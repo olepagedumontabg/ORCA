@@ -31,13 +31,35 @@ def load_data():
         # Load each Excel file, reading all worksheets
         for file_path in excel_files:
             try:
-                # Use pd.ExcelFile to get all sheet names
-                excel = pd.ExcelFile(file_path)
+                # Use pd.ExcelFile to get all sheet names, with engine explicitly specified
+                try:
+                    # First try with openpyxl engine
+                    excel = pd.ExcelFile(file_path, engine='openpyxl')
+                except Exception as e:
+                    logger.warning(f"Failed to read with openpyxl engine, trying xlrd: {str(e)}")
+                    # If that fails, try with xlrd engine
+                    try:
+                        excel = pd.ExcelFile(file_path, engine='xlrd')
+                    except Exception as e2:
+                        logger.error(f"Failed to read Excel file with all engines: {str(e2)}")
+                        continue
+                        
                 sheet_names = excel.sheet_names
+                logger.debug(f"Found sheets: {sheet_names}")
                 
                 # Load each worksheet into a separate DataFrame
                 for sheet_name in sheet_names:
-                    df = pd.read_excel(file_path, sheet_name=sheet_name)
+                    try:
+                        # Try with openpyxl engine first
+                        df = pd.read_excel(file_path, sheet_name=sheet_name, engine='openpyxl')
+                    except Exception:
+                        # If that fails, try with xlrd engine
+                        try:
+                            df = pd.read_excel(file_path, sheet_name=sheet_name, engine='xlrd')
+                        except Exception as e2:
+                            logger.error(f"Failed to read sheet {sheet_name}: {str(e2)}")
+                            continue
+                    
                     # Use the sheet name as the key in the data dictionary
                     data[sheet_name] = df
                     logger.debug(f"Loaded worksheet '{sheet_name}' with {len(df)} rows")
