@@ -161,7 +161,7 @@ class FullCompatibilityProcessor:
     def _match_nominal_dimensions(self, dim1, dim2):
         """
         Match nominal dimensions with format flexibility
-        Handles variations like "48 x 32" vs "48x32"
+        Handles variations like "48 x 32" vs "48x32" and unit conversions
         """
         if pd.isna(dim1) or pd.isna(dim2):
             return False
@@ -178,14 +178,40 @@ class FullCompatibilityProcessor:
         if dim1_nospace == dim2_nospace:
             return True
             
+        # Replace common variations of 'x' separator
+        dim1_std = re.sub(r'[×xX*]', 'x', dim1_nospace)
+        dim2_std = re.sub(r'[×xX*]', 'x', dim2_nospace)
+        if dim1_std == dim2_std:
+            return True
+            
         # Split by 'x' and compare individual dimensions
         try:
-            dim1_parts = dim1_nospace.split('x')
-            dim2_parts = dim2_nospace.split('x')
+            dim1_parts = dim1_std.split('x')
+            dim2_parts = dim2_std.split('x')
+            
+            # Basic dimension comparison
             if len(dim1_parts) == 2 and len(dim2_parts) == 2:
-                return dim1_parts[0] == dim2_parts[0] and dim1_parts[1] == dim2_parts[1]
+                # Extract numeric values if possible
+                try:
+                    dim1_width = float(re.match(r'(\d+(?:\.\d+)?)', dim1_parts[0]).group(1))
+                    dim1_depth = float(re.match(r'(\d+(?:\.\d+)?)', dim1_parts[1]).group(1))
+                    dim2_width = float(re.match(r'(\d+(?:\.\d+)?)', dim2_parts[0]).group(1))
+                    dim2_depth = float(re.match(r'(\d+(?:\.\d+)?)', dim2_parts[1]).group(1))
+                    
+                    # Check if dimensions match with a small tolerance
+                    width_match = abs(dim1_width - dim2_width) <= 0.5
+                    depth_match = abs(dim1_depth - dim2_depth) <= 0.5
+                    
+                    if width_match and depth_match:
+                        return True
+                except:
+                    # If numeric extraction fails, fallback to exact string match
+                    return dim1_parts[0] == dim2_parts[0] and dim1_parts[1] == dim2_parts[1]
         except:
             pass
+            
+        # Handle special cases like fractions or unit conversions
+        # This would be expanded based on observed data patterns
             
         return False
             
