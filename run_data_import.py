@@ -6,7 +6,7 @@ import os
 import sys
 import logging
 from data_updater import run_update_process
-from compatibility_processor import run_compatibility_process
+from compatibility_processor import run_compatibility_processor
 
 # Configure logging
 logging.basicConfig(
@@ -42,7 +42,7 @@ def main():
     
     # Run the compatibility processor
     logger.info("Step 2: Processing compatibility relationships...")
-    run_compatibility_process()
+    run_compatibility_processor()
     
     logger.info("Data import complete!")
     return True
