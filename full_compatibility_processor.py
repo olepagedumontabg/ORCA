@@ -7,6 +7,7 @@ import os
 import sys
 import pandas as pd
 import json
+import re
 import logging
 from sqlalchemy import create_engine, text
 
@@ -121,18 +122,25 @@ class FullCompatibilityProcessor:
             return False
         if pd.isna(base_family) or pd.isna(wall_family):
             return False
-            
-        return (
+        
+        # First check the brand combinations
+        brand_match = (
             (base_brand == "Swan" and wall_brand == "Swan") or
             (base_brand == "Maax" and wall_brand == "Maax") or
             (base_brand == "Neptune" and wall_brand == "Neptune") or
-            (base_brand == "Bootz" and wall_brand == "Bootz") or
+            (base_brand == "Bootz" and wall_brand == "Bootz")
+        )
+        
+        # Then check family combinations
+        family_match = (
             (base_family == "W&B" and wall_family == "W&B") or
             (base_family == "Olio" and wall_family == "Olio") or
             (base_family == "Vellamo" and wall_brand == "Vellamo") or
-            (base_family in ["B3", "Finesse", "Distinct", "Zone", "Olympia", "Icon"] and
+            (base_family in ["B3", "B3Square", "Finesse", "Distinct", "Zone", "Olympia", "Icon"] and
              wall_family in ["Utile", "Denso", "Nextile", "Versaline"])
         )
+        
+        return brand_match or family_match
         
     def bathtub_brand_family_match(self, base_brand, base_family, wall_brand, wall_family):
         """Check if brands and families match for bathtub compatibility"""

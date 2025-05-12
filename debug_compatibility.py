@@ -5,6 +5,7 @@ import os
 import sys
 import pandas as pd
 import logging
+import re  # Add regex support for dimension matching
 
 # Configure logging
 logging.basicConfig(
