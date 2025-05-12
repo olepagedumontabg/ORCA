@@ -34,7 +34,34 @@ def generate_image_url(product_info):
             if is_valid_url(value):
                 return normalize_url(value)
     
-    # If we couldn't find an image URL, return an empty string
+    # Generate a pseudo-URL based on product name for product images in static folder
+    if 'Product Name' in product_info and product_info['Product Name']:
+        product_name = product_info['Product Name'].strip()
+        # Convert product name to a format suitable for a file name
+        product_name = product_name.lower().replace(' ', '_').replace('-', '_')
+        # Remove any other special characters
+        import re
+        product_name = re.sub(r'[^a-z0-9_]', '', product_name)
+        
+        # Check if this category has common image patterns
+        category = product_info.get('category', '')
+        sku = product_info.get('Unique ID', '')
+        
+        # Try to determine image name from product type
+        image_name = None
+        if 'B3Round' in product_info.get('Product Name', ''):
+            image_name = 'b3round'
+        elif 'B3Square' in product_info.get('Product Name', ''):
+            image_name = 'b3square'
+        elif 'shower base' in product_info.get('Product Name', '').lower():
+            image_name = 'shower_base'
+        elif 'shower door' in category.lower() or 'door' in product_info.get('Product Name', '').lower():
+            image_name = 'shower_door'
+            
+        if image_name:
+            return f"/static/images/products/{image_name}.jpg"
+    
+    # If we couldn't find or generate an image URL, return an empty string
     return ""
 
 def normalize_url(url):
