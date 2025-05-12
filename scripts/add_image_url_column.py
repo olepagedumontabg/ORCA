@@ -19,10 +19,16 @@ def add_image_url_column(excel_path):
     try:
         print(f"Opening Excel file: {excel_path}")
         
-        # Use ExcelFile to get all sheet names
-        xl = pd.ExcelFile(excel_path)
+        # Use ExcelFile to get all sheet names, explicitly specify engine
+        xl = pd.ExcelFile(excel_path, engine='openpyxl')
         sheet_names = xl.sheet_names
         print(f"Found {len(sheet_names)} sheets: {sheet_names}")
+        
+        # Create a backup first
+        backup_path = excel_path + '.backup'
+        import shutil
+        shutil.copy2(excel_path, backup_path)
+        print(f"Created backup at {backup_path}")
         
         # Initialize ExcelWriter for saving changes
         writer = pd.ExcelWriter(excel_path, engine='openpyxl')
@@ -32,7 +38,7 @@ def add_image_url_column(excel_path):
             print(f"\nProcessing sheet: {sheet}")
             
             # Read the entire sheet
-            df = pd.read_excel(excel_path, sheet_name=sheet)
+            df = pd.read_excel(excel_path, sheet_name=sheet, engine='openpyxl')
             
             # Check if Image URL column already exists
             if 'Image URL' in df.columns:
