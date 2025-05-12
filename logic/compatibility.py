@@ -2,11 +2,47 @@ import os
 import pandas as pd
 import logging
 import glob
+import re
 from logic import base_compatibility
 from logic import image_handler
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+def get_fixed_door_type(product_info):
+    """
+    Get door type using only the approved values (Pivot, Sliding, Bypass)
+    
+    Args:
+        product_info (dict): Product information dictionary
+        
+    Returns:
+        str: Door type from the approved set
+    """
+    # First try to get the door type from the Door Type column if it exists
+    if product_info and "Door Type" in product_info and product_info["Door Type"] is not None:
+        door_type = product_info["Door Type"]
+        if pd.notna(door_type) and door_type and isinstance(door_type, str) and door_type.strip():
+            # If the door type is already one of our approved types, return it
+            if door_type in ["Pivot", "Sliding", "Bypass"]:
+                return door_type
+    
+    # If no valid door type was found, determine it from the product name
+    name = product_info.get("Product Name", "") if product_info else ""
+    
+    if not name or not isinstance(name, str):
+        return "Sliding"  # Default to Sliding if no name is provided
+    
+    name = name.lower()
+    
+    # Only use the 3 door types that are in the Excel file
+    if "pivot" in name:
+        return "Pivot"
+    elif "bypass" in name:
+        return "Bypass"
+    
+    # Default to Sliding for all other cases
+    return "Sliding"
 
 def load_data():
     """
@@ -181,7 +217,7 @@ def find_compatible_products(sku):
                                 "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
                                 "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
                                 "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
-                                "door_type": product_info.get("Door Type", "") if product_info.get("Door Type") is not None else ""
+                                "door_type": get_fixed_door_type(product_info)
                             })
                 
                 compatible_products.append({
@@ -220,7 +256,7 @@ def find_compatible_products(sku):
                             "brand": door_info.get("Brand", "") if door_info.get("Brand") is not None else "",
                             "series": door_info.get("Series", "") if door_info.get("Series") is not None else "",
                             "glass_thickness": door_info.get("Glass Thickness", "") if door_info.get("Glass Thickness") is not None else "",
-                            "door_type": door_info.get("Door Type", "") if door_info.get("Door Type") is not None else ""
+                            "door_type": get_fixed_door_type(door_info)
                         })
                 
                 if enhanced_skus:

@@ -42,26 +42,18 @@ def determine_door_type(name):
         str: Door type classification
     """
     if not name or not isinstance(name, str):
-        return 'Standard'
+        return 'Sliding'  # Default to Sliding if no name is provided
     
     name = name.lower()
     
-    if 'sliding' in name:
-        return 'Sliding'
-    elif 'pivot' in name:
+    # Only use the 3 door types that are in the Excel file
+    if 'pivot' in name:
         return 'Pivot'
-    elif 'hinged' in name or 'swing' in name:
-        return 'Hinged/Swing'
     elif 'bypass' in name:
         return 'Bypass'
-    elif 'corner' in name:
-        return 'Corner'
-    elif 'round' in name:
-        return 'Round'
-    elif 'square' in name:
-        return 'Square'
     
-    return 'Standard'
+    # Default to Sliding for all other cases
+    return 'Sliding'
 
 def update_excel_columns(file_path):
     """
