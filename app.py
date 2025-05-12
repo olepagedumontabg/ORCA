@@ -70,9 +70,17 @@ def search():
             
             if compat.requires_return_panel:
                 # Format with return panel info
-                results[category].append(f"{compat.target_sku} (+ Return Panel: {compat.requires_return_panel})")
+                results[category].append({
+                    'sku': compat.target_sku,
+                    'requires_return': True,
+                    'return_panel': compat.requires_return_panel
+                })
             else:
-                results[category].append(compat.target_sku)
+                results[category].append({
+                    'sku': compat.target_sku,
+                    'requires_return': False,
+                    'return_panel': None
+                })
         
         # Format for the frontend
         formatted_results = []
