@@ -106,9 +106,19 @@ function compatibilityApp() {
         
         /**
          * Get a placeholder image URL for products without images
+         * Uses a better product-specific placeholder based on the product name if available
+         * @param {string} productName - Optional product name to use in the placeholder
          * @returns {string} The placeholder image URL
          */
-        getPlaceholderImage() {
+        getPlaceholderImage(productName) {
+            // If a product name is provided, create a more specific placeholder
+            if (productName) {
+                // Clean the product name for use in URL (remove special chars, limit length)
+                const cleanName = productName.replace(/[^a-zA-Z0-9 ]/g, '')
+                                           .replace(/\s+/g, '+')
+                                           .substring(0, 20);
+                return `https://via.placeholder.com/150x150?text=${cleanName}`;
+            }
             return 'https://via.placeholder.com/150x150?text=No+Image';
         },
         
