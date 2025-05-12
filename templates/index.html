@@ -191,29 +191,18 @@
                                         <thead class="bg-gray-50">
                                             <tr>
                                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand/Family</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Series</th>
+                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
                                                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Panel</th>
                                             </tr>
                                         </thead>
                                         <tbody class="bg-white divide-y divide-gray-200">
                                             <template x-for="(item, idx) in category.skus" :key="idx">
                                                 <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600" x-text="item.sku"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.brand + ' / ' + item.family"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.series"></td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.category || (item.family + ' ' + item.series)"></td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.brand"></td>
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.nominal_dimensions"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                        <template x-if="item.requires_return">
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                                <span x-text="item.return_panel"></span>
-                                                            </span>
-                                                        </template>
-                                                        <template x-if="!item.requires_return">
-                                                            <span class="text-gray-400">None</span>
-                                                        </template>
-                                                    </td>
                                                 </tr>
                                             </template>
                                         </tbody>
