@@ -262,19 +262,8 @@
 
             <!-- Mobile search history (visible only on small screens) -->
             <div class="md:hidden bg-white rounded-lg shadow-md p-4 mb-6">
-                <h2 class="text-lg font-semibold mb-2 text-secondary">Recent Searches</h2>
-                <div class="flex flex-wrap gap-2" id="mobileHistoryList">
-                    <template x-if="searchHistory.length === 0">
-                        <div class="text-gray-500 italic">No recent searches</div>
-                    </template>
-                    <template x-for="(sku, index) in searchHistory" :key="index">
-                        <button 
-                            @click="searchSku(sku)"
-                            x-text="sku"
-                            class="bg-gray-100 hover:bg-gray-200 text-primary px-3 py-1 rounded-full text-sm transition duration-150 ease-in-out"
-                        ></button>
-                    </template>
-                </div>
+                <h2 class="text-lg font-semibold mb-2 text-secondary">Search SKUs</h2>
+                <p class="text-gray-600 text-sm">Enter a product SKU in the search bar above to find compatible products.</p>
             </div>
 
             <!-- Results area -->
