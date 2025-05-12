@@ -65,19 +65,20 @@ def find_compatible_products(sku):
         product_category = None
         
         for category, df in data.items():
-            # Check if 'SKU' column exists in the DataFrame
-            sku_column = None
+            # Check if 'Unique ID' column exists in the DataFrame (main identifier in the Excel file)
+            id_column = None
             for col in df.columns:
-                if col.upper() == 'SKU' or col.lower() == 'sku':
-                    sku_column = col
+                if col == 'Unique ID':
+                    id_column = col
                     break
             
-            if sku_column is None:
-                logger.warning(f"No SKU column found in {category} data")
+            if id_column is None:
+                logger.warning(f"No Unique ID column found in {category} data")
                 continue
             
             # Try to find the SKU in this category
-            product_row = df[df[sku_column].astype(str).str.upper() == sku.upper()]
+            # Convert everything to string and uppercase for case-insensitive comparison
+            product_row = df[df[id_column].astype(str).str.upper() == sku.upper()]
             
             if not product_row.empty:
                 product_info = product_row.iloc[0].to_dict()
@@ -89,29 +90,125 @@ def find_compatible_products(sku):
             logger.warning(f"No product found for SKU: {sku}")
             return []
         
-        # Find compatible products
+        # Find compatible products based on the product's category
         compatible_products = []
         
-        # This is a placeholder for the actual compatibility logic
-        # The real implementation would use the existing compatibility scripts
-        # that would be placed in this directory
-        
-        # Example structure (to be replaced with actual compatibility logic):
-        # The structure assumes we have compatibility rules defined somewhere
-        for category, df in data.items():
-            if category == product_category:
-                continue  # Skip the product's own category
+        # Different compatibility logic based on the product category
+        if product_category == 'Shower Bases':
+            # Shower Base compatibility
+            # Compatible with doors, walls, and enclosures
+            shower_base_width = product_info.get('Width')
+            shower_base_length = product_info.get('Length')
+            installation_type = product_info.get('Installation')
+            max_door_width = product_info.get('Max Door Width')
+            fits_return_panel = product_info.get('Fits Return Panel Size')
+            
+            # Find compatible doors
+            if 'Shower Doors' in data and max_door_width is not None:
+                doors_df = data['Shower Doors']
+                compatible_doors = doors_df[doors_df['Door Width'] <= max_door_width]
+                door_skus = compatible_doors['Unique ID'].astype(str).tolist()
                 
-            compatible_skus = []
+                if door_skus:
+                    compatible_products.append({
+                        "category": "Shower Doors",
+                        "skus": door_skus
+                    })
             
-            # This would be replaced with the actual compatibility checking logic
-            # For now, we'll just add a placeholder
-            compatible_skus = ["Sample-SKU-1", "Sample-SKU-2"]
+            # Find compatible walls
+            if 'Walls' in data and shower_base_length is not None and shower_base_width is not None:
+                walls_df = data['Walls']
+                # Find walls that match the base dimensions
+                compatible_walls = walls_df[
+                    (walls_df['Base Length'] == shower_base_length) & 
+                    (walls_df['Base Width'] == shower_base_width)
+                ]
+                wall_skus = compatible_walls['Unique ID'].astype(str).tolist()
+                
+                if wall_skus:
+                    compatible_products.append({
+                        "category": "Walls",
+                        "skus": wall_skus
+                    })
             
-            if compatible_skus:
+            # Find compatible return panels if it's a corner installation
+            if 'Return Panels' in data and fits_return_panel is not None and installation_type == 'Corner':
+                panels_df = data['Return Panels']
+                compatible_panels = panels_df[panels_df['Return Panel Size'] == fits_return_panel]
+                panel_skus = compatible_panels['Unique ID'].astype(str).tolist()
+                
+                if panel_skus:
+                    compatible_products.append({
+                        "category": "Return Panels",
+                        "skus": panel_skus
+                    })
+                    
+        elif product_category == 'Showers':
+            # Showers compatibility
+            # They might be compatible with doors
+            shower_width = product_info.get('Width')
+            
+            if 'Shower Doors' in data and shower_width is not None:
+                doors_df = data['Shower Doors']
+                # Find doors that fit this shower width
+                compatible_doors = doors_df[doors_df['Door Width'] <= shower_width]
+                door_skus = compatible_doors['Unique ID'].astype(str).tolist()
+                
+                if door_skus:
+                    compatible_products.append({
+                        "category": "Shower Doors",
+                        "skus": door_skus
+                    })
+                    
+        elif product_category == 'Shower Doors':
+            # Shower doors compatibility
+            # They might fit certain bases and showers
+            door_width = product_info.get('Door Width')
+            
+            if 'Shower Bases' in data and door_width is not None:
+                bases_df = data['Shower Bases']
+                # Find bases that can fit this door
+                compatible_bases = bases_df[bases_df['Max Door Width'] >= door_width]
+                base_skus = compatible_bases['Unique ID'].astype(str).tolist()
+                
+                if base_skus:
+                    compatible_products.append({
+                        "category": "Shower Bases",
+                        "skus": base_skus
+                    })
+            
+            if 'Showers' in data and door_width is not None:
+                showers_df = data['Showers']
+                # Find showers that can fit this door (if Width column exists)
+                if 'Width' in showers_df.columns:
+                    compatible_showers = showers_df[showers_df['Width'] >= door_width]
+                    shower_skus = compatible_showers['Unique ID'].astype(str).tolist()
+                    
+                    if shower_skus:
+                        compatible_products.append({
+                            "category": "Showers",
+                            "skus": shower_skus
+                        })
+                    
+        # Add similar logic for other categories (Walls, Tub Doors, etc.)
+        
+        # If no specific compatibility logic matched or no compatible products found,
+        # check if there are explicit compatibility columns in the product info
+        if not compatible_products:
+            # Check for explicitly listed compatible doors
+            if 'Compatible Doors' in product_info and pd.notna(product_info['Compatible Doors']):
+                compatible_doors = str(product_info['Compatible Doors']).split(',')
                 compatible_products.append({
-                    "category": category,
-                    "skus": compatible_skus
+                    "category": "Doors",
+                    "skus": [door.strip() for door in compatible_doors]
+                })
+                
+            # Check for explicitly listed compatible walls
+            if 'Compatible Walls' in product_info and pd.notna(product_info['Compatible Walls']):
+                compatible_walls = str(product_info['Compatible Walls']).split(',')
+                compatible_products.append({
+                    "category": "Walls", 
+                    "skus": [wall.strip() for wall in compatible_walls]
                 })
         
         logger.debug(f"Found {len(compatible_products)} compatible categories")
