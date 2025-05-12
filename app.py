@@ -1,16 +1,17 @@
 import os
 import logging
-from flask import Flask, render_template, request, jsonify, session
-import pandas as pd
 import traceback
-from logic import compatibility
-
-# Configure app
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+import json
+from flask import render_template, request, jsonify, session
+from main import app, db
+from models import Product, Compatibility
+from sqlalchemy import func
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Routes module for the application
+routes = app  # For importing in main.py
 
 # Initialize session data structure for search history
 @app.before_request
@@ -39,37 +40,54 @@ def search():
         # Log the search request
         logger.debug(f"Searching for SKU: {sku}")
         
-        # Call the compatibility function to find matches
-        results = compatibility.find_compatible_products(sku)
+        # Find product in database
+        product = Product.query.filter(Product.sku == sku).first()
         
-        # Update search history (most recent first, maximum 5 items)
-        search_history = session.get('search_history', [])
-        
-        # Remove the SKU if it's already in history to avoid duplicates
-        search_history = [s for s in search_history if s != sku]
-        
-        # Add the new SKU at the beginning
-        search_history.insert(0, sku)
-        
-        # Keep only the 5 most recent searches
-        search_history = search_history[:5]
-        
-        # Update session
-        session['search_history'] = search_history
-        
-        if results:
-            return jsonify({
-                'success': True,
-                'sku': sku,
-                'data': results,
-                'search_history': search_history
-            })
-        else:
+        if not product:
+            logger.warning(f"No product found for SKU: {sku}")
+            # Update search history
+            update_search_history(sku)
             return jsonify({
                 'success': False,
                 'message': f'No product found for SKU {sku}',
-                'search_history': search_history
+                'search_history': session.get('search_history', [])
             })
+        
+        # Find compatible products
+        compatibilities = Compatibility.query.filter(
+            Compatibility.source_sku == sku
+        ).all()
+        
+        # Organize results by category
+        results = {}
+        for compat in compatibilities:
+            category = compat.target_category
+            if category not in results:
+                results[category] = []
+            
+            if compat.requires_return_panel:
+                # Format with return panel info
+                results[category].append(f"{compat.target_sku} (+ Return Panel: {compat.requires_return_panel})")
+            else:
+                results[category].append(compat.target_sku)
+        
+        # Format for the frontend
+        formatted_results = []
+        for category, skus in results.items():
+            formatted_results.append({
+                'category': category,
+                'skus': skus
+            })
+        
+        # Update search history
+        update_search_history(sku)
+        
+        return jsonify({
+            'success': True,
+            'sku': sku,
+            'data': formatted_results,
+            'search_history': session.get('search_history', [])
+        })
             
     except Exception as e:
         logger.error(f"Error processing search: {str(e)}")
@@ -79,5 +97,19 @@ def search():
             'message': f'An error occurred: {str(e)}'
         })
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+def update_search_history(sku):
+    """Update the session search history"""
+    search_history = session.get('search_history', [])
+    
+    # Remove the SKU if it's already in history to avoid duplicates
+    search_history = [s for s in search_history if s != sku]
+    
+    # Add the new SKU at the beginning
+    search_history.insert(0, sku)
+    
+    # Keep only the 5 most recent searches
+    search_history = search_history[:5]
+    
+    # Update session
+    session['search_history'] = search_history
+    return search_history
