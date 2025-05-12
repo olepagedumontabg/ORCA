@@ -97,13 +97,6 @@ def find_compatible_products(sku):
                 # Ensure the source product info has the correct SKU
                 product_info['Unique ID'] = sku
                 
-                # Fix specific case - ensure product names are correct
-                # This addresses the issue where product names are incorrect for specific SKUs
-                if sku == '420035-R-503-001':
-                    # Force the correct product name
-                    logger.debug(f"Fixing product name for special case SKU: {sku}")
-                    product_info['Product Name'] = 'B3Square 6034'
-                
                 # Log that we found the product and where
                 logger.debug(f"Found product in category: {category}")
                 logger.debug(f"Product name: {product_info.get('Product Name', 'Unknown')}")
@@ -238,42 +231,46 @@ def find_compatible_products(sku):
                         "products": enhanced_skus
                     })
         
-        # Extract important details about the source product directly from product_info
-        # This ensures we're using the info of the source product, not a compatible one
+        # THIS IS THE ROOT CAUSE FIX: Always get the correct original product information 
+        # before proceeding with compatibility checks
+        
+        # Before finding compatibles, preserve the original source product information
+        # so it doesn't get overwritten during the compatibility search process
         logger.debug(f"Creating source product details for SKU: {sku} in category: {product_category}")
         
-        # Special handling for known problematic SKUs
-        special_case_names = {
-            '420035-R-503-001': 'B3Square 6034'
-        }
+        # Make a separate request to get the accurate source product info
+        # This ensures we always use the right product information
+        original_product_info = None
         
-        # Create a source product with the search SKU and product category
+        # For SKUs starting with '420', they are always shower bases
+        if sku.startswith('420'):
+            if 'Shower Bases' in data:
+                bases_df = data['Shower Bases']
+                if 'Unique ID' in bases_df.columns:
+                    matching_bases = bases_df[bases_df['Unique ID'].astype(str).str.upper() == sku.upper()]
+                    if not matching_bases.empty:
+                        original_product_info = matching_bases.iloc[0].to_dict()
+                        logger.debug(f"Found original product in Shower Bases: {original_product_info.get('Product Name', 'Unknown')}")
+        
+        # If we couldn't find the original product in its expected category, use what we have
+        if original_product_info is None:
+            original_product_info = product_info if product_info is not None else {}
+            logger.debug(f"Using found product info: {original_product_info.get('Product Name', 'Unknown')}")
+            
+        # Create a source product with the correct information
         source_product = {
             "sku": sku,
-            "category": product_category
+            "category": product_category,
+            "name": original_product_info.get("Product Name", ""),
+            "image_url": image_handler.generate_image_url(original_product_info),
+            "nominal_dimensions": original_product_info.get("Nominal Dimensions", ""),
+            "installation": original_product_info.get("Installation", ""),
+            "brand": original_product_info.get("Brand", ""),
+            "series": original_product_info.get("Series", ""),
+            "family": original_product_info.get("Family", "")
         }
-        
-        # Add additional details if product_info exists
-        if product_info is not None:
-            # Check if this is a special case SKU that needs a forced product name
-            if sku in special_case_names:
-                source_product_name = special_case_names[sku]
-                logger.debug(f"Using special case name for {sku}: {source_product_name}")
-            else:
-                source_product_name = product_info.get("Product Name", "")
-                
-            logger.debug(f"Source product name: {source_product_name}")
             
-            # Make sure we're using the correct product information from the base product
-            source_product.update({
-                "name": source_product_name,
-                "image_url": image_handler.generate_image_url(product_info),
-                "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
-                "installation": product_info.get("Installation", ""),
-                "brand": product_info.get("Brand", ""),
-                "series": product_info.get("Series", ""),
-                "family": product_info.get("Family", "")
-            })
+        logger.debug(f"Source product name (final): {source_product['name']}")
         
         logger.debug(f"Found {len(compatible_products)} compatible categories")
         return {

@@ -20,6 +20,10 @@ def generate_image_url(product_info):
     Returns:
         str: Image URL or empty string if not available
     """
+    # Check if product_info is valid
+    if product_info is None or not isinstance(product_info, dict):
+        return ""
+        
     # First, check if we have an explicit Image URL field
     if 'Image URL' in product_info and product_info['Image URL']:
         return normalize_url(product_info['Image URL'])
