@@ -21,8 +21,6 @@ function compatibilityApp() {
             selectedBrands: [],
             selectedGlassThicknesses: [],
             selectedDoorTypes: [],
-            dimensionMin: '',
-            dimensionMax: '',
             selectedCategories: []
         },
         
@@ -286,32 +284,7 @@ function compatibilityApp() {
                 if (!doorTypeMatch) return false;
             }
             
-            // Dimension range filters
-            if (product.nominal_dimensions) {
-                const dimensions = product.nominal_dimensions;
-                
-                // Extract numeric values from dimensions
-                // Typical format: "48 x 36" or "56-59 x 71"
-                const match = dimensions.match(/(\d+)(?:-\d+)?\s*x\s*(\d+)/);
-                if (match) {
-                    const width = parseInt(match[1]);
-                    const height = parseInt(match[2]);
-                    
-                    // Check min width filter
-                    if (this.filters.dimensionMin && !isNaN(parseInt(this.filters.dimensionMin))) {
-                        if (width < parseInt(this.filters.dimensionMin)) {
-                            return false;
-                        }
-                    }
-                    
-                    // Check max width filter
-                    if (this.filters.dimensionMax && !isNaN(parseInt(this.filters.dimensionMax))) {
-                        if (width > parseInt(this.filters.dimensionMax)) {
-                            return false;
-                        }
-                    }
-                }
-            }
+
             
             // All filters passed
             return true;
@@ -385,8 +358,6 @@ function compatibilityApp() {
                 selectedBrands: [],
                 selectedGlassThicknesses: [],
                 selectedDoorTypes: [],
-                dimensionMin: '',
-                dimensionMax: '',
                 selectedCategories: []
             };
             
