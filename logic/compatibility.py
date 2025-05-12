@@ -90,9 +90,18 @@ def find_compatible_products(sku):
             product_row = df[df[id_column].astype(str).str.upper() == sku.upper()]
             
             if not product_row.empty:
+                # Store the exact match from this category
                 product_info = product_row.iloc[0].to_dict()
                 product_category = category
+                
+                # Ensure the source product info has the correct SKU
+                product_info['Unique ID'] = sku
+                
+                # Log that we found the product and where
                 logger.debug(f"Found product in category: {category}")
+                logger.debug(f"Product name: {product_info.get('Product Name', 'Unknown')}")
+                
+                # Since we found a direct match, stop searching other categories
                 break
         
         if product_info is None:
@@ -224,6 +233,9 @@ def find_compatible_products(sku):
         
         # Extract important details about the source product directly from product_info
         # This ensures we're using the info of the source product, not a compatible one
+        logger.debug(f"Creating source product details for SKU: {sku} in category: {product_category}")
+        
+        # Create a source product with the search SKU and product category
         source_product = {
             "sku": sku,
             "category": product_category
@@ -231,9 +243,13 @@ def find_compatible_products(sku):
         
         # Add additional details if product_info exists
         if product_info is not None:
+            # Double-check we're using the correct product information
+            source_product_name = product_info.get("Product Name", "")
+            logger.debug(f"Source product name: {source_product_name}")
+            
             # Make sure we're using the correct product information from the base product
             source_product.update({
-                "name": product_info.get("Product Name", ""),
+                "name": source_product_name,
                 "image_url": image_handler.generate_image_url(product_info),
                 "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
                 "installation": product_info.get("Installation", ""),
@@ -264,17 +280,23 @@ def get_product_details(data, sku):
         dict: Product details or None if not found
     """
     try:
+        logger.debug(f"Looking for product details for SKU: {sku}")
+        
         for category, df in data.items():
             # Skip any dataframes without a Unique ID column
             if 'Unique ID' not in df.columns:
                 continue
                 
             # Find the product in this category
+            # Convert everything to string and uppercase for case-insensitive comparison
             product_row = df[df['Unique ID'].astype(str).str.upper() == sku.upper()]
             
             if not product_row.empty:
-                return product_row.iloc[0].to_dict()
+                product_info = product_row.iloc[0].to_dict()
+                logger.debug(f"Found product in {category}: {product_info.get('Product Name', 'Unknown')}")
+                return product_info
                 
+        logger.debug(f"No product found for SKU: {sku}")
         return None
     except Exception as e:
         logger.error(f"Error in get_product_details: {str(e)}")
