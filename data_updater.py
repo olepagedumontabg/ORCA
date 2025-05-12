@@ -99,7 +99,7 @@ def update_database(data):
             # Ensure we have a SKU column (various possible names)
             sku_column = None
             for col in df.columns:
-                if col.upper() == 'SKU' or col.lower() == 'sku' or 'unique id' in col.lower():
+                if col.upper() == 'SKU' or col.lower() == 'sku' or col == 'Unique ID':
                     sku_column = col
                     break
             
@@ -227,7 +227,7 @@ def update_database(data):
             # Ensure we have a SKU column and compatibility columns
             sku_column = None
             for col in df.columns:
-                if col.upper() == 'SKU' or col.lower() == 'sku' or 'unique id' in col.lower():
+                if col.upper() == 'SKU' or col.lower() == 'sku' or col == 'Unique ID':
                     sku_column = col
                     break
             
