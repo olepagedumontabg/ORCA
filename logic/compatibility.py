@@ -175,13 +175,13 @@ def find_compatible_products(sku):
                             enhanced_skus.append({
                                 "sku": sku_item,
                                 "is_combo": False,
-                                "name": product_info.get("Product Name", ""),
+                                "name": product_info.get("Product Name", "") if product_info.get("Product Name") is not None else "",
                                 "image_url": image_handler.generate_image_url(product_info),
-                                "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
-                                "brand": product_info.get("Brand", ""),
-                                "series": product_info.get("Series", ""),
-                                "glass_thickness": product_info.get("Glass Thickness", ""),
-                                "door_type": product_info.get("Door Type", "")
+                                "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info.get("Nominal Dimensions") is not None else "",
+                                "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
+                                "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
+                                "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
+                                "door_type": product_info.get("Door Type", "") if product_info.get("Door Type") is not None else ""
                             })
                 
                 compatible_products.append({
@@ -214,13 +214,13 @@ def find_compatible_products(sku):
                         enhanced_skus.append({
                             "sku": door_sku,
                             "is_combo": False,
-                            "name": door_info.get("Product Name", ""),
+                            "name": door_info.get("Product Name", "") if door_info.get("Product Name") is not None else "",
                             "image_url": image_handler.generate_image_url(door_info),
-                            "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
-                            "brand": door_info.get("Brand", ""),
-                            "series": door_info.get("Series", ""),
-                            "glass_thickness": door_info.get("Glass Thickness", ""),
-                            "door_type": door_info.get("Door Type", "")
+                            "nominal_dimensions": door_info.get("Nominal Dimensions", "") if door_info.get("Nominal Dimensions") is not None else "",
+                            "brand": door_info.get("Brand", "") if door_info.get("Brand") is not None else "",
+                            "series": door_info.get("Series", "") if door_info.get("Series") is not None else "",
+                            "glass_thickness": door_info.get("Glass Thickness", "") if door_info.get("Glass Thickness") is not None else "",
+                            "door_type": door_info.get("Door Type", "") if door_info.get("Door Type") is not None else ""
                         })
                 
                 if enhanced_skus:
@@ -293,13 +293,13 @@ def find_compatible_products(sku):
         source_product = {
             "sku": sku,
             "category": product_category,
-            "name": original_product_info.get("Product Name", ""),
+            "name": original_product_info.get("Product Name", "") if original_product_info.get("Product Name") is not None else "",
             "image_url": image_handler.generate_image_url(original_product_info),
-            "nominal_dimensions": original_product_info.get("Nominal Dimensions", ""),
-            "installation": original_product_info.get("Installation", ""),
-            "brand": original_product_info.get("Brand", ""),
-            "series": original_product_info.get("Series", ""),
-            "family": original_product_info.get("Family", "")
+            "nominal_dimensions": original_product_info.get("Nominal Dimensions", "") if original_product_info.get("Nominal Dimensions") is not None else "",
+            "installation": original_product_info.get("Installation", "") if original_product_info.get("Installation") is not None else "",
+            "brand": original_product_info.get("Brand", "") if original_product_info.get("Brand") is not None else "",
+            "series": original_product_info.get("Series", "") if original_product_info.get("Series") is not None else "",
+            "family": original_product_info.get("Family", "") if original_product_info.get("Family") is not None else ""
         }
             
         logger.debug(f"Source product name (final): {source_product['name']}")
