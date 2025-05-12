@@ -111,15 +111,43 @@ function compatibilityApp() {
          * @returns {string} The placeholder image URL
          */
         getPlaceholderImage(productName) {
-            // If a product name is provided, create a more specific placeholder
+            // Check if we can determine a category-based image
             if (productName) {
-                // Clean the product name for use in URL (remove special chars, limit length)
+                // Look for key words in the product name to determine image type
+                productName = productName.toLowerCase();
+                
+                if (productName.includes('b3round') || (productName.includes('round') && productName.includes('base'))) {
+                    return '/static/images/products/b3round.jpg';
+                }
+                
+                if (productName.includes('b3square') || (productName.includes('square') && productName.includes('base'))) {
+                    return '/static/images/products/b3square.jpg';
+                }
+                
+                if (productName.includes('door')) {
+                    return '/static/images/products/shower_door.jpg';
+                }
+                
+                if (productName.includes('wall')) {
+                    return '/static/images/products/shower_wall.jpg';
+                }
+                
+                if (productName.includes('panel') || productName.includes('return')) {
+                    return '/static/images/products/return_panel.jpg';
+                }
+                
+                if (productName.includes('base') || productName.includes('shower base')) {
+                    return '/static/images/products/b3square.jpg';
+                }
+                
+                // If no matching category, create a generic placeholder with the product name
                 const cleanName = productName.replace(/[^a-zA-Z0-9 ]/g, '')
                                            .replace(/\s+/g, '+')
                                            .substring(0, 20);
-                return `https://via.placeholder.com/150x150?text=${cleanName}`;
+                return `https://via.placeholder.com/300x200?text=${cleanName}`;
             }
-            return 'https://via.placeholder.com/150x150?text=No+Image';
+            
+            return '/static/images/products/b3square.jpg'; // Default
         },
         
         /**

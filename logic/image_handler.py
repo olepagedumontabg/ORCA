@@ -34,32 +34,60 @@ def generate_image_url(product_info):
             if is_valid_url(value):
                 return normalize_url(value)
     
-    # Generate a pseudo-URL based on product name for product images in static folder
-    if 'Product Name' in product_info and product_info['Product Name']:
-        product_name = product_info['Product Name'].strip()
-        # Convert product name to a format suitable for a file name
-        product_name = product_name.lower().replace(' ', '_').replace('-', '_')
-        # Remove any other special characters
-        import re
-        product_name = re.sub(r'[^a-z0-9_]', '', product_name)
-        
-        # Check if this category has common image patterns
+    # Generate a pseudo-URL based on product name/category for product images in static folder
+    if product_info:
+        # Get product name, category and SKU for smart image selection
+        product_name = product_info.get('Product Name', '').strip()
         category = product_info.get('category', '')
         sku = product_info.get('Unique ID', '')
         
-        # Try to determine image name from product type
+        # Try to determine image name from product characteristics
         image_name = None
-        if 'B3Round' in product_info.get('Product Name', ''):
+        
+        # Base images
+        if 'B3Round' in product_name:
             image_name = 'b3round'
-        elif 'B3Square' in product_info.get('Product Name', ''):
+        elif 'B3Square' in product_name:
             image_name = 'b3square'
-        elif 'shower base' in product_info.get('Product Name', '').lower():
-            image_name = 'shower_base'
-        elif 'shower door' in category.lower() or 'door' in product_info.get('Product Name', '').lower():
+        elif 'shower base' in product_name.lower():
+            image_name = 'b3square'  # fallback to a square base
+        elif category == 'Shower Bases' or (sku and (sku.startswith('410') or sku.startswith('420'))):
+            # Any shower base
+            if '60' in product_name:  # 60" bases are usually round
+                image_name = 'b3round'
+            else:
+                image_name = 'b3square'  # Default to square
+                
+        # Door images    
+        elif 'Shower Doors' in category or 'door' in product_name.lower():
             image_name = 'shower_door'
+        elif 'Tub Doors' in category:
+            image_name = 'shower_door'  # Reuse shower door image
             
+        # Wall images
+        elif 'Walls' in category or 'wall' in product_name.lower():
+            image_name = 'shower_wall'
+            
+        # Return panel images
+        elif 'Return Panels' in category or 'return panel' in product_name.lower():
+            image_name = 'return_panel'
+            
+        # If we identified an image to use, return its URL
         if image_name:
+            logger.debug(f"Selected image '{image_name}' for product: {product_name}")
             return f"/static/images/products/{image_name}.jpg"
+            
+        # If we couldn't determine a specific image, fall back to a generic one by category
+        if category:
+            category_lower = category.lower()
+            if 'base' in category_lower:
+                return "/static/images/products/b3square.jpg"
+            elif 'door' in category_lower:
+                return "/static/images/products/shower_door.jpg"
+            elif 'wall' in category_lower:
+                return "/static/images/products/shower_wall.jpg"
+            elif 'panel' in category_lower:
+                return "/static/images/products/return_panel.jpg"
     
     # If we couldn't find or generate an image URL, return an empty string
     return ""
