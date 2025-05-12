@@ -61,17 +61,81 @@ def search():
             Compatibility.source_sku == sku
         ).all()
         
+        # Process source compatibilities (where this SKU is source)
+        results = {}
+        for compat in source_compatibilities:
+            category = compat.target_category
+            if category not in results:
+                results[category] = []
+            
+            # Try to get the target product details
+            target_product = db.session.query(Product).filter(
+                Product.sku == compat.target_sku
+            ).first()
+            
+            # Create response with product info (if available)
+            product_details = {
+                'sku': compat.target_sku,
+                'requires_return': bool(compat.requires_return_panel),
+                'return_panel': compat.requires_return_panel
+            }
+            
+            # Add additional details if product exists
+            if target_product:
+                product_details.update({
+                    'brand': target_product.brand,
+                    'family': target_product.family,
+                    'series': target_product.series,
+                    'nominal_dimensions': target_product.nominal_dimensions,
+                    'product_name': target_product.product_name
+                })
+            else:
+                # Add placeholder values if product not in database
+                product_details.update({
+                    'brand': 'Unknown',
+                    'family': 'Unknown',
+                    'series': 'Unknown',
+                    'nominal_dimensions': 'Unknown',
+                    'product_name': 'Unknown Product'
+                })
+            
+            results[category].append(product_details)
+
         # Also check if this product is a target for other products (reverse compatibility)
         target_compatibilities = db.session.query(Compatibility).filter(
             Compatibility.target_sku == sku
         ).all()
         
-        # Combine the results
-        compatibilities = source_compatibilities
-        
         # Process reverse compatibilities (where this SKU is a target)
-        # Create a list to store reverse compatibility entries
-        reverse_compatibilities = []
+        for compat in target_compatibilities:
+            # Get the source product
+            source_product = db.session.query(Product).filter(
+                Product.sku == compat.source_sku
+            ).first()
+            
+            if not source_product:
+                continue
+                
+            # Determine the category for display
+            category = source_product.category + "s" if not source_product.category.endswith('s') else source_product.category
+            
+            if category not in results:
+                results[category] = []
+                
+            # Create response with product info
+            product_details = {
+                'sku': source_product.sku,
+                'requires_return': bool(compat.requires_return_panel),
+                'return_panel': compat.requires_return_panel,
+                'brand': source_product.brand or 'Unknown',
+                'family': source_product.family or 'Unknown',
+                'series': source_product.series or 'Unknown',
+                'nominal_dimensions': source_product.nominal_dimensions or 'Unknown',
+                'product_name': source_product.product_name or 'Unknown Product'
+            }
+            
+            # Add to results
+            results[category].append(product_details)
         
         # For each target compatibility, create a "reverse" compatibility entry
         for compat in target_compatibilities:
