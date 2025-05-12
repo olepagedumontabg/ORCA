@@ -52,6 +52,9 @@ def search():
                 'message': f'No product found for SKU {sku}',
                 'search_history': session.get('search_history', [])
             })
+            
+        # Debug output
+        logger.debug(f"Found product: {product.sku} in category {product.category}")
         
         # Find compatible products
         compatibilities = Compatibility.query.filter(
