@@ -54,12 +54,23 @@ def search():
             product_category = results['product'].get('category', 'Unknown Category')
             logger.debug(f"Returning product: {product_name} from category: {product_category} for SKU: {sku}")
             
-            return jsonify({
+            # Create a clean response object without any NaN values
+            clean_response = {
                 'success': True,
                 'sku': sku,
                 'product': results['product'],
                 'compatibles': results['compatibles']
-            })
+            }
+            
+            # Use pandas.isna() to clean any NaN values that might have slipped through
+            import pandas as pd
+            import json
+            
+            # First, serialize to JSON, then parse back to ensure all values are clean
+            clean_json_str = json.dumps(clean_response, default=lambda x: None if pd.isna(x) else x)
+            clean_response = json.loads(clean_json_str)
+            
+            return jsonify(clean_response)
         else:
             return jsonify({
                 'success': False,

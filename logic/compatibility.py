@@ -338,7 +338,14 @@ def get_product_details(data, sku):
             product_row = df[df['Unique ID'].astype(str).str.upper() == sku.upper()]
             
             if not product_row.empty:
+                # Convert to dict and clean up NaN values
                 product_info = product_row.iloc[0].to_dict()
+                
+                # Clean up NaN values in the dictionary
+                for key, value in product_info.items():
+                    if pd.isna(value):
+                        product_info[key] = None
+                
                 logger.debug(f"Found product in {category}: {product_info.get('Product Name', 'Unknown')}")
                 return product_info
                 
