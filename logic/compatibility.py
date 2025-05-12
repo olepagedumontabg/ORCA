@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 import glob
 from logic import base_compatibility
+from logic import image_handler
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -125,13 +126,13 @@ def find_compatible_products(sku):
                                 "main_product": {
                                     "sku": door_sku,
                                     "name": door_info.get("Product Name", ""),
-                                    "image_url": door_info.get("Image URL", ""),  # Will work if column exists
+                                    "image_url": image_handler.generate_image_url(door_info),
                                     "nominal_dimensions": door_info.get("Nominal Dimensions", "")
                                 },
                                 "secondary_product": {
                                     "sku": panel_sku,
                                     "name": panel_info.get("Product Name", ""),
-                                    "image_url": panel_info.get("Image URL", ""),  # Will work if column exists
+                                    "image_url": image_handler.generate_image_url(panel_info),
                                     "nominal_dimensions": panel_info.get("Nominal Dimensions", "")
                                 }
                             })
@@ -142,7 +143,7 @@ def find_compatible_products(sku):
                                 "sku": sku_item,
                                 "is_combo": False,
                                 "name": product_info.get("Product Name", ""),
-                                "image_url": product_info.get("Image URL", ""),  # Will work if column exists
+                                "image_url": image_handler.generate_image_url(product_info),
                                 "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
                                 "brand": product_info.get("Brand", ""),
                                 "series": product_info.get("Series", "")
@@ -179,7 +180,7 @@ def find_compatible_products(sku):
                             "sku": door_sku,
                             "is_combo": False,
                             "name": door_info.get("Product Name", ""),
-                            "image_url": door_info.get("Image URL", ""),  # Will work if column exists
+                            "image_url": image_handler.generate_image_url(door_info),
                             "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
                             "brand": door_info.get("Brand", ""),
                             "series": door_info.get("Series", "")
@@ -209,7 +210,7 @@ def find_compatible_products(sku):
                             "sku": wall_sku,
                             "is_combo": False,
                             "name": wall_info.get("Product Name", ""),
-                            "image_url": wall_info.get("Image URL", ""),  # Will work if column exists
+                            "image_url": image_handler.generate_image_url(wall_info),
                             "nominal_dimensions": wall_info.get("Nominal Dimensions", ""),
                             "brand": wall_info.get("Brand", ""),
                             "series": wall_info.get("Series", "")
@@ -233,7 +234,7 @@ def find_compatible_products(sku):
             # Make sure we're using the correct product information from the base product
             source_product.update({
                 "name": product_info.get("Product Name", ""),
-                "image_url": product_info.get("Image URL", ""),  # Will use image URL if column exists
+                "image_url": image_handler.generate_image_url(product_info),
                 "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
                 "installation": product_info.get("Installation", ""),
                 "brand": product_info.get("Brand", ""),
