@@ -53,6 +53,10 @@ def search():
         # Update search history (most recent first, maximum 5 items)
         search_history = session.get('search_history', [])
         
+        # Convert old format (strings) to new format (dictionaries) if needed
+        if search_history and isinstance(search_history[0], str):
+            search_history = [{'sku': s, 'category': ''} for s in search_history]
+        
         # Create history item with category info
         history_item = {
             'sku': sku,
