@@ -12,7 +12,6 @@ function compatibilityApp() {
         currentSku: '',
         results: [],
         searchHistory: [],
-        productInfo: {},
         
         /**
          * Initialize the application
@@ -77,12 +76,10 @@ function compatibilityApp() {
                     // Display results
                     this.results = data.data;
                     this.currentSku = data.sku;
-                    this.productInfo = data.product || {};
                     this.errorMessage = '';
                 } else {
                     // Display error message
                     this.results = [];
-                    this.productInfo = {};
                     this.errorMessage = data.message || 'An error occurred during the search';
                 }
             })
@@ -90,7 +87,6 @@ function compatibilityApp() {
                 console.error('Search error:', error);
                 this.isLoading = false;
                 this.results = [];
-                this.productInfo = {};
                 this.errorMessage = 'A network error occurred. Please try again.';
             });
         },

@@ -148,68 +148,31 @@
                 
                 <!-- Results table -->
                 <div x-show="results.length > 0 && !errorMessage">
-                    <h2 class="text-xl font-semibold mb-2">Product Information</h2>
-                    
-                    <!-- Product details card -->
-                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <p class="text-sm text-gray-600">SKU</p>
-                                <p class="text-lg font-semibold" x-text="productInfo.sku"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Category</p>
-                                <p class="font-medium" x-text="productInfo.category"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Brand / Family</p>
-                                <p class="font-medium" x-text="productInfo.brand + ' / ' + productInfo.family"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Series</p>
-                                <p class="font-medium" x-text="productInfo.series"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Dimensions</p>
-                                <p class="font-medium" x-text="productInfo.nominal_dimensions"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">Installation</p>
-                                <p class="font-medium" x-text="productInfo.installation"></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <h2 class="text-xl font-semibold mb-4">Compatible Products</h2>
+                    <h2 class="text-xl font-semibold mb-4">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
                     
                     <div class="overflow-x-auto">
-                        <template x-for="(category, index) in results" :key="index">
-                            <div class="mb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2" x-text="category.category + ' (' + category.skus.length + ')'"></h3>
-                                <div class="bg-white rounded-lg shadow overflow-hidden">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
-                                            <template x-for="(item, idx) in category.skus" :key="idx">
-                                                <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600" x-text="item.sku"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.product_name"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.brand"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.nominal_dimensions"></td>
-                                                </tr>
-                                            </template>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </template>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compatible SKUs</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="(category, index) in results" :key="index">
+                                    <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="category.category"></td>
+                                        <td class="px-6 py-4 text-sm text-gray-500">
+                                            <div class="flex flex-wrap gap-2">
+                                                <template x-for="(sku, idx) in category.skus" :key="idx">
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800" x-text="sku"></span>
+                                                </template>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

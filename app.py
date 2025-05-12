@@ -1,17 +1,16 @@
 import os
 import logging
+from flask import Flask, render_template, request, jsonify, session
+import pandas as pd
 import traceback
-import json
-from flask import render_template, request, jsonify, session
-from main import app, db
-from models import Product, Compatibility
-from sqlalchemy import func
+from logic import compatibility
+
+# Configure app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-# Routes module for the application
-routes = app  # For importing in main.py
 
 # Initialize session data structure for search history
 @app.before_request
@@ -40,229 +39,37 @@ def search():
         # Log the search request
         logger.debug(f"Searching for SKU: {sku}")
         
-        # Find product in database
-        product = Product.query.filter(Product.sku == sku).first()
+        # Call the compatibility function to find matches
+        results = compatibility.find_compatible_products(sku)
         
-        if not product:
-            logger.warning(f"No product found for SKU: {sku}")
-            # Update search history
-            update_search_history(sku)
+        # Update search history (most recent first, maximum 5 items)
+        search_history = session.get('search_history', [])
+        
+        # Remove the SKU if it's already in history to avoid duplicates
+        search_history = [s for s in search_history if s != sku]
+        
+        # Add the new SKU at the beginning
+        search_history.insert(0, sku)
+        
+        # Keep only the 5 most recent searches
+        search_history = search_history[:5]
+        
+        # Update session
+        session['search_history'] = search_history
+        
+        if results:
+            return jsonify({
+                'success': True,
+                'sku': sku,
+                'data': results,
+                'search_history': search_history
+            })
+        else:
             return jsonify({
                 'success': False,
                 'message': f'No product found for SKU {sku}',
-                'search_history': session.get('search_history', [])
+                'search_history': search_history
             })
-            
-        # Debug output
-        logger.debug(f"Found product: {product.sku} in category {product.category}")
-        
-        # Find all compatibilities for this SKU (both directions)
-        source_compatibilities = db.session.query(Compatibility).filter(
-            Compatibility.source_sku == sku
-        ).all()
-        
-        # Process source compatibilities (where this SKU is source)
-        results = {}
-        for compat in source_compatibilities:
-            category = compat.target_category
-            if category not in results:
-                results[category] = []
-            
-            # Try to get the target product details
-            target_product = db.session.query(Product).filter(
-                Product.sku == compat.target_sku
-            ).first()
-            
-            # Create response with product info (if available)
-            product_details = {
-                'sku': compat.target_sku,
-                'requires_return': bool(compat.requires_return_panel),
-                'return_panel': compat.requires_return_panel
-            }
-            
-            # Add additional details if product exists
-            if target_product:
-                product_details.update({
-                    'brand': target_product.brand,
-                    'family': target_product.family,
-                    'series': target_product.series,
-                    'nominal_dimensions': target_product.nominal_dimensions,
-                    'product_name': target_product.product_name
-                })
-            else:
-                # Add placeholder values if product not in database
-                product_details.update({
-                    'brand': 'Unknown',
-                    'family': 'Unknown',
-                    'series': 'Unknown',
-                    'nominal_dimensions': 'Unknown',
-                    'product_name': 'Unknown Product'
-                })
-            
-            results[category].append(product_details)
-
-        # Also check if this product is a target for other products (reverse compatibility)
-        target_compatibilities = db.session.query(Compatibility).filter(
-            Compatibility.target_sku == sku
-        ).all()
-        
-        # Process reverse compatibilities (where this SKU is a target)
-        for compat in target_compatibilities:
-            # Get the source product
-            source_product = db.session.query(Product).filter(
-                Product.sku == compat.source_sku
-            ).first()
-            
-            if not source_product:
-                continue
-                
-            # Determine the category for display
-            category = source_product.category + "s" if not source_product.category.endswith('s') else source_product.category
-            
-            if category not in results:
-                results[category] = []
-                
-            # Create response with product info
-            product_details = {
-                'sku': source_product.sku,
-                'requires_return': bool(compat.requires_return_panel),
-                'return_panel': compat.requires_return_panel,
-                'brand': source_product.brand or 'Unknown',
-                'family': source_product.family or 'Unknown',
-                'series': source_product.series or 'Unknown',
-                'nominal_dimensions': source_product.nominal_dimensions or 'Unknown',
-                'product_name': source_product.product_name or 'Unknown Product'
-            }
-            
-            # Add to results
-            results[category].append(product_details)
-        
-        # For each target compatibility, create a "reverse" compatibility entry
-        for compat in target_compatibilities:
-            # Get the source product that's compatible with our SKU
-            source_product = db.session.query(Product).filter(
-                Product.sku == compat.source_sku
-            ).first()
-            
-            if source_product:
-                # Create a reverse compatibility based on the product category
-                reverse_compatibilities.append({
-                    'source_sku': sku,
-                    'target_sku': compat.source_sku,
-                    'target_category': source_product.category,
-                    'requires_return_panel': compat.requires_return_panel
-                })
-        
-        # Organize results by category
-        results = {}
-        
-        # First, process forward compatibilities
-        for compat in compatibilities:
-            category = compat.target_category
-            if category not in results:
-                results[category] = []
-            
-            # Try to get the target product details
-            target_product = db.session.query(Product).filter(
-                Product.sku == compat.target_sku
-            ).first()
-            
-            # Create response with product info (if available)
-            product_details = {
-                'sku': compat.target_sku,
-                'requires_return': bool(compat.requires_return_panel),
-                'return_panel': compat.requires_return_panel
-            }
-            
-            # Add additional details if product exists
-            if target_product:
-                product_details.update({
-                    'brand': target_product.brand,
-                    'family': target_product.family,
-                    'series': target_product.series,
-                    'nominal_dimensions': target_product.nominal_dimensions,
-                    'product_name': target_product.product_name
-                })
-            else:
-                # Add placeholder values if product not in database
-                product_details.update({
-                    'brand': 'Unknown',
-                    'family': 'Unknown',
-                    'series': 'Unknown',
-                    'nominal_dimensions': 'Unknown',
-                    'product_name': 'Unknown Product'
-                })
-            
-            results[category].append(product_details)
-            
-        # Now process reverse compatibilities
-        for reverse_compat in reverse_compatibilities:
-            category = reverse_compat['target_category']
-            if category not in results:
-                results[category] = []
-                
-            # Try to get the target product details
-            target_product = db.session.query(Product).filter(
-                Product.sku == reverse_compat['target_sku']
-            ).first()
-            
-            # Create response with product info
-            product_details = {
-                'sku': reverse_compat['target_sku'],
-                'requires_return': bool(reverse_compat['requires_return_panel']),
-                'return_panel': reverse_compat['requires_return_panel']
-            }
-            
-            # Add additional details if product exists
-            if target_product:
-                product_details.update({
-                    'brand': target_product.brand,
-                    'family': target_product.family,
-                    'series': target_product.series,
-                    'nominal_dimensions': target_product.nominal_dimensions,
-                    'product_name': target_product.product_name
-                })
-            else:
-                # Add placeholder values if product not in database
-                product_details.update({
-                    'brand': 'Unknown',
-                    'family': 'Unknown',
-                    'series': 'Unknown',
-                    'nominal_dimensions': 'Unknown',
-                    'product_name': 'Unknown Product'
-                })
-                
-            results[category].append(product_details)
-        
-        # Format for the frontend
-        formatted_results = []
-        for category, skus in results.items():
-            formatted_results.append({
-                'category': category,
-                'skus': skus
-            })
-            
-        # Include source product details
-        product_info = {
-            'sku': product.sku,
-            'category': product.category,
-            'brand': product.brand,
-            'family': product.family,
-            'series': product.series,
-            'nominal_dimensions': product.nominal_dimensions,
-            'installation': product.installation
-        }
-        
-        # Update search history
-        update_search_history(sku)
-        
-        return jsonify({
-            'success': True,
-            'sku': sku,
-            'product': product_info,
-            'data': formatted_results,
-            'search_history': session.get('search_history', [])
-        })
             
     except Exception as e:
         logger.error(f"Error processing search: {str(e)}")
@@ -272,19 +79,5 @@ def search():
             'message': f'An error occurred: {str(e)}'
         })
 
-def update_search_history(sku):
-    """Update the session search history"""
-    search_history = session.get('search_history', [])
-    
-    # Remove the SKU if it's already in history to avoid duplicates
-    search_history = [s for s in search_history if s != sku]
-    
-    # Add the new SKU at the beginning
-    search_history.insert(0, sku)
-    
-    # Keep only the 5 most recent searches
-    search_history = search_history[:5]
-    
-    # Update session
-    session['search_history'] = search_history
-    return search_history
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
