@@ -56,31 +56,34 @@ def search():
         # Debug output
         logger.debug(f"Found product: {product.sku} in category {product.category}")
         
-        # Find compatible products
-        compatibilities = Compatibility.query.filter(
+        # Find compatible products along with their details
+        compatibilities = db.session.query(
+            Compatibility, Product
+        ).join(
+            Product, Compatibility.target_sku == Product.sku
+        ).filter(
             Compatibility.source_sku == sku
         ).all()
         
         # Organize results by category
         results = {}
-        for compat in compatibilities:
+        for compat, target_product in compatibilities:
             category = compat.target_category
             if category not in results:
                 results[category] = []
             
-            if compat.requires_return_panel:
-                # Format with return panel info
-                results[category].append({
-                    'sku': compat.target_sku,
-                    'requires_return': True,
-                    'return_panel': compat.requires_return_panel
-                })
-            else:
-                results[category].append({
-                    'sku': compat.target_sku,
-                    'requires_return': False,
-                    'return_panel': None
-                })
+            # Create response with detailed product info
+            product_details = {
+                'sku': compat.target_sku,
+                'requires_return': bool(compat.requires_return_panel),
+                'return_panel': compat.requires_return_panel,
+                'brand': target_product.brand,
+                'family': target_product.family,
+                'series': target_product.series,
+                'nominal_dimensions': target_product.nominal_dimensions
+            }
+            
+            results[category].append(product_details)
         
         # Format for the frontend
         formatted_results = []
@@ -89,6 +92,17 @@ def search():
                 'category': category,
                 'skus': skus
             })
+            
+        # Include source product details
+        product_info = {
+            'sku': product.sku,
+            'category': product.category,
+            'brand': product.brand,
+            'family': product.family,
+            'series': product.series,
+            'nominal_dimensions': product.nominal_dimensions,
+            'installation': product.installation
+        }
         
         # Update search history
         update_search_history(sku)
@@ -96,6 +110,7 @@ def search():
         return jsonify({
             'success': True,
             'sku': sku,
+            'product': product_info,
             'data': formatted_results,
             'search_history': session.get('search_history', [])
         })
