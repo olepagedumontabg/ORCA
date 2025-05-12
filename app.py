@@ -28,7 +28,15 @@ def index():
 def search():
     """Handle SKU search request"""
     try:
-        sku = request.form.get('sku', '').strip().upper()
+        # Check if the request is JSON or form data
+        if request.is_json:
+            data = request.json
+            sku = data.get('sku', '') if data else ''
+        else:
+            sku = request.form.get('sku', '')
+            
+        # Normalize the SKU
+        sku = sku.strip().upper() if sku else ''
         
         if not sku:
             return jsonify({
@@ -45,11 +53,17 @@ def search():
         # Update search history (most recent first, maximum 5 items)
         search_history = session.get('search_history', [])
         
-        # Remove the SKU if it's already in history to avoid duplicates
-        search_history = [s for s in search_history if s != sku]
+        # Create history item with category info
+        history_item = {
+            'sku': sku,
+            'category': results.get('product', {}).get('category', '') if results and results.get('product') else ''
+        }
         
-        # Add the new SKU at the beginning
-        search_history.insert(0, sku)
+        # Remove the SKU if it's already in history to avoid duplicates
+        search_history = [s for s in search_history if s.get('sku') != sku]
+        
+        # Add the new item at the beginning
+        search_history.insert(0, history_item)
         
         # Keep only the 5 most recent searches
         search_history = search_history[:5]
