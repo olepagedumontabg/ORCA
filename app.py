@@ -17,6 +17,11 @@ def index():
     """Render the main page"""
     return render_template('index.html')
 
+@app.route('/simple')
+def simple():
+    """Render the simplified page for testing"""
+    return render_template('simple.html')
+
 @app.route('/search', methods=['POST'])
 def search():
     """Handle SKU search request"""

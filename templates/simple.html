@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Compatibility Finder</title>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .search-form {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .product-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        .compatible-list {
+            margin-top: 20px;
+        }
+        .filter-options {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .filter-tag {
+            background-color: #e5e7eb;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .filter-tag.selected {
+            background-color: #2563eb;
+            color: white;
+        }
+    </style>
+</head>
+<body x-data="app()">
+    <h1>Simple Compatibility Finder</h1>
+    
+    <div class="search-form">
+        <input 
+            type="text" 
+            x-model="searchInput" 
+            placeholder="Enter SKU (e.g., 420043-541-001)" 
+            @keyup.enter="submitSearch()"
+        >
+        <button @click="submitSearch()">Search</button>
+    </div>
+    
+    <div class="error" x-show="errorMessage" x-text="errorMessage"></div>
+    
+    <div x-show="isLoading">Searching...</div>
+    
+    <template x-if="productDetails">
+        <div>
+            <div class="product-card">
+                <h2 x-text="productDetails.name + ' (' + productDetails.sku + ')'"></h2>
+                <p>Category: <span x-text="productDetails.category"></span></p>
+                <p>Brand: <span x-text="productDetails.brand"></span></p>
+                <p>Series: <span x-text="productDetails.series"></span></p>
+            </div>
+            
+            <h3>Compatible Products</h3>
+            
+            <div class="filter-options" x-show="availableFilters.glassThicknesses.length > 0">
+                <span>Glass Thickness:</span>
+                <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
+                    <span 
+                        class="filter-tag" 
+                        :class="{'selected': filters.selectedGlassThicknesses.includes(thickness)}"
+                        @click="toggleGlassThicknessFilter(thickness)"
+                        x-text="thickness"
+                    ></span>
+                </template>
+            </div>
+            
+            <div class="filter-options" x-show="availableFilters.doorTypes.length > 0">
+                <span>Door Type:</span>
+                <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
+                    <span 
+                        class="filter-tag" 
+                        :class="{'selected': filters.selectedDoorTypes.includes(doorType)}"
+                        @click="toggleDoorTypeFilter(doorType)"
+                        x-text="doorType"
+                    ></span>
+                </template>
+            </div>
+            
+            <div class="compatible-list">
+                <template x-for="category in filteredCompatibleProducts" :key="category.category">
+                    <div>
+                        <h4 x-text="category.category"></h4>
+                        <ul>
+                            <template x-for="product in category.products" :key="product.sku">
+                                <li>
+                                    <strong x-text="product.name"></strong> <br>
+                                    SKU: <span x-text="product.sku"></span> <br>
+                                    <span x-text="product.glass_thickness"></span> - 
+                                    <span x-text="product.door_type"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+    
+    <script>
+        function app() {
+            return {
+                searchInput: '',
+                isLoading: false,
+                hasSearched: false,
+                errorMessage: '',
+                currentSku: '',
+                productDetails: null,
+                compatibleProducts: [],
+                filteredCompatibleProducts: [],
+                
+                // Filtering options
+                filters: {
+                    selectedGlassThicknesses: [],
+                    selectedDoorTypes: [],
+                },
+                
+                availableFilters: {
+                    glassThicknesses: [],
+                    doorTypes: [],
+                },
+                
+                submitSearch() {
+                    if (!this.searchInput.trim()) {
+                        this.errorMessage = 'Please enter a SKU number';
+                        return;
+                    }
+                    
+                    this.isLoading = true;
+                    this.errorMessage = '';
+                    this.hasSearched = true;
+                    this.currentSku = this.searchInput;
+                    
+                    fetch('/search', {
+                        method: 'POST',
+                        body: JSON.stringify({ sku: this.searchInput }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.isLoading = false;
+                        
+                        if (data.success) {
+                            this.productDetails = data.product;
+                            this.compatibleProducts = data.compatibles || [];
+                            this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
+                            this.currentSku = data.sku;
+                            this.errorMessage = '';
+                            
+                            this.extractFilterOptions();
+                            this.resetFilters();
+                        } else {
+                            this.productDetails = null;
+                            this.compatibleProducts = [];
+                            this.errorMessage = data.message || 'An error occurred during the search';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        this.isLoading = false;
+                        this.productDetails = null;
+                        this.compatibleProducts = [];
+                        this.errorMessage = 'A network error occurred. Please try again.';
+                    });
+                },
+                
+                extractFilterOptions() {
+                    // Reset available filters
+                    this.availableFilters.glassThicknesses = [];
+                    this.availableFilters.doorTypes = [];
+                    
+                    // Sets to collect unique values
+                    const glassThicknessSet = new Set();
+                    const doorTypeSet = new Set();
+                    
+                    // Process categories and products
+                    this.compatibleProducts.forEach(category => {
+                        if (!category.products) return;
+                        
+                        category.products.forEach(product => {
+                            if (product.glass_thickness) glassThicknessSet.add(product.glass_thickness);
+                            if (product.door_type) doorTypeSet.add(product.door_type);
+                        });
+                    });
+                    
+                    // Convert sets to sorted arrays
+                    this.availableFilters.glassThicknesses = [...glassThicknessSet].sort();
+                    this.availableFilters.doorTypes = [...doorTypeSet].sort();
+                },
+                
+                resetFilters() {
+                    this.filters = {
+                        selectedGlassThicknesses: [],
+                        selectedDoorTypes: [],
+                    };
+                    
+                    this.applyFilters();
+                },
+                
+                toggleGlassThicknessFilter(thickness) {
+                    const index = this.filters.selectedGlassThicknesses.indexOf(thickness);
+                    if (index === -1) {
+                        this.filters.selectedGlassThicknesses.push(thickness);
+                    } else {
+                        this.filters.selectedGlassThicknesses.splice(index, 1);
+                    }
+                    
+                    this.applyFilters();
+                },
+                
+                toggleDoorTypeFilter(doorType) {
+                    const index = this.filters.selectedDoorTypes.indexOf(doorType);
+                    if (index === -1) {
+                        this.filters.selectedDoorTypes.push(doorType);
+                    } else {
+                        this.filters.selectedDoorTypes.splice(index, 1);
+                    }
+                    
+                    this.applyFilters();
+                },
+                
+                applyFilters() {
+                    // Start with a deep copy of the original data
+                    this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
+                    
+                    // Process each category
+                    this.filteredCompatibleProducts.forEach(category => {
+                        if (!category.products) return;
+                        
+                        // Filter products based on selected criteria
+                        category.products = category.products.filter(product => {
+                            // Glass thickness filter
+                            if (this.filters.selectedGlassThicknesses.length > 0 && product.glass_thickness) {
+                                if (!this.filters.selectedGlassThicknesses.includes(product.glass_thickness)) {
+                                    return false;
+                                }
+                            }
+                            
+                            // Door type filter
+                            if (this.filters.selectedDoorTypes.length > 0 && product.door_type) {
+                                if (!this.filters.selectedDoorTypes.includes(product.door_type)) {
+                                    return false;
+                                }
+                            }
+                            
+                            return true;
+                        });
+                    });
+                    
+                    // Remove empty categories
+                    this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(
+                        category => category.products && category.products.length > 0
+                    );
+                }
+            };
+        }
+    </script>
+</body>
+</html>
