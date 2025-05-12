@@ -242,17 +242,21 @@ def find_compatible_products(sku):
         # This ensures we always use the right product information
         original_product_info = None
         
-        # For SKUs starting with '420', they are always shower bases
-        if sku.startswith('420'):
-            if 'Shower Bases' in data:
-                bases_df = data['Shower Bases']
-                if 'Unique ID' in bases_df.columns:
-                    matching_bases = bases_df[bases_df['Unique ID'].astype(str).str.upper() == sku.upper()]
-                    if not matching_bases.empty:
-                        original_product_info = matching_bases.iloc[0].to_dict()
-                        logger.debug(f"Found original product in Shower Bases: {original_product_info.get('Product Name', 'Unknown')}")
-        
-        # If we couldn't find the original product in its expected category, use what we have
+        # Search all worksheets for the exact SKU to get the correct product information
+        # This is a comprehensive solution to ensure we get the right product details 
+        # regardless of which worksheet it comes from
+        for sheet_name, df in data.items():
+            if 'Unique ID' in df.columns:
+                # Case-insensitive search for the SKU
+                matching_rows = df[df['Unique ID'].astype(str).str.upper() == sku.upper()]
+                if not matching_rows.empty:
+                    original_product_info = matching_rows.iloc[0].to_dict()
+                    logger.debug(f"Found original product in {sheet_name}: {original_product_info.get('Product Name', 'Unknown')}")
+                    # Update the category if it's different
+                    product_category = sheet_name
+                    break  # Stop once we find a direct match
+
+        # If we couldn't find the original product in any category, use what we have
         if original_product_info is None:
             original_product_info = product_info if product_info is not None else {}
             logger.debug(f"Using found product info: {original_product_info.get('Product Name', 'Unknown')}")

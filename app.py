@@ -59,7 +59,9 @@ def search():
         
         if results and results['product']:
             # Log the product details for debugging
-            logger.debug(f"Returning product: {results['product'].get('name', 'Unknown')} for SKU: {sku}")
+            product_name = results['product'].get('name', 'Unknown')
+            product_category = results['product'].get('category', 'Unknown Category')
+            logger.debug(f"Returning product: {product_name} from category: {product_category} for SKU: {sku}")
             
             return jsonify({
                 'success': True,
