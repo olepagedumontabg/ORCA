@@ -220,7 +220,10 @@
                 class="bg-white rounded-lg shadow-md p-4 sticky top-24"
             >
                 <h2 class="text-lg font-semibold mb-3 text-secondary">Search History</h2>
-                <ul class="space-y-2" id="historyList">
+                <!-- Hidden element with search history data -->
+                <div id="searchHistoryData" data-history="{{ search_history|tojson }}" class="hidden"></div>
+                
+                <ul class="space-y-2">
                     <template x-for="(item, index) in searchHistory" :key="index">
                         <li>
                             <a 
@@ -229,6 +232,11 @@
                                 @click.prevent="searchSku(item.sku)"
                                 class="text-primary hover:text-blue-700 hover:underline transition duration-150 ease-in-out"
                             ></a>
+                            <span 
+                                x-show="item.category" 
+                                class="text-xs text-gray-500 ml-2"
+                                x-text="'(' + item.category + ')'"
+                            ></span>
                         </li>
                     </template>
                 </ul>

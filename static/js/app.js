@@ -39,10 +39,18 @@ function compatibilityApp() {
          */
         init() {
             // Get search history from server-side rendered data
-            const historyList = document.getElementById('historyList');
-            if (historyList && historyList.dataset.history) {
+            const historyElement = document.getElementById('searchHistoryData');
+            if (historyElement && historyElement.dataset.history) {
                 try {
-                    this.searchHistory = JSON.parse(historyList.dataset.history);
+                    const historyData = JSON.parse(historyElement.dataset.history);
+                    
+                    // Convert old format history (strings) to new format (objects) if needed
+                    this.searchHistory = historyData.map(item => {
+                        if (typeof item === 'string') {
+                            return { sku: item, category: '' };
+                        }
+                        return item;
+                    });
                 } catch (e) {
                     console.error('Error parsing search history:', e);
                     this.searchHistory = [];
@@ -72,15 +80,12 @@ function compatibilityApp() {
             this.hasSearched = true;
             this.currentSku = sku;
             
-            // Create form data for the request
-            const formData = new FormData();
-            formData.append('sku', sku);
-            
-            // Send the search request
+            // Send the search request using JSON format
             fetch('/search', {
                 method: 'POST',
-                body: formData,
+                body: JSON.stringify({ sku: sku }),
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
