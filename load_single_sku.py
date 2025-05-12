@@ -60,6 +60,9 @@ def main():
     base_series = base["Series"].iloc[0]
     base_brand = base["Brand"].iloc[0]
     base_family = base["Family"].iloc[0]
+    base_nominal = base["Nominal Dimensions"].iloc[0] if "Nominal Dimensions" in base.columns else None
+    base_length = base["Length"].iloc[0] if "Length" in base.columns else None
+    base_width_actual = base["Width"].iloc[0] if "Width" in base.columns else None
     
     logger.info(f"Base properties: Installation={base_install}, Max Width={base_width}, Series={base_series}, Brand={base_brand}, Family={base_family}")
     
@@ -103,22 +106,63 @@ def main():
         if pd.isna(wall_sku) or not wall_sku:
             continue
             
-        wall_type = str(wall.get("Type", "")).lower()
+        wall_type = str(wall.get("Type", "")).lower() if not pd.isna(wall.get("Type")) else ""
         wall_brand = wall.get("Brand")
         wall_series = wall.get("Series")
         wall_family = wall.get("Family")
+        wall_nominal = wall.get("Nominal Dimensions")
+        wall_length = wall.get("Length")
+        wall_width = wall.get("Width")
+        wall_cut = wall.get("Cut to Size")
         
-        # Match based on your compatibility logic
-        is_compatible = (
-            "alcove shower" in wall_type and
-            (base_install in ["alcove", "alcove or corner"]) and
-            series_compatible(base_series, wall_series) and
-            brand_family_match_walls(base_brand, base_family, wall_brand, wall_family)
-        )
-        
-        if is_compatible:
-            compatible_walls.append(wall_sku)
-            logger.info(f"Compatible wall: {wall_sku} - {wall.get('Product Name')}")
+        # Skip if missing essential data
+        if pd.isna(wall_brand) or pd.isna(wall_family) or pd.isna(wall_type):
+            continue
+            
+        try:
+            wall_tolerance = 3  # inches for Walls
+            
+            # Check for alcove match with detailed criteria
+            alcove_match = False
+            corner_match = False
+            
+            if "alcove shower" in wall_type and (base_install.lower() in ["alcove", "alcove or corner"]):
+                if series_compatible(base_series, wall_series) and brand_family_match_walls(base_brand, base_family, wall_brand, wall_family):
+                    # Check nominal match or dimensions match
+                    if base_nominal == wall_nominal:
+                        alcove_match = True
+                        logger.debug(f"Wall {wall_sku} matches by nominal dimensions: {base_nominal} = {wall_nominal}")
+                    elif wall_cut == "Yes" and pd.notna(base_length) and pd.notna(wall_length) and pd.notna(base_width_actual) and pd.notna(wall_width):
+                        # Check dimensional match with tolerance
+                        if (base_length <= wall_length and 
+                            abs(base_length - wall_length) <= wall_tolerance and
+                            base_width_actual <= wall_width and
+                            abs(base_width_actual - wall_width) <= wall_tolerance):
+                            alcove_match = True
+                            logger.debug(f"Wall {wall_sku} matches by dimensions: Base {base_length}x{base_width_actual}, Wall {wall_length}x{wall_width}")
+            
+            # Check for corner match with detailed criteria
+            if "corner shower" in wall_type and (base_install.lower() in ["corner", "alcove or corner"]):
+                if series_compatible(base_series, wall_series) and brand_family_match_walls(base_brand, base_family, wall_brand, wall_family):
+                    # Check nominal match or dimensions match
+                    if base_nominal == wall_nominal:
+                        corner_match = True
+                        logger.debug(f"Wall {wall_sku} matches by nominal dimensions (corner): {base_nominal} = {wall_nominal}")
+                    elif wall_cut == "Yes" and pd.notna(base_length) and pd.notna(wall_length) and pd.notna(base_width_actual) and pd.notna(wall_width):
+                        # Check dimensional match with tolerance
+                        if (base_length <= wall_length and 
+                            abs(base_length - wall_length) <= wall_tolerance and
+                            base_width_actual <= wall_width and
+                            abs(base_width_actual - wall_width) <= wall_tolerance):
+                            corner_match = True
+                            logger.debug(f"Wall {wall_sku} matches by dimensions (corner): Base {base_length}x{base_width_actual}, Wall {wall_length}x{wall_width}")
+            
+            if alcove_match or corner_match:
+                compatible_walls.append(wall_sku)
+                logger.info(f"Compatible wall: {wall_sku} - {wall.get('Product Name')} (Brand: {wall_brand}, Family: {wall_family})")
+                
+        except Exception as e:
+            logger.warning(f"Error matching wall {wall_sku}: {e}")
     
     # Clear existing data and store in database
     engine = create_engine(db_url)
