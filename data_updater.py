@@ -339,8 +339,8 @@ if __name__ == "__main__":
     # Run once immediately
     run_update_process()
     
-    # Then run every hour
+    # Then run every day
     while True:
-        # Sleep for one hour
-        time.sleep(3600)
+        # Sleep for 24 hours (86400 seconds)
+        time.sleep(86400)
         run_update_process()
