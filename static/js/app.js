@@ -29,7 +29,7 @@ function compatibilityApp() {
             series: [],
             brands: [],
             glassThicknesses: ['6mm', '8mm'],
-            doorTypes: ['Standard', 'Sliding', 'Pivot', 'Hinged/Swing', 'Bypass', 'Round', 'Square', 'Corner'],
+            doorTypes: ['Sliding', 'Pivot', 'Bypass'], // Only use the 3 door types from Excel
             categories: []
         },
         
@@ -288,9 +288,8 @@ function compatibilityApp() {
             const brandsSet = new Set();
             const glassThicknessSet = new Set(['6mm', '8mm']); // Default values
             const doorTypeSet = new Set([
-                'Standard', 'Sliding', 'Pivot', 'Hinged/Swing', 
-                'Bypass', 'Round', 'Square', 'Corner'
-            ]); // Default values
+                'Sliding', 'Pivot', 'Bypass'
+            ]); // Only use the 3 door types from Excel
             
             // Categories come from the results
             this.compatibleProducts.forEach(category => {
@@ -307,13 +306,21 @@ function compatibilityApp() {
                             if (product.main_product.series) seriesSet.add(product.main_product.series);
                             if (product.main_product.brand) brandsSet.add(product.main_product.brand);
                             if (product.main_product.glass_thickness) glassThicknessSet.add(product.main_product.glass_thickness);
-                            if (product.main_product.door_type) doorTypeSet.add(product.main_product.door_type);
+                            // Only add door_type if it's one of our valid types
+                            if (product.main_product.door_type && 
+                                ['Sliding', 'Pivot', 'Bypass'].includes(product.main_product.door_type)) {
+                                doorTypeSet.add(product.main_product.door_type);
+                            }
                         }
                         if (product.secondary_product) {
                             if (product.secondary_product.series) seriesSet.add(product.secondary_product.series);
                             if (product.secondary_product.brand) brandsSet.add(product.secondary_product.brand);
                             if (product.secondary_product.glass_thickness) glassThicknessSet.add(product.secondary_product.glass_thickness);
-                            if (product.secondary_product.door_type) doorTypeSet.add(product.secondary_product.door_type);
+                            // Only add door_type if it's one of our valid types
+                            if (product.secondary_product.door_type && 
+                                ['Sliding', 'Pivot', 'Bypass'].includes(product.secondary_product.door_type)) {
+                                doorTypeSet.add(product.secondary_product.door_type);
+                            }
                         }
                     } 
                     // Regular products
@@ -321,7 +328,11 @@ function compatibilityApp() {
                         if (product.series) seriesSet.add(product.series);
                         if (product.brand) brandsSet.add(product.brand);
                         if (product.glass_thickness) glassThicknessSet.add(product.glass_thickness);
-                        if (product.door_type) doorTypeSet.add(product.door_type);
+                        // Only add door_type if it's one of our valid types
+                        if (product.door_type && 
+                            ['Sliding', 'Pivot', 'Bypass'].includes(product.door_type)) {
+                            doorTypeSet.add(product.door_type);
+                        }
                     }
                 });
             });
