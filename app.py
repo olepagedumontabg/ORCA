@@ -56,32 +56,46 @@ def search():
         # Debug output
         logger.debug(f"Found product: {product.sku} in category {product.category}")
         
-        # Find compatible products along with their details
-        compatibilities = db.session.query(
-            Compatibility, Product
-        ).join(
-            Product, Compatibility.target_sku == Product.sku
-        ).filter(
+        # Find all compatibilities for this SKU
+        compatibilities = db.session.query(Compatibility).filter(
             Compatibility.source_sku == sku
         ).all()
         
         # Organize results by category
         results = {}
-        for compat, target_product in compatibilities:
+        for compat in compatibilities:
             category = compat.target_category
             if category not in results:
                 results[category] = []
             
-            # Create response with detailed product info
+            # Try to get the target product details
+            target_product = db.session.query(Product).filter(
+                Product.sku == compat.target_sku
+            ).first()
+            
+            # Create response with product info (if available)
             product_details = {
                 'sku': compat.target_sku,
                 'requires_return': bool(compat.requires_return_panel),
-                'return_panel': compat.requires_return_panel,
-                'brand': target_product.brand,
-                'family': target_product.family,
-                'series': target_product.series,
-                'nominal_dimensions': target_product.nominal_dimensions
+                'return_panel': compat.requires_return_panel
             }
+            
+            # Add additional details if product exists
+            if target_product:
+                product_details.update({
+                    'brand': target_product.brand,
+                    'family': target_product.family,
+                    'series': target_product.series,
+                    'nominal_dimensions': target_product.nominal_dimensions
+                })
+            else:
+                # Add placeholder values if product not in database
+                product_details.update({
+                    'brand': 'Unknown',
+                    'family': 'Unknown',
+                    'series': 'Unknown',
+                    'nominal_dimensions': 'Unknown'
+                })
             
             results[category].append(product_details)
         
