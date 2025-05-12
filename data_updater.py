@@ -164,13 +164,24 @@ def update_database(data):
                         except:
                             height = None
                         
+                        # Get product name from the column
+                        product_name = row.get('Product Name', None) if 'Product Name' in df.columns else None
+                        if not product_name or pd.isna(product_name):
+                            # Generate a product name if one doesn't exist in the Excel
+                            if brand and family:
+                                product_name = f"{brand} {family} {category}"
+                            else:
+                                product_name = f"{category} {sku}"
+                        else:
+                            product_name = str(product_name)
+                
                         # Prepare query
                         insert_query = text("""
                             INSERT INTO products 
                             (sku, category, brand, family, series, nominal_dimensions, installation, 
-                            max_door_width, width, length, height, product_data) 
+                            max_door_width, width, length, height, product_data, product_name) 
                             VALUES (:sku, :category, :brand, :family, :series, :nominal, :install,
-                            :max_door_width, :width, :length, :height, :product_data)
+                            :max_door_width, :width, :length, :height, :product_data, :product_name)
                             ON CONFLICT (sku) DO UPDATE SET
                             category = :category,
                             brand = :brand,
@@ -182,7 +193,8 @@ def update_database(data):
                             width = :width,
                             length = :length,
                             height = :height,
-                            product_data = :product_data
+                            product_data = :product_data,
+                            product_name = :product_name
                         """)
                         
                         conn.execute(insert_query, {
@@ -197,7 +209,8 @@ def update_database(data):
                             'width': width,
                             'length': length,
                             'height': height,
-                            'product_data': json.dumps(product_data)
+                            'product_data': json.dumps(product_data),
+                            'product_name': product_name
                         })
                         conn.commit()
                     product_count += 1

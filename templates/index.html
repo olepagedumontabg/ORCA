@@ -200,7 +200,7 @@
                                             <template x-for="(item, idx) in category.skus" :key="idx">
                                                 <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600" x-text="item.sku"></td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.category || (item.family + ' ' + item.series)"></td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.product_name"></td>
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.brand"></td>
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700" x-text="item.nominal_dimensions"></td>
                                                 </tr>

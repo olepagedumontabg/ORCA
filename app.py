@@ -86,7 +86,8 @@ def search():
                     'brand': target_product.brand,
                     'family': target_product.family,
                     'series': target_product.series,
-                    'nominal_dimensions': target_product.nominal_dimensions
+                    'nominal_dimensions': target_product.nominal_dimensions,
+                    'product_name': target_product.product_name
                 })
             else:
                 # Add placeholder values if product not in database
@@ -94,7 +95,8 @@ def search():
                     'brand': 'Unknown',
                     'family': 'Unknown',
                     'series': 'Unknown',
-                    'nominal_dimensions': 'Unknown'
+                    'nominal_dimensions': 'Unknown',
+                    'product_name': 'Unknown Product'
                 })
             
             results[category].append(product_details)
