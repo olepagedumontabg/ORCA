@@ -157,6 +157,37 @@ class FullCompatibilityProcessor:
             (base_family in ["Nomad", "Mackenzie", "Exhibit", "New Town", "Rubix", "Bosca", "Cocoon", "Corinthia"] and
              wall_family in ["Utile", "Nextile", "Versaline"])
         )
+        
+    def _match_nominal_dimensions(self, dim1, dim2):
+        """
+        Match nominal dimensions with format flexibility
+        Handles variations like "48 x 32" vs "48x32"
+        """
+        if pd.isna(dim1) or pd.isna(dim2):
+            return False
+            
+        # Direct string comparison (case-insensitive, whitespace trimmed)
+        dim1_clean = str(dim1).strip().lower()
+        dim2_clean = str(dim2).strip().lower()
+        if dim1_clean == dim2_clean:
+            return True
+            
+        # Remove all whitespace and compare
+        dim1_nospace = re.sub(r'\s+', '', dim1_clean)
+        dim2_nospace = re.sub(r'\s+', '', dim2_clean)
+        if dim1_nospace == dim2_nospace:
+            return True
+            
+        # Split by 'x' and compare individual dimensions
+        try:
+            dim1_parts = dim1_nospace.split('x')
+            dim2_parts = dim2_nospace.split('x')
+            if len(dim1_parts) == 2 and len(dim2_parts) == 2:
+                return dim1_parts[0] == dim2_parts[0] and dim1_parts[1] == dim2_parts[1]
+        except:
+            pass
+            
+        return False
             
     def store_compatibility(self, source_sku, target_sku, target_category, return_panel=None):
         """Store compatibility relationship in the database"""
@@ -362,7 +393,7 @@ class FullCompatibilityProcessor:
                         self.series_compatible(base_series, wall_series) and
                         self.brand_family_match_walls(base_brand, base_family, wall_brand, wall_family) and
                         (
-                            base_nominal == wall_nominal or
+                            self._match_nominal_dimensions(base_nominal, wall_nominal) or
                             (wall_cut == "Yes" and
                              pd.notna(base_length) and pd.notna(wall_length) and
                              pd.notna(base_width_actual) and pd.notna(wall_width) and
@@ -380,7 +411,7 @@ class FullCompatibilityProcessor:
                         self.series_compatible(base_series, wall_series) and
                         self.brand_family_match_walls(base_brand, base_family, wall_brand, wall_family) and
                         (
-                            base_nominal == wall_nominal or
+                            self._match_nominal_dimensions(base_nominal, wall_nominal) or
                             (wall_cut == "Yes" and
                              pd.notna(base_length) and pd.notna(wall_length) and
                              pd.notna(base_width_actual) and pd.notna(wall_width) and
@@ -639,7 +670,7 @@ class FullCompatibilityProcessor:
                         self.series_compatible(tub_series, wall_series) and
                         self.bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family) and
                         (
-                            tub_nominal == wall_nominal or
+                            self._match_nominal_dimensions(tub_nominal, wall_nominal) or
                             (wall_cut == "Yes" and
                              pd.notna(tub_length) and pd.notna(wall_length) and
                              pd.notna(tub_width_actual) and pd.notna(wall_width) and
@@ -1010,7 +1041,7 @@ class FullCompatibilityProcessor:
                     self.series_compatible(tub_series, wall_series) and
                     self.bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family) and
                     (
-                        tub_nominal == wall_nominal or
+                        self._match_nominal_dimensions(tub_nominal, wall_nominal) or
                         (wall_cut == "Yes" and
                          pd.notna(tub_length) and pd.notna(wall_length) and
                          pd.notna(tub_width_actual) and pd.notna(wall_width) and
