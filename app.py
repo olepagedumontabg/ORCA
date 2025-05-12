@@ -58,6 +58,9 @@ def search():
         session['search_history'] = search_history
         
         if results and results['product']:
+            # Log the product details for debugging
+            logger.debug(f"Returning product: {results['product'].get('name', 'Unknown')} for SKU: {sku}")
+            
             return jsonify({
                 'success': True,
                 'sku': sku,
