@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import traceback
 from logic import compatibility
@@ -12,17 +12,10 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Initialize session data structure for search history
-@app.before_request
-def initialize_session():
-    if 'search_history' not in session:
-        session['search_history'] = []
-
 @app.route('/')
 def index():
     """Render the main page"""
-    search_history = session.get('search_history', [])
-    return render_template('index.html', search_history=search_history)
+    return render_template('index.html')
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -50,31 +43,6 @@ def search():
         # Call the compatibility function to find matches
         results = compatibility.find_compatible_products(sku)
         
-        # Update search history (most recent first, maximum 5 items)
-        search_history = session.get('search_history', [])
-        
-        # Convert old format (strings) to new format (dictionaries) if needed
-        if search_history and isinstance(search_history[0], str):
-            search_history = [{'sku': s, 'category': ''} for s in search_history]
-        
-        # Create history item with category info
-        history_item = {
-            'sku': sku,
-            'category': results.get('product', {}).get('category', '') if results and results.get('product') else ''
-        }
-        
-        # Remove the SKU if it's already in history to avoid duplicates
-        search_history = [s for s in search_history if s.get('sku') != sku]
-        
-        # Add the new item at the beginning
-        search_history.insert(0, history_item)
-        
-        # Keep only the 5 most recent searches
-        search_history = search_history[:5]
-        
-        # Update session
-        session['search_history'] = search_history
-        
         if results and results['product']:
             # Log the product details for debugging
             product_name = results['product'].get('name', 'Unknown')
@@ -85,14 +53,12 @@ def search():
                 'success': True,
                 'sku': sku,
                 'product': results['product'],
-                'compatibles': results['compatibles'],
-                'search_history': search_history
+                'compatibles': results['compatibles']
             })
         else:
             return jsonify({
                 'success': False,
-                'message': f'No product found for SKU {sku}',
-                'search_history': search_history
+                'message': f'No product found for SKU {sku}'
             })
             
     except Exception as e:

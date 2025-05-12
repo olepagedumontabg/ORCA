@@ -13,7 +13,6 @@ function compatibilityApp() {
         productDetails: null,
         compatibleProducts: [],
         filteredCompatibleProducts: [],
-        searchHistory: [],
         
         // Filtering options
         filters: {
@@ -38,24 +37,7 @@ function compatibilityApp() {
          * Initialize the application
          */
         init() {
-            // Get search history from server-side rendered data
-            const historyElement = document.getElementById('searchHistoryData');
-            if (historyElement && historyElement.dataset.history) {
-                try {
-                    const historyData = JSON.parse(historyElement.dataset.history);
-                    
-                    // Convert old format history (strings) to new format (objects) if needed
-                    this.searchHistory = historyData.map(item => {
-                        if (typeof item === 'string') {
-                            return { sku: item, category: '' };
-                        }
-                        return item;
-                    });
-                } catch (e) {
-                    console.error('Error parsing search history:', e);
-                    this.searchHistory = [];
-                }
-            }
+            // Initialize application (no search history)
         },
         
         /**
@@ -93,10 +75,7 @@ function compatibilityApp() {
             .then(data => {
                 this.isLoading = false;
                 
-                // Update search history
-                if (data.search_history) {
-                    this.searchHistory = data.search_history;
-                }
+                // Search history has been removed
                 
                 if (data.success) {
                     // Display results
