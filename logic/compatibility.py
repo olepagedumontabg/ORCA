@@ -221,7 +221,8 @@ def find_compatible_products(sku):
                         "products": enhanced_skus
                     })
         
-        # Extract important details about the source product
+        # Extract important details about the source product directly from product_info
+        # This ensures we're using the info of the source product, not a compatible one
         source_product = {
             "sku": sku,
             "category": product_category
@@ -229,6 +230,7 @@ def find_compatible_products(sku):
         
         # Add additional details if product_info exists
         if product_info is not None:
+            # Make sure we're using the correct product information from the base product
             source_product.update({
                 "name": product_info.get("Product Name", ""),
                 "image_url": product_info.get("Image URL", ""),
