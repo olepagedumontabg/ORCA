@@ -17,20 +17,22 @@ function compatibilityApp() {
         
         // Filtering options
         filters: {
-            series: '',
-            brand: '',
-            glassThickness: '',
+            selectedSeries: [],
+            selectedBrands: [],
+            selectedGlassThicknesses: [],
+            selectedDoorTypes: [],
             dimensionMin: '',
             dimensionMax: '',
             selectedCategories: []
         },
         
         // UI state for filters
-        showFilters: false,
+        showFilters: true, // Default show filters in sidebar
         availableFilters: {
             series: [],
             brands: [],
             glassThicknesses: ['6mm', '8mm'],
+            doorTypes: ['Standard', 'Sliding', 'Pivot', 'Hinged/Swing', 'Bypass', 'Round', 'Square', 'Corner'],
             categories: []
         },
         
@@ -236,25 +238,52 @@ function compatibilityApp() {
         filterMatchesProduct(product) {
             if (!product) return false;
             
-            // Series filter
-            if (this.filters.series && product.series) {
-                if (!product.series.toLowerCase().includes(this.filters.series.toLowerCase())) {
-                    return false;
+            // Series filter - multi-select
+            if (this.filters.selectedSeries.length > 0 && product.series) {
+                let seriesMatch = false;
+                for (let selectedSeries of this.filters.selectedSeries) {
+                    if (product.series.toLowerCase() === selectedSeries.toLowerCase()) {
+                        seriesMatch = true;
+                        break;
+                    }
                 }
+                if (!seriesMatch) return false;
             }
             
-            // Brand filter
-            if (this.filters.brand && product.brand) {
-                if (!product.brand.toLowerCase().includes(this.filters.brand.toLowerCase())) {
-                    return false;
+            // Brand filter - multi-select
+            if (this.filters.selectedBrands.length > 0 && product.brand) {
+                let brandMatch = false;
+                for (let selectedBrand of this.filters.selectedBrands) {
+                    if (product.brand.toLowerCase() === selectedBrand.toLowerCase()) {
+                        brandMatch = true;
+                        break;
+                    }
                 }
+                if (!brandMatch) return false;
             }
             
-            // Glass thickness filter
-            if (this.filters.glassThickness && product.name) {
-                if (!product.name.toLowerCase().includes(this.filters.glassThickness.toLowerCase())) {
-                    return false;
+            // Glass thickness filter - multi-select
+            if (this.filters.selectedGlassThicknesses.length > 0 && product.glass_thickness) {
+                let thicknessMatch = false;
+                for (let selectedThickness of this.filters.selectedGlassThicknesses) {
+                    if (product.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
+                        thicknessMatch = true;
+                        break;
+                    }
                 }
+                if (!thicknessMatch) return false;
+            }
+            
+            // Door type filter - multi-select
+            if (this.filters.selectedDoorTypes.length > 0 && product.door_type) {
+                let doorTypeMatch = false;
+                for (let selectedType of this.filters.selectedDoorTypes) {
+                    if (product.door_type.toLowerCase() === selectedType.toLowerCase()) {
+                        doorTypeMatch = true;
+                        break;
+                    }
+                }
+                if (!doorTypeMatch) return false;
             }
             
             // Dimension range filters
@@ -297,9 +326,14 @@ function compatibilityApp() {
             this.availableFilters.brands = [];
             this.availableFilters.categories = [];
             
-            // Series & brands come from all products
+            // Sets to collect unique values
             const seriesSet = new Set();
             const brandsSet = new Set();
+            const glassThicknessSet = new Set(['6mm', '8mm']); // Default values
+            const doorTypeSet = new Set([
+                'Standard', 'Sliding', 'Pivot', 'Hinged/Swing', 
+                'Bypass', 'Round', 'Square', 'Corner'
+            ]); // Default values
             
             // Categories come from the results
             this.compatibleProducts.forEach(category => {
@@ -315,16 +349,22 @@ function compatibilityApp() {
                         if (product.main_product) {
                             if (product.main_product.series) seriesSet.add(product.main_product.series);
                             if (product.main_product.brand) brandsSet.add(product.main_product.brand);
+                            if (product.main_product.glass_thickness) glassThicknessSet.add(product.main_product.glass_thickness);
+                            if (product.main_product.door_type) doorTypeSet.add(product.main_product.door_type);
                         }
                         if (product.secondary_product) {
                             if (product.secondary_product.series) seriesSet.add(product.secondary_product.series);
                             if (product.secondary_product.brand) brandsSet.add(product.secondary_product.brand);
+                            if (product.secondary_product.glass_thickness) glassThicknessSet.add(product.secondary_product.glass_thickness);
+                            if (product.secondary_product.door_type) doorTypeSet.add(product.secondary_product.door_type);
                         }
                     } 
                     // Regular products
                     else {
                         if (product.series) seriesSet.add(product.series);
                         if (product.brand) brandsSet.add(product.brand);
+                        if (product.glass_thickness) glassThicknessSet.add(product.glass_thickness);
+                        if (product.door_type) doorTypeSet.add(product.door_type);
                     }
                 });
             });
@@ -332,6 +372,8 @@ function compatibilityApp() {
             // Convert sets to arrays
             this.availableFilters.series = [...seriesSet].sort();
             this.availableFilters.brands = [...brandsSet].sort();
+            this.availableFilters.glassThicknesses = [...glassThicknessSet].filter(t => t).sort();
+            this.availableFilters.doorTypes = [...doorTypeSet].filter(t => t).sort();
         },
         
         /**
@@ -339,9 +381,10 @@ function compatibilityApp() {
          */
         resetFilters() {
             this.filters = {
-                series: '',
-                brand: '',
-                glassThickness: '',
+                selectedSeries: [],
+                selectedBrands: [],
+                selectedGlassThicknesses: [],
+                selectedDoorTypes: [],
                 dimensionMin: '',
                 dimensionMax: '',
                 selectedCategories: []
@@ -363,6 +406,78 @@ function compatibilityApp() {
             } else {
                 // Category already selected, remove it
                 this.filters.selectedCategories.splice(index, 1);
+            }
+            
+            // Apply the updated filters
+            this.applyFilters();
+        },
+        
+        /**
+         * Toggle a series selection in filters
+         * @param {string} series - The series to toggle
+         */
+        toggleSeriesFilter(series) {
+            const index = this.filters.selectedSeries.indexOf(series);
+            if (index === -1) {
+                // Series not selected, add it
+                this.filters.selectedSeries.push(series);
+            } else {
+                // Series already selected, remove it
+                this.filters.selectedSeries.splice(index, 1);
+            }
+            
+            // Apply the updated filters
+            this.applyFilters();
+        },
+        
+        /**
+         * Toggle a brand selection in filters
+         * @param {string} brand - The brand to toggle
+         */
+        toggleBrandFilter(brand) {
+            const index = this.filters.selectedBrands.indexOf(brand);
+            if (index === -1) {
+                // Brand not selected, add it
+                this.filters.selectedBrands.push(brand);
+            } else {
+                // Brand already selected, remove it
+                this.filters.selectedBrands.splice(index, 1);
+            }
+            
+            // Apply the updated filters
+            this.applyFilters();
+        },
+        
+        /**
+         * Toggle a glass thickness selection in filters
+         * @param {string} thickness - The glass thickness to toggle
+         */
+        toggleGlassThicknessFilter(thickness) {
+            const index = this.filters.selectedGlassThicknesses.indexOf(thickness);
+            if (index === -1) {
+                // Thickness not selected, add it
+                this.filters.selectedGlassThicknesses.push(thickness);
+            } else {
+                // Thickness already selected, remove it
+                this.filters.selectedGlassThicknesses.splice(index, 1);
+            }
+            
+            // Apply the updated filters
+            this.applyFilters();
+        },
+        
+        /**
+         * Toggle a door type selection in filters
+         * @param {string} doorType - The door type to toggle
+         */
+        toggleDoorTypeFilter(doorType) {
+            const index = this.filters.selectedDoorTypes.indexOf(doorType);
+            if (index === -1) {
+                // Door type not selected, add it
+                this.filters.selectedDoorTypes.push(doorType);
+            } else {
+                // Door type already selected, remove it
+                this.filters.selectedDoorTypes.splice(index, 1);
             }
             
             // Apply the updated filters
