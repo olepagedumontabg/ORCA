@@ -60,48 +60,7 @@ def load_data():
                             logger.error(f"Failed to read sheet {sheet_name}: {str(e2)}")
                             continue
                     
-                    # Enhance the data with additional properties before storing
-                    # Add Glass Thickness if it's the Shower Doors sheet
-                    if sheet_name == 'Shower Doors' and 'Glass Thickness' not in df.columns:
-                        import re
-                        # Extract thickness from Product Name
-                        # Define a function to extract thickness safely
-                        def extract_thickness(name):
-                            if not name or not isinstance(name, str):
-                                return ''
-                            match = re.search(r'(\d+)[\s-]*mm', str(name).lower())
-                            if match:
-                                return match.group(1) + 'mm'
-                            return ''
-                        
-                        # Apply the function to extract thickness
-                        df['Glass Thickness'] = df['Product Name'].apply(extract_thickness)
-                        logger.debug(f"Added Glass Thickness column to {sheet_name} sheet")
-                    
-                    # Add Door Type if it's the Shower Doors sheet
-                    if sheet_name == 'Shower Doors' and 'Door Type' not in df.columns:
-                        # Initialize with default value
-                        df['Door Type'] = 'Standard'
-                        
-                        # Set door types based on product name patterns
-                        for index, row in df.iterrows():
-                            name = str(row.get('Product Name', '')).lower()
-                            if 'sliding' in name:
-                                df.at[index, 'Door Type'] = 'Sliding'
-                            elif 'pivot' in name:
-                                df.at[index, 'Door Type'] = 'Pivot'
-                            elif 'hinged' in name or 'swing' in name:
-                                df.at[index, 'Door Type'] = 'Hinged/Swing'
-                            elif 'bypass' in name:
-                                df.at[index, 'Door Type'] = 'Bypass'
-                            elif 'round' in name:
-                                df.at[index, 'Door Type'] = 'Round'
-                            elif 'square' in name:
-                                df.at[index, 'Door Type'] = 'Square'
-                            elif 'corner' in name:
-                                df.at[index, 'Door Type'] = 'Corner'
-                        
-                        logger.debug(f"Added Door Type column to {sheet_name} sheet")
+                    # No need to add columns dynamically as they're now included directly in the Excel file
                     
                     # Use the sheet name as the key in the data dictionary
                     data[sheet_name] = df
