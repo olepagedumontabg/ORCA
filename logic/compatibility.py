@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import logging
 import glob
+from logic import base_compatibility
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -97,48 +98,55 @@ def find_compatible_products(sku):
             logger.warning(f"No product found for SKU: {sku}")
             return []
         
-        # This is a placeholder for your actual compatibility logic
-        # You will need to paste your existing compatibility scripts here
-        # The returned structure should be a list of dictionaries, where each dictionary has:
-        # - 'category': The product category
-        # - 'skus': A list of compatible SKU strings
-        
-        # PLACEHOLDER COMPATIBILITY LOGIC - REPLACE WITH YOUR OWN SCRIPTS
-        # For demonstration purposes only
+        # Set up the empty results list
         compatible_products = []
         
-        # Example: If we found a Shower Base, we might show sample compatible doors and walls
+        # Call the appropriate compatibility logic based on product category
         if product_category == 'Shower Bases':
-            # Just a placeholder - your actual logic will determine real compatible products
-            compatible_products = [
-                {
-                    "category": "Shower Doors",
-                    "skus": ["Example Door SKU 1", "Example Door SKU 2"] 
-                },
-                {
-                    "category": "Walls",
-                    "skus": ["Example Wall SKU 1", "Example Wall SKU 2"]
-                }
-            ]
+            # Use the dedicated shower base compatibility logic
+            compatible_products = base_compatibility.find_base_compatibilities(data, product_info)
+        
+        # Additional categories can be added here with their own dedicated modules
+        # elif product_category == 'Shower Doors':
+        #     compatible_products = door_compatibility.find_door_compatibilities(data, product_info)
+        # etc.
+        
+        # If no specific compatibility logic matched or no compatible products found,
+        # check if there are explicit compatibility columns in the product info
+        if not compatible_products:
+            # Check for explicitly listed compatible doors
+            if 'Compatible Doors' in product_info and pd.notna(product_info['Compatible Doors']):
+                doors_value = str(product_info['Compatible Doors'])
+                if '|' in doors_value:
+                    # Pipe-delimited values
+                    compatible_doors = doors_value.split('|')
+                else:
+                    # Comma-delimited values
+                    compatible_doors = doors_value.split(',')
+                    
+                compatible_products.append({
+                    "category": "Doors",
+                    "skus": [door.strip() for door in compatible_doors if door.strip()]
+                })
+                
+            # Check for explicitly listed compatible walls
+            if 'Compatible Walls' in product_info and pd.notna(product_info['Compatible Walls']):
+                walls_value = str(product_info['Compatible Walls'])
+                if '|' in walls_value:
+                    # Pipe-delimited values
+                    compatible_walls = walls_value.split('|')
+                else:
+                    # Comma-delimited values
+                    compatible_walls = walls_value.split(',')
+                    
+                compatible_products.append({
+                    "category": "Walls", 
+                    "skus": [wall.strip() for wall in compatible_walls if wall.strip()]
+                })
         
         logger.debug(f"Found {len(compatible_products)} compatible categories")
         return compatible_products
-        
-        # ******************************************************************
-        # INSERT YOUR COMPATIBILITY MATCHING LOGIC BELOW THIS LINE
-        # ******************************************************************
-        # The existing data structure:
-        # - 'data' is a dictionary where keys are worksheet names and values are pandas DataFrames
-        # - 'product_info' contains the product details as a dictionary
-        # - 'product_category' is the name of the worksheet where the product was found
-        # 
-        # Return a list of dictionaries in this format:
-        # [
-        #    {"category": "Category Name", "skus": ["SKU1", "SKU2", "SKU3"]},
-        #    {"category": "Another Category", "skus": ["SKU4", "SKU5"]}
-        # ]
-        # ******************************************************************
-        
+    
     except Exception as e:
         logger.error(f"Error in find_compatible_products: {str(e)}")
         return []
