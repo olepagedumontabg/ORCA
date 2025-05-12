@@ -58,7 +58,7 @@ def find_compatible_products(sku):
         sku (str): The SKU to search for
     
     Returns:
-        list: List of dictionaries containing category and compatible SKUs
+        dict: Dictionary containing source product info and compatible products
     """
     try:
         # Load all data from worksheets
@@ -66,7 +66,7 @@ def find_compatible_products(sku):
         
         if not data:
             logger.warning("No data available for compatibility search")
-            return []
+            return {"product": None, "compatibles": []}
         
         # Find the product in the data
         product_info = None
@@ -96,7 +96,7 @@ def find_compatible_products(sku):
         
         if product_info is None:
             logger.warning(f"No product found for SKU: {sku}")
-            return []
+            return {"product": None, "compatibles": []}
         
         # Set up the empty results list
         compatible_products = []
@@ -104,7 +104,54 @@ def find_compatible_products(sku):
         # Call the appropriate compatibility logic based on product category
         if product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
-            compatible_products = base_compatibility.find_base_compatibilities(data, product_info)
+            compatible_categories = base_compatibility.find_base_compatibilities(data, product_info)
+            
+            # Enhance the results with additional product details
+            for category_info in compatible_categories:
+                category = category_info["category"]
+                enhanced_skus = []
+                
+                for sku_item in category_info["skus"]:
+                    # Check if this is a combined SKU (door + return panel)
+                    if "|" in sku_item:
+                        door_sku, panel_sku = sku_item.split("|")
+                        door_info = get_product_details(data, door_sku)
+                        panel_info = get_product_details(data, panel_sku)
+                        
+                        if door_info and panel_info:
+                            enhanced_skus.append({
+                                "sku": sku_item,
+                                "is_combo": True,
+                                "main_product": {
+                                    "sku": door_sku,
+                                    "name": door_info.get("Product Name", ""),
+                                    "image_url": door_info.get("Image URL", ""),
+                                    "nominal_dimensions": door_info.get("Nominal Dimensions", "")
+                                },
+                                "secondary_product": {
+                                    "sku": panel_sku,
+                                    "name": panel_info.get("Product Name", ""),
+                                    "image_url": panel_info.get("Image URL", ""),
+                                    "nominal_dimensions": panel_info.get("Nominal Dimensions", "")
+                                }
+                            })
+                    else:
+                        product_info = get_product_details(data, sku_item)
+                        if product_info:
+                            enhanced_skus.append({
+                                "sku": sku_item,
+                                "is_combo": False,
+                                "name": product_info.get("Product Name", ""),
+                                "image_url": product_info.get("Image URL", ""),
+                                "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
+                                "brand": product_info.get("Brand", ""),
+                                "series": product_info.get("Series", "")
+                            })
+                
+                compatible_products.append({
+                    "category": category,
+                    "products": enhanced_skus
+                })
         
         # Additional categories can be added here with their own dedicated modules
         # elif product_category == 'Shower Doors':
@@ -113,9 +160,9 @@ def find_compatible_products(sku):
         
         # If no specific compatibility logic matched or no compatible products found,
         # check if there are explicit compatibility columns in the product info
-        if not compatible_products:
+        if not compatible_products and product_info is not None:
             # Check for explicitly listed compatible doors
-            if 'Compatible Doors' in product_info and pd.notna(product_info['Compatible Doors']):
+            if 'Compatible Doors' in product_info and product_info.get('Compatible Doors') and pd.notna(product_info['Compatible Doors']):
                 doors_value = str(product_info['Compatible Doors'])
                 if '|' in doors_value:
                     # Pipe-delimited values
@@ -123,14 +170,29 @@ def find_compatible_products(sku):
                 else:
                     # Comma-delimited values
                     compatible_doors = doors_value.split(',')
-                    
-                compatible_products.append({
-                    "category": "Doors",
-                    "skus": [door.strip() for door in compatible_doors if door.strip()]
-                })
+                
+                enhanced_skus = []
+                for door_sku in [door.strip() for door in compatible_doors if door.strip()]:
+                    door_info = get_product_details(data, door_sku)
+                    if door_info:
+                        enhanced_skus.append({
+                            "sku": door_sku,
+                            "is_combo": False,
+                            "name": door_info.get("Product Name", ""),
+                            "image_url": door_info.get("Image URL", ""),
+                            "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
+                            "brand": door_info.get("Brand", ""),
+                            "series": door_info.get("Series", "")
+                        })
+                
+                if enhanced_skus:
+                    compatible_products.append({
+                        "category": "Doors",
+                        "products": enhanced_skus
+                    })
                 
             # Check for explicitly listed compatible walls
-            if 'Compatible Walls' in product_info and pd.notna(product_info['Compatible Walls']):
+            if 'Compatible Walls' in product_info and product_info.get('Compatible Walls') and pd.notna(product_info['Compatible Walls']):
                 walls_value = str(product_info['Compatible Walls'])
                 if '|' in walls_value:
                     # Pipe-delimited values
@@ -138,18 +200,82 @@ def find_compatible_products(sku):
                 else:
                     # Comma-delimited values
                     compatible_walls = walls_value.split(',')
-                    
-                compatible_products.append({
-                    "category": "Walls", 
-                    "skus": [wall.strip() for wall in compatible_walls if wall.strip()]
-                })
+                
+                enhanced_skus = []
+                for wall_sku in [wall.strip() for wall in compatible_walls if wall.strip()]:
+                    wall_info = get_product_details(data, wall_sku)
+                    if wall_info:
+                        enhanced_skus.append({
+                            "sku": wall_sku,
+                            "is_combo": False,
+                            "name": wall_info.get("Product Name", ""),
+                            "image_url": wall_info.get("Image URL", ""),
+                            "nominal_dimensions": wall_info.get("Nominal Dimensions", ""),
+                            "brand": wall_info.get("Brand", ""),
+                            "series": wall_info.get("Series", "")
+                        })
+                
+                if enhanced_skus:
+                    compatible_products.append({
+                        "category": "Walls", 
+                        "products": enhanced_skus
+                    })
+        
+        # Extract important details about the source product
+        source_product = {
+            "sku": sku,
+            "category": product_category
+        }
+        
+        # Add additional details if product_info exists
+        if product_info is not None:
+            source_product.update({
+                "name": product_info.get("Product Name", ""),
+                "image_url": product_info.get("Image URL", ""),
+                "nominal_dimensions": product_info.get("Nominal Dimensions", ""),
+                "installation": product_info.get("Installation", ""),
+                "brand": product_info.get("Brand", ""),
+                "series": product_info.get("Series", ""),
+                "family": product_info.get("Family", "")
+            })
         
         logger.debug(f"Found {len(compatible_products)} compatible categories")
-        return compatible_products
+        return {
+            "product": source_product,
+            "compatibles": compatible_products
+        }
     
     except Exception as e:
         logger.error(f"Error in find_compatible_products: {str(e)}")
-        return []
+        return {"product": None, "compatibles": []}
+
+def get_product_details(data, sku):
+    """
+    Get product details by SKU from any worksheet
+    
+    Args:
+        data (dict): Dictionary of DataFrames containing product data
+        sku (str): The SKU to search for
+        
+    Returns:
+        dict: Product details or None if not found
+    """
+    try:
+        for category, df in data.items():
+            # Skip any dataframes without a Unique ID column
+            if 'Unique ID' not in df.columns:
+                continue
+                
+            # Find the product in this category
+            product_row = df[df['Unique ID'].astype(str).str.upper() == sku.upper()]
+            
+            if not product_row.empty:
+                return product_row.iloc[0].to_dict()
+                
+        return None
+    except Exception as e:
+        logger.error(f"Error in get_product_details: {str(e)}")
+        return None
 
 # Note: This placeholder implementation should be replaced with the actual
 # compatibility logic from the existing scripts when they are provided.

@@ -10,7 +10,8 @@ function compatibilityApp() {
         hasSearched: false,
         errorMessage: '',
         currentSku: '',
-        results: [],
+        productDetails: null,
+        compatibleProducts: [],
         searchHistory: [],
         
         /**
@@ -74,22 +75,56 @@ function compatibilityApp() {
                 
                 if (data.success) {
                     // Display results
-                    this.results = data.data;
+                    this.productDetails = data.product;
+                    this.compatibleProducts = data.compatibles || [];
                     this.currentSku = data.sku;
                     this.errorMessage = '';
                 } else {
                     // Display error message
-                    this.results = [];
+                    this.productDetails = null;
+                    this.compatibleProducts = [];
                     this.errorMessage = data.message || 'An error occurred during the search';
                 }
             })
             .catch(error => {
                 console.error('Search error:', error);
                 this.isLoading = false;
-                this.results = [];
+                this.productDetails = null;
+                this.compatibleProducts = [];
                 this.errorMessage = 'A network error occurred. Please try again.';
             });
         },
+        
+        /**
+         * Check if a product is a combo (has main + secondary product)
+         * @param {object} product - The product to check
+         * @returns {boolean} True if the product is a combo
+         */
+        isComboProduct(product) {
+            return product && product.is_combo === true;
+        },
+        
+        /**
+         * Get a placeholder image URL for products without images
+         * @returns {string} The placeholder image URL
+         */
+        getPlaceholderImage() {
+            return 'https://via.placeholder.com/150x150?text=No+Image';
+        },
+        
+        /**
+         * Format a product display name
+         * @param {object} product - The product object
+         * @returns {string} The formatted name with dimensions
+         */
+        formatProductName(product) {
+            if (!product) return '';
+            let name = product.name || '';
+            if (product.nominal_dimensions) {
+                name += ` (${product.nominal_dimensions})`;
+            }
+            return name;
+        }
     };
 }
 

@@ -57,11 +57,12 @@ def search():
         # Update session
         session['search_history'] = search_history
         
-        if results:
+        if results and results['product']:
             return jsonify({
                 'success': True,
                 'sku': sku,
-                'data': results,
+                'product': results['product'],
+                'compatibles': results['compatibles'],
                 'search_history': search_history
             })
         else:
