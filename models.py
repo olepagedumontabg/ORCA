@@ -16,6 +16,7 @@ class Product(db.Model):
     width = Column(Integer, nullable=True)
     length = Column(Integer, nullable=True)
     height = Column(Integer, nullable=True)
+    product_name = Column(String(200), nullable=True)  # Product name/description
     product_data = Column(Text, nullable=True)  # JSON data for all other attributes
     
     def __repr__(self):
