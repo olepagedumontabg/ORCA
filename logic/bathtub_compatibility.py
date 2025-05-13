@@ -70,10 +70,14 @@ def find_bathtub_compatibilities(data, tub_info):
             door_min_width = door.get("Minimum Width")
             door_max_width = door.get("Maximum Width")
             door_series = door.get("Series")
-            door_id = str(door.get("Unique ID", "")).strip()
             
-            if not door_id:
+            # Ensure we have a string ID - handle int/float values properly
+            door_id = door.get("Unique ID", "")
+            if pd.isna(door_id) or door_id == "":
                 continue
+                
+            # Convert to string to ensure compatibility with the rest of the code
+            door_id = str(door_id).strip()
                 
             if (
                 pd.notna(door_min_width) and pd.notna(door_max_width) and

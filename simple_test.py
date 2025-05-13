@@ -16,6 +16,25 @@ def test_sku(sku):
         
         if response.status_code == 200:
             print(f"  Success! Response length: {len(response.text)}")
+            # Check if we got a "no product found" message
+            if "No product found" in response.text:
+                print("  Warning: No product found")
+            # Check if we got any compatibility results
+            elif "compatibilityData" in response.text:
+                print("  Found compatibility data!")
+                # Extract some basic info about the result
+                import re
+                product_name_match = re.search(r'<h1[^>]*>([^<]+)</h1>', response.text)
+                if product_name_match:
+                    print(f"  Product: {product_name_match.group(1).strip()}")
+                # Look for compatible categories
+                categories_match = re.findall(r'data-category="([^"]+)"', response.text)
+                if categories_match:
+                    print(f"  Compatible categories: {', '.join(categories_match)}")
+                else:
+                    print("  No compatible categories found")
+            else:
+                print("  Warning: Response doesn't contain compatibility data")
             return True
         else:
             print(f"  Error! Status code: {response.status_code}")
