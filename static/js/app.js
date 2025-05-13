@@ -198,11 +198,13 @@ function compatibilityApp() {
          * Apply filters to compatible products
          */
         applyFilters() {
+            console.log("Applying filters:", this.filters);
             // Start with a copy of the original compatible products
             this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
             
             // Apply category filters if any are selected
             if (this.filters.selectedCategories.length > 0) {
+                console.log("Filtering by categories:", this.filters.selectedCategories);
                 this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(category => 
                     this.filters.selectedCategories.includes(category.category)
                 );
@@ -212,17 +214,26 @@ function compatibilityApp() {
             this.filteredCompatibleProducts.forEach(category => {
                 if (!category.products) return;
                 
+                console.log(`Filtering products in category: ${category.category}`);
+                
                 // Filter the products in this category
+                const originalCount = category.products.length;
+                
                 category.products = category.products.filter(product => {
                     // Return early if it's a combo product - special handling
                     if (this.isComboProduct(product)) {
-                        return this.filterMatchesProduct(product.main_product) || 
-                               this.filterMatchesProduct(product.secondary_product);
+                        const matches = this.filterMatchesMainProduct(product.main_product);
+                        console.log(`  Combo product ${product.sku} match: ${matches}`, product.main_product);
+                        return matches;
                     }
                     
                     // Regular product filtering
-                    return this.filterMatchesProduct(product);
+                    const matches = this.filterMatchesProduct(product);
+                    console.log(`  Regular product ${product.sku} match: ${matches}`, product);
+                    return matches;
                 });
+                
+                console.log(`  Category ${category.category}: ${originalCount} products → ${category.products.length} after filtering`);
             });
             
             // Remove empty categories
@@ -239,8 +250,12 @@ function compatibilityApp() {
         filterMatchesProduct(product) {
             if (!product) return false;
             
-            // For combo products, check the main product for all filters
+            console.log("filterMatchesProduct checking product:", product);
+            
+            // We shouldn't get combo products here, as they're handled in applyFilters
+            // But just in case, we'll handle them properly
             if (this.isComboProduct(product) && product.main_product) {
+                console.log("  Encountered combo product in filterMatchesProduct, forwarding to filterMatchesMainProduct");
                 return this.filterMatchesMainProduct(product.main_product);
             }
             
