@@ -213,49 +213,65 @@ def find_compatible_products(sku):
         # Call the appropriate compatibility logic based on product category
         if product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
+            logger.info(f"Using shower base compatibility logic for SKU: {sku}")
             compatible_categories = base_compatibility.find_base_compatibilities(data, product_info)
         elif product_category == 'Bathtubs':
             # Use the dedicated bathtub compatibility logic
+            logger.info(f"Using bathtub compatibility logic for SKU: {sku}")
             compatible_categories = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
+        else:
+            logger.info(f"No dedicated compatibility logic for category: {product_category}")
+            compatible_categories = []
             
-            # Enhance the results with additional product details
-            for category_info in compatible_categories:
-                category = category_info["category"]
-                enhanced_skus = []
-                
-                # Check if this is the new format (from bathtub_compatibility) with products list
-                if "products" in category_info:
-                    for product in category_info["products"]:
-                        sku_item = product.get("sku", "")
-                        if sku_item:
-                            # Get ranking value for product
-                            ranking_value = 999  # Default high ranking if not specified
-                            if "Ranking" in product and product["Ranking"] is not None:
-                                try:
-                                    # Make sure we're converting to float properly
-                                    ranking_str = str(product["Ranking"]).strip()
-                                    if ranking_str:
-                                        ranking_value = float(ranking_str)
-                                        logger.debug(f"Using ranking {ranking_value} for product {sku_item}")
-                                except (ValueError, TypeError) as e:
-                                    logger.debug(f"Invalid ranking value for {sku_item}: {product.get('Ranking')}, error: {str(e)}")
-                            
-                            product_dict = {
-                                "sku": sku_item,
-                                "is_combo": False,
-                                "_ranking": ranking_value,  # Internal use only, not sent to frontend
-                                "name": product.get("Product Name", "") if product.get("Product Name") is not None else "",
-                                "image_url": image_handler.generate_image_url(product),
-                                "nominal_dimensions": product.get("Nominal Dimensions", "") if product.get("Nominal Dimensions") is not None else "",
-                                "brand": product.get("Brand", "") if product.get("Brand") is not None else "",
-                                "series": product.get("Series", "") if product.get("Series") is not None else "",
-                                "glass_thickness": product.get("Glass Thickness", "") if product.get("Glass Thickness") is not None else "",
-                                "door_type": get_fixed_door_type(product)
-                            }
-                            enhanced_skus.append(product_dict)
-                else:
-                    # Legacy format with skus list
-                    for sku_item in category_info["skus"]:
+        # Enhance the results with additional product details for all product types
+        for category_info in compatible_categories:
+            category = category_info["category"]
+            enhanced_skus = []
+            
+            # Check if this is the new format with products list
+            if "products" in category_info:
+                logger.debug(f"Processing {len(category_info['products'])} products for category {category}")
+                for product in category_info["products"]:
+                    sku_item = product.get("sku", "")
+                    if sku_item:
+                        # Get ranking value for product
+                        ranking_value = 999  # Default high ranking if not specified
+                        if "Ranking" in product and product["Ranking"] is not None:
+                            try:
+                                # Make sure we're converting to float properly
+                                ranking_str = str(product["Ranking"]).strip()
+                                if ranking_str:
+                                    ranking_value = float(ranking_str)
+                                    logger.debug(f"Using ranking {ranking_value} for product {sku_item}")
+                            except (ValueError, TypeError) as e:
+                                logger.debug(f"Invalid ranking value for {sku_item}: {product.get('Ranking')}, error: {str(e)}")
+                        
+                        # Check for Image URL in the product dictionary
+                        image_url = ""
+                        if "Image URL" in product and product["Image URL"]:
+                            image_url = image_handler.normalize_url(product["Image URL"])
+                            logger.debug(f"Using direct Image URL for product {sku_item}: {image_url}")
+                        else:
+                            image_url = image_handler.generate_image_url(product)
+                            logger.debug(f"Generated Image URL for product {sku_item}: {image_url}")
+                        
+                        product_dict = {
+                            "sku": sku_item,
+                            "is_combo": False,
+                            "_ranking": ranking_value,  # Internal use only, not sent to frontend
+                            "name": product.get("Product Name", "") if product.get("Product Name") is not None else "",
+                            "image_url": image_url,
+                            "nominal_dimensions": product.get("Nominal Dimensions", "") if product.get("Nominal Dimensions") is not None else "",
+                            "brand": product.get("Brand", "") if product.get("Brand") is not None else "",
+                            "series": product.get("Series", "") if product.get("Series") is not None else "",
+                            "glass_thickness": product.get("Glass Thickness", "") if product.get("Glass Thickness") is not None else "",
+                            "door_type": get_fixed_door_type(product)
+                        }
+                        enhanced_skus.append(product_dict)
+            elif "skus" in category_info:
+                # Legacy format with skus list
+                logger.debug(f"Processing legacy format with skus list for category {category}")
+                for sku_item in category_info["skus"]:
                         # Check if this is a combined SKU (door + return panel)
                         if "|" in sku_item:
                             door_sku, panel_sku = sku_item.split("|")
