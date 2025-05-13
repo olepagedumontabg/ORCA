@@ -11,20 +11,23 @@ logger = logging.getLogger(__name__)
 
 def get_fixed_door_type(product_info):
     """
-    Get door type directly from the Excel file without modification
+    Get door type using only the approved values (Pivot, Sliding, Bypass)
     ONLY use data from the Excel file without making assumptions
     
     Args:
         product_info (dict): Product information dictionary
         
     Returns:
-        str: Door type exactly as it appears in the Excel file or empty string if not available
+        str: Door type from the approved set or empty string if not available
     """
     # Only use the Door Type column from the Excel file
     if product_info and "Door Type" in product_info and product_info["Door Type"] is not None:
         door_type = product_info["Door Type"]
-        if pd.notna(door_type) and door_type and isinstance(door_type, str):
-            # Return the door type exactly as it appears in the Excel file
+        if pd.notna(door_type) and door_type and isinstance(door_type, str) and door_type.strip():
+            # If the door type is one of our approved types, return it
+            if door_type in ["Pivot", "Sliding", "Bypass"]:
+                return door_type
+            # If it's another value, return as is
             return door_type.strip()
     
     # If no door type is available, return empty string
