@@ -222,9 +222,18 @@ def find_compatible_products(sku):
                         panel_info = get_product_details(data, panel_sku)
                         
                         if door_info and panel_info:
-                            enhanced_skus.append({
+                            # Get the ranking from the door component (if available)
+                            ranking_value = 999  # Default high ranking if not specified
+                            if "Ranking" in door_info and door_info["Ranking"] is not None:
+                                try:
+                                    ranking_value = float(door_info["Ranking"])
+                                except (ValueError, TypeError):
+                                    logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}")
+                                    
+                            combo_product = {
                                 "sku": sku_item,
                                 "is_combo": True,
+                                "_ranking": ranking_value,  # Internal use only, not sent to frontend
                                 "main_product": {
                                     "sku": door_sku,
                                     "name": door_info.get("Product Name", ""),
@@ -244,7 +253,8 @@ def find_compatible_products(sku):
                                     "series": panel_info.get("Series", ""),
                                     "glass_thickness": panel_info.get("Glass Thickness", "")
                                 }
-                            })
+                            }
+                            enhanced_skus.append(combo_product)
                     else:
                         product_info = get_product_details(data, sku_item)
                         if product_info:
@@ -421,6 +431,9 @@ def get_product_details(data, sku):
                 for key, value in product_info.items():
                     if pd.isna(value):
                         product_info[key] = None
+                
+                # Add the category to the product info
+                product_info['_source_category'] = category
                 
                 logger.debug(f"Found product in {category}: {product_info.get('Product Name', 'Unknown')}")
                 return product_info
