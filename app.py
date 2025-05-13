@@ -1,16 +1,45 @@
 import os
 import logging
+import threading
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import traceback
 from logic import compatibility
+
+# Try to import the data update service
+try:
+    import data_update_service
+    data_service_available = True
+except ImportError:
+    data_service_available = False
 
 # Configure app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 
 # Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
 logger = logging.getLogger(__name__)
+
+# Initialize data update service
+data_update_thread = None
+if data_service_available:
+    try:
+        # Import locally within the conditional
+        import data_update_service as data_service
+        logger.info("Initializing data update service")
+        data_update_thread = threading.Thread(
+            target=data_service.run_data_service,
+            daemon=True
+        )
+        data_update_thread.start()
+        logger.info("Data update service thread started")
+    except Exception as e:
+        logger.error(f"Failed to start data update service: {str(e)}")
+        data_service_available = False
 
 @app.route('/')
 def index():

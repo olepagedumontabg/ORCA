@@ -8,12 +8,15 @@ from datetime import datetime
 from logic import base_compatibility
 from logic import image_handler
 
-# Import the data update service (with a try/except to handle the case where it's not available yet)
+# Global flag to indicate whether the data update service is available
+data_service_available = False
+
+# Try to import the data update service
 try:
     import data_update_service
     data_service_available = True
 except ImportError:
-    data_service_available = False
+    pass  # Keep the data_service_available flag as False
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -54,9 +57,12 @@ def load_data():
     data = {}
     
     # Try to get data from the data update service first
+    global data_service_available
     if data_service_available:
         try:
-            cached_data, update_time = data_update_service.get_product_data()
+            # Import locally in case it wasn't available at module load time
+            import data_update_service as data_service
+            cached_data, update_time = data_service.get_product_data()
             if cached_data:
                 logger.info(f"Using in-memory product data from cache (last updated: {update_time})")
                 return cached_data
@@ -64,6 +70,7 @@ def load_data():
                 logger.warning("In-memory cache is empty, falling back to file-based loading")
         except Exception as e:
             logger.error(f"Error accessing data from update service: {str(e)}. Falling back to file-based loading.")
+            data_service_available = False
     
     # Fallback: Load from file system if data service is not available or cache is empty
     try:
@@ -121,10 +128,12 @@ def load_data():
         # update the in-memory cache
         if data and data_service_available:
             try:
+                # Import locally in case it wasn't available at module load time
+                import data_update_service as data_service
                 # Update the global cache with a copy of the data
-                with data_update_service.data_lock:
-                    data_update_service.product_data_cache = data.copy()
-                    data_update_service.last_update_time = datetime.now()
+                with data_service.data_lock:
+                    data_service.product_data_cache = data.copy()
+                    data_service.last_update_time = datetime.now()
                 logger.info("Updated in-memory cache with data loaded from files")
             except Exception as e:
                 logger.error(f"Error updating in-memory cache: {str(e)}")
