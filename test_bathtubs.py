@@ -30,8 +30,8 @@ test_bathtubs = pd.DataFrame([
         'Length': 60,
         'Width': 60,
         'Installation': 'Corner',
-        'Brand': 'Maax',
-        'Series': 'Collection',
+        'Brand': 'Swan',
+        'Series': 'Retail',
         'Family': 'Vellamo',
         'Compatible Doors': None,
         'Compatible Walls': None
@@ -99,6 +99,20 @@ test_walls = pd.DataFrame([
         'Series': 'Retail',
         'Family': 'Tub Surround',
         'Ranking': 1200
+    },
+    {
+        'Unique ID': 'WLL-003',
+        'Product Name': 'Test Alcove Tub Wall Kit Maax',
+        'Image URL': None,
+        'Nominal Dimensions': '60 x 32',
+        'Length': 60,
+        'Width': 32,
+        'Type': 'Alcove Tub Wall Kit',
+        'Cut to Size': 'Yes',
+        'Brand': 'Maax',
+        'Series': 'MAAX',
+        'Family': 'Utile',
+        'Ranking': 950
     }
 ])
 

@@ -54,6 +54,26 @@ def test_bathtub_compatibility():
             name = product.get('name', 'Unnamed')
             logger.info(f"  {i+1}. {sku} - {name}")
     
+    # Try with second test bathtub
+    if len(data['Bathtubs']) > 1:
+        bathtub_info = data['Bathtubs'].iloc[1].to_dict()
+        bathtub_id = bathtub_info.get('Unique ID')
+        
+        logger.info(f"\nTesting compatibility for second bathtub: {bathtub_id} - {bathtub_info.get('Product Name')}")
+        compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, bathtub_info)
+        
+        # Display results
+        logger.info(f"Found {len(compatible_products)} compatible categories")
+        
+        for category in compatible_products:
+            logger.info(f"Category: {category['category']}")
+            logger.info(f"Number of compatible products: {len(category['products'])}")
+            
+            for i, product in enumerate(category['products']):
+                sku = product.get('sku', 'Unknown')
+                name = product.get('name', 'Unnamed')
+                logger.info(f"  {i+1}. {sku} - {name}")
+    
     logger.info("Compatibility test completed")
 
 if __name__ == "__main__":
