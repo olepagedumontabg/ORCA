@@ -169,6 +169,9 @@ def find_compatible_products(sku):
         product_info = None
         product_category = None
         
+        # Make sure we have a string version of the SKU for comparisons
+        sku_str = str(sku).strip()
+        
         for category, df in data.items():
             # Check if 'Unique ID' column exists in the DataFrame (main identifier in the Excel file)
             id_column = None
@@ -183,7 +186,7 @@ def find_compatible_products(sku):
             
             # Try to find the SKU in this category
             # Convert everything to string and uppercase for case-insensitive comparison
-            product_row = df[df[id_column].astype(str).str.upper() == sku.upper()]
+            product_row = df[df[id_column].astype(str).str.upper() == sku_str.upper()]
             
             if not product_row.empty:
                 # Store the exact match from this category
@@ -191,7 +194,7 @@ def find_compatible_products(sku):
                 product_category = category
                 
                 # Ensure the source product info has the correct SKU
-                product_info['Unique ID'] = sku
+                product_info['Unique ID'] = sku_str
                 
                 # Log that we found the product and where
                 logger.debug(f"Found product in category: {category}")
@@ -556,13 +559,15 @@ def get_product_details(data, sku):
     
     Args:
         data (dict): Dictionary of DataFrames containing product data
-        sku (str): The SKU to search for
+        sku (str or int): The SKU to search for - can be string or integer
         
     Returns:
         dict: Product details or None if not found
     """
     try:
-        logger.debug(f"Looking for product details for SKU: {sku}")
+        # Ensure we have a string version of the SKU for comparison
+        sku_str = str(sku).strip()
+        logger.debug(f"Looking for product details for SKU: {sku_str}")
         
         for category, df in data.items():
             # Skip any dataframes without a Unique ID column
@@ -571,7 +576,7 @@ def get_product_details(data, sku):
                 
             # Find the product in this category
             # Convert everything to string and uppercase for case-insensitive comparison
-            product_row = df[df['Unique ID'].astype(str).str.upper() == sku.upper()]
+            product_row = df[df['Unique ID'].astype(str).str.upper() == sku_str.upper()]
             
             if not product_row.empty:
                 # Convert to dict and clean up NaN values

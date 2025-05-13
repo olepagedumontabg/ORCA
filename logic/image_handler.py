@@ -51,7 +51,7 @@ def generate_image_url(product_info):
             image_name = 'b3square'
         elif 'shower base' in product_name.lower():
             image_name = 'b3square'  # fallback to a square base
-        elif category == 'Shower Bases' or (sku and (sku.startswith('410') or sku.startswith('420'))):
+        elif category == 'Shower Bases' or (sku and (str(sku).startswith('410') or str(sku).startswith('420'))):
             # Any shower base
             if '60' in product_name:  # 60" bases are usually round
                 image_name = 'b3round'

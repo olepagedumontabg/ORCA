@@ -109,9 +109,16 @@ def find_bathtub_compatibilities(data, tub_info):
             wall_length = wall.get("Length")
             wall_width = wall.get("Width")
             wall_cut = wall.get("Cut to Size")
-            wall_id = str(wall.get("Unique ID", "")).strip()
             
-            if not wall_id or "tub" not in wall_type:
+            # Ensure we have a string ID - handle int/float values properly
+            wall_id = wall.get("Unique ID", "")
+            if pd.isna(wall_id) or wall_id == "":
+                continue
+                
+            # Convert to string to ensure compatibility with the rest of the code
+            wall_id = str(wall_id).strip()
+            
+            if "tub" not in wall_type:
                 continue
                 
             if (
