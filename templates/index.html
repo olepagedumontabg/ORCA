@@ -247,7 +247,7 @@
                                 <ul class="py-1">
                                     <template x-for="(suggestion, index) in suggestions" :key="index">
                                         <li 
-                                            @mousedown="selectAndSearch(suggestion, index);"
+                                            @mousedown="selectSuggestion(suggestion, index);"
                                             :class="{'bg-gray-100': index === highlightedSuggestion}"
                                             class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                                             x-text="suggestion"
@@ -339,7 +339,7 @@
                                     <ul class="py-1">
                                         <template x-for="(suggestion, index) in suggestions" :key="index">
                                             <li 
-                                                @mousedown="selectAndSearch(suggestion, index);"
+                                                @mousedown="selectSuggestion(suggestion, index);"
                                                 :class="{'bg-gray-100': index === highlightedSuggestion}"
                                                 class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                                                 x-text="suggestion"

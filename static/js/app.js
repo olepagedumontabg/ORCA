@@ -121,26 +121,14 @@ function compatibilityApp() {
         },
         
         /**
-         * Select a suggestion from the dropdown and immediately search
+         * Select a suggestion from the dropdown (DEPRECATED - keeping for backward compatibility)
          * @param {string} suggestion - The selected suggestion (display format: "SKU - Product Name")
          * @param {number} index - The index of the suggestion in the list
          */
         selectAndSearch(suggestion, index) {
-            // First clear the dropdown completely
-            this.suggestions = [];
-            this.showSuggestions = false;
-            
-            // If we have raw SKUs stored and the index is valid, use the raw SKU
-            if (this.rawSkus && this.rawSkus.length > index && index >= 0) {
-                this.searchInput = this.rawSkus[index];
-            } else {
-                // Otherwise extract the SKU from the suggestion text (everything before " - ")
-                const skuMatch = suggestion.match(/^(.*?)(?:\s+-\s+|$)/);
-                this.searchInput = skuMatch ? skuMatch[1].trim() : suggestion;
-            }
-            
-            // Immediately submit the search 
-            this.submitSearch();
+            // Replaced with selectSuggestion
+            console.warn("selectAndSearch is deprecated - use selectSuggestion instead");
+            this.selectSuggestion(suggestion, index);
         },
         
         /**
@@ -149,6 +137,10 @@ function compatibilityApp() {
          * @param {number} index - The index of the suggestion in the list
          */
         selectSuggestion(suggestion, index) {
+            // First, clear the dropdown
+            this.suggestions = [];
+            this.showSuggestions = false;
+            
             // If we have raw SKUs stored and the index is valid, use the raw SKU
             if (this.rawSkus && this.rawSkus.length > index && index >= 0) {
                 this.searchInput = this.rawSkus[index];
@@ -158,9 +150,10 @@ function compatibilityApp() {
                 this.searchInput = skuMatch ? skuMatch[1].trim() : suggestion;
             }
             
-            // Clear suggestions list and hide dropdown
-            this.suggestions = [];
-            this.showSuggestions = false;
+            // Force UI update to clear any hanging dropdown elements
+            setTimeout(() => {
+                this.showSuggestions = false;
+            }, 100);
         },
         
         /**
