@@ -11,7 +11,14 @@ def load_test_data():
     """Load test data from the Excel file"""
     data = {}
     try:
-        excel_path = 'data/Product_Data_Test.xlsx'
+        # Use the test data created by test_bathtubs.py
+        excel_path = 'data/test/test_product_data.xlsx'
+        
+        if not os.path.exists(excel_path):
+            logger.error(f"Test data file not found: {excel_path}")
+            logger.info("Please run test_bathtubs.py first to generate test data")
+            return {}
+            
         excel = pd.ExcelFile(excel_path)
         
         for sheet_name in excel.sheet_names:

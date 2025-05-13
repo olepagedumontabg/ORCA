@@ -31,7 +31,7 @@ test_bathtubs = pd.DataFrame([
         'Width': 60,
         'Installation': 'Corner',
         'Brand': 'Swan',
-        'Series': 'Retail',
+        'Series': 'Swan',  # Changed from Retail to Swan for better compatibility
         'Family': 'Tub Surround',
         'Compatible Doors': None,
         'Compatible Walls': None
@@ -96,7 +96,7 @@ test_walls = pd.DataFrame([
         'Type': 'Corner Tub Wall Kit',
         'Cut to Size': 'No',
         'Brand': 'Swan',
-        'Series': 'Retail',
+        'Series': 'Swan',
         'Family': 'Tub Surround',
         'Ranking': 1200
     },
