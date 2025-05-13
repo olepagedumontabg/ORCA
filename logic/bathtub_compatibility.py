@@ -171,8 +171,8 @@ def find_bathtub_compatibilities(data, bathtub_info):
                     "is_combo": False,
                     "_ranking": door_data.get("Ranking", 999),
                     "name": door_data.get("Product Name", ""),
-                    "image_url": "",  # We'll rely on image_handler elsewhere
-                    "nominal_dimensions": "",
+                    "image_url": door_data.get("Image URL", ""),
+                    "nominal_dimensions": door_data.get("Nominal Dimensions", ""),
                     "brand": door_data.get("Brand", ""),
                     "series": door_data.get("Series", ""),
                     "glass_thickness": door_data.get("Glass Thickness", ""),
