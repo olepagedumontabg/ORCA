@@ -53,7 +53,7 @@ def simple():
 
 @app.route('/suggest', methods=['GET'])
 def suggest_skus():
-    """Provide SKU suggestions based on partial input"""
+    """Provide SKU suggestions based on partial input (SKU or product name)"""
     try:
         query = request.args.get('q', '').strip().upper()
         
@@ -80,8 +80,17 @@ def suggest_skus():
                     product_name = str(row[product_name_col]) if product_name_col else ''
                     sku_product_map[sku] = product_name
         
-        # Filter SKUs that match the query
-        matching_skus = [sku for sku in sku_product_map.keys() if query in sku]
+        # Find matches by SKU
+        matching_skus_by_id = [sku for sku in sku_product_map.keys() if query in sku]
+        
+        # Find matches by product name
+        matching_skus_by_name = []
+        for sku, product_name in sku_product_map.items():
+            if product_name and query in product_name.upper():
+                matching_skus_by_name.append(sku)
+        
+        # Combine unique matches, prioritizing SKU matches
+        matching_skus = list(dict.fromkeys(matching_skus_by_id + matching_skus_by_name))
         
         # Sort and limit results
         matching_skus.sort()
@@ -97,7 +106,7 @@ def suggest_skus():
                 display_suggestions.append(sku)
         
         # Log the number of suggestions for debugging
-        logger.debug(f"Found {len(matching_skus)} suggestions for query '{query}'")
+        logger.debug(f"Found {len(matching_skus)} suggestions for query '{query}' (SKU: {len(matching_skus_by_id)}, Name: {len(matching_skus_by_name)})")
         
         return jsonify({
             'suggestions': matching_skus,  # Original SKUs for selection
