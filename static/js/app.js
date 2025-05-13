@@ -419,46 +419,81 @@ function compatibilityApp() {
             }
             
             // Series filter - multi-select
-            if (this.filters.selectedSeries.length > 0 && product.series) {
-                let seriesMatch = false;
-                for (let selectedSeries of this.filters.selectedSeries) {
-                    if (product.series.toLowerCase() === selectedSeries.toLowerCase()) {
-                        seriesMatch = true;
-                        break;
+            if (this.filters.selectedSeries.length > 0) {
+                // Get series value from either lowercase or PascalCase property
+                const seriesValue = product.series || product.Series || '';
+                
+                if (seriesValue) {
+                    let seriesMatch = false;
+                    for (let selectedSeries of this.filters.selectedSeries) {
+                        if (seriesValue.toLowerCase() === selectedSeries.toLowerCase()) {
+                            seriesMatch = true;
+                            break;
+                        }
                     }
+                    if (!seriesMatch) return false;
                 }
-                if (!seriesMatch) return false;
             }
             
             // Brand filter - multi-select
-            if (this.filters.selectedBrands.length > 0 && product.brand) {
-                let brandMatch = false;
-                for (let selectedBrand of this.filters.selectedBrands) {
-                    if (product.brand.toLowerCase() === selectedBrand.toLowerCase()) {
-                        brandMatch = true;
-                        break;
+            if (this.filters.selectedBrands.length > 0) {
+                // Get brand from either lowercase or PascalCase property
+                const brandValue = product.brand || product.Brand || '';
+                
+                if (brandValue) {
+                    let brandMatch = false;
+                    for (let selectedBrand of this.filters.selectedBrands) {
+                        if (brandValue.toLowerCase() === selectedBrand.toLowerCase()) {
+                            brandMatch = true;
+                            break;
+                        }
                     }
+                    if (!brandMatch) return false;
                 }
-                if (!brandMatch) return false;
             }
             
             // Glass thickness filter - multi-select
-            if (this.filters.selectedGlassThicknesses.length > 0 && product.glass_thickness) {
-                let thicknessMatch = false;
-                for (let selectedThickness of this.filters.selectedGlassThicknesses) {
-                    if (product.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
-                        thicknessMatch = true;
-                        break;
+            if (this.filters.selectedGlassThicknesses.length > 0) {
+                // Try to get glass thickness from property in any case format
+                let glassThickness = product.glass_thickness || product['Glass Thickness'] || '';
+                
+                // For bathtub door products, try to extract from the name if not present
+                if (!glassThickness && product.name && 
+                    (product.category === 'Tub Doors' || 
+                     (typeof product.sku === 'string' && product.sku.startsWith('13')) ||
+                     (typeof product.sku === 'number' && product.sku.toString().startsWith('13')))) {
+                    
+                    const name = product.name.toLowerCase();
+                    if (name.includes('8mm') || name.includes('8 mm')) {
+                        glassThickness = '8mm';
+                        // Store for future filtering
+                        product.glass_thickness = '8mm';
+                    } else if (name.includes('6mm') || name.includes('6 mm')) {
+                        glassThickness = '6mm';
+                        product.glass_thickness = '6mm';
+                    } else if (name.includes('10mm') || name.includes('10 mm')) {
+                        glassThickness = '10mm';
+                        product.glass_thickness = '10mm';
                     }
                 }
-                if (!thicknessMatch) return false;
-            } else if (this.filters.selectedGlassThicknesses.length > 0) {
-                // If thickness filters are selected but product doesn't have thickness data
-                // Only apply to door-related categories
-                if (product.category && 
-                    (product.category.toLowerCase().includes('door') || 
-                     product.sku.toLowerCase().startsWith('gd'))) {
-                    return false;
+                
+                if (glassThickness) {
+                    let thicknessMatch = false;
+                    for (let selectedThickness of this.filters.selectedGlassThicknesses) {
+                        if (glassThickness.toLowerCase() === selectedThickness.toLowerCase()) {
+                            thicknessMatch = true;
+                            break;
+                        }
+                    }
+                    if (!thicknessMatch) return false;
+                } else {
+                    // If glass thickness filters are selected but product doesn't have data
+                    // Only apply to door-related categories
+                    if (product.category && 
+                        (product.category.toLowerCase().includes('door') || 
+                         (typeof product.sku === 'string' && product.sku.toLowerCase().startsWith('gd')))) {
+                        return false;
+                    }
                 }
             }
             
