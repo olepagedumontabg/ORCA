@@ -388,14 +388,7 @@ function compatibilityApp() {
             }
             
             // Glass thickness filter - multi-select
-            if (this.filters.selectedGlassThicknesses.length > 0) {
-                // Skip glass thickness filtering if the product doesn't have glass_thickness
-                if (!product.glass_thickness) {
-                    console.log(`  Product ${product.sku} has no glass_thickness, skipping filter`);
-                    // If no glass thickness is defined, don't filter this product out
-                    return true;
-                }
-                
+            if (this.filters.selectedGlassThicknesses.length > 0 && product.glass_thickness) {
                 let thicknessMatch = false;
                 for (let selectedThickness of this.filters.selectedGlassThicknesses) {
                     if (product.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
@@ -404,17 +397,18 @@ function compatibilityApp() {
                     }
                 }
                 if (!thicknessMatch) return false;
+            } else if (this.filters.selectedGlassThicknesses.length > 0) {
+                // If thickness filters are selected but product doesn't have thickness data
+                // Only apply to door-related categories
+                if (product.category && 
+                    (product.category.toLowerCase().includes('door') || 
+                     product.sku.toLowerCase().startsWith('gd'))) {
+                    return false;
+                }
             }
             
             // Door type filter - multi-select
-            if (this.filters.selectedDoorTypes.length > 0) {
-                // Skip door type filtering if the product doesn't have a door_type
-                if (!product.door_type) {
-                    console.log(`  Product ${product.sku} has no door_type, skipping filter`);
-                    // If no door type is defined, don't filter this product out
-                    return true;
-                }
-                
+            if (this.filters.selectedDoorTypes.length > 0 && product.door_type) {
                 let doorTypeMatch = false;
                 for (let selectedType of this.filters.selectedDoorTypes) {
                     if (product.door_type.toLowerCase() === selectedType.toLowerCase()) {
@@ -423,6 +417,14 @@ function compatibilityApp() {
                     }
                 }
                 if (!doorTypeMatch) return false;
+            } else if (this.filters.selectedDoorTypes.length > 0) {
+                // If door type filters are selected but product doesn't have door type data
+                // Only apply to door-related categories
+                if (product.category && 
+                    (product.category.toLowerCase().includes('door') || 
+                     product.sku.toLowerCase().startsWith('gd'))) {
+                    return false;
+                }
             }
             
             // All filters passed
@@ -462,14 +464,7 @@ function compatibilityApp() {
             }
             
             // Glass thickness filter - multi-select
-            if (this.filters.selectedGlassThicknesses.length > 0) {
-                // Skip glass thickness filtering if the product doesn't have glass_thickness
-                if (!mainProduct.glass_thickness) {
-                    console.log(`  Main Product ${mainProduct.sku} has no glass_thickness, skipping filter`);
-                    // If no glass thickness is defined, don't filter this product out
-                    return true;
-                }
-                
+            if (this.filters.selectedGlassThicknesses.length > 0 && mainProduct.glass_thickness) {
                 let thicknessMatch = false;
                 for (let selectedThickness of this.filters.selectedGlassThicknesses) {
                     if (mainProduct.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
@@ -478,17 +473,18 @@ function compatibilityApp() {
                     }
                 }
                 if (!thicknessMatch) return false;
+            } else if (this.filters.selectedGlassThicknesses.length > 0) {
+                // If thickness filters are selected but product doesn't have thickness data
+                // Only apply to door-related categories
+                if (mainProduct.category && 
+                    (mainProduct.category.toLowerCase().includes('door') || 
+                     mainProduct.sku.toLowerCase().startsWith('gd'))) {
+                    return false;
+                }
             }
             
             // Door type filter - multi-select
-            if (this.filters.selectedDoorTypes.length > 0) {
-                // Skip door type filtering if the product doesn't have a door_type
-                if (!mainProduct.door_type) {
-                    console.log(`  Main Product ${mainProduct.sku} has no door_type, skipping filter`);
-                    // If no door type is defined, don't filter this product out
-                    return true;
-                }
-                
+            if (this.filters.selectedDoorTypes.length > 0 && mainProduct.door_type) {
                 let doorTypeMatch = false;
                 for (let selectedType of this.filters.selectedDoorTypes) {
                     if (mainProduct.door_type.toLowerCase() === selectedType.toLowerCase()) {
@@ -497,6 +493,14 @@ function compatibilityApp() {
                     }
                 }
                 if (!doorTypeMatch) return false;
+            } else if (this.filters.selectedDoorTypes.length > 0) {
+                // If door type filters are selected but product doesn't have door type data
+                // Only apply to door-related categories
+                if (mainProduct.category && 
+                    (mainProduct.category.toLowerCase().includes('door') || 
+                     mainProduct.sku.toLowerCase().startsWith('gd'))) {
+                    return false;
+                }
             }
             
             // All filters passed

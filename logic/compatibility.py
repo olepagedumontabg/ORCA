@@ -373,11 +373,11 @@ def find_compatible_products(sku):
         # Prepare the source product info for the frontend
         source_product = {
             "sku": sku_str,
-            "name": product_info.get("Product Name", "") if product_info.get("Product Name") is not None else "",
-            "image_url": product_info.get("Image URL", "") if product_info.get("Image URL") else image_handler.generate_image_url(product_info),
-            "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info.get("Nominal Dimensions") is not None else "",
-            "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
-            "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
+            "name": product_info.get("Product Name", "") if product_info and product_info.get("Product Name") is not None else "",
+            "image_url": product_info.get("Image URL", "") if product_info and product_info.get("Image URL") else image_handler.generate_image_url(product_info),
+            "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info and product_info.get("Nominal Dimensions") is not None else "",
+            "brand": product_info.get("Brand", "") if product_info and product_info.get("Brand") is not None else "",
+            "series": product_info.get("Series", "") if product_info and product_info.get("Series") is not None else "",
             "category": product_category if product_category is not None else ""
         }
         
