@@ -244,11 +244,15 @@ def find_bathtub_compatibilities(data, bathtub_info):
         except Exception as e:
             logger.error(f"Error processing wall: {e}")
     
-    # Add results to the output
+    # Sort products by ranking (lowest to highest) before adding to results
     if compatible_doors:
-        results.append({"category": "Tub Doors", "products": compatible_doors})
+        # Sort the doors by ranking
+        sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
+        results.append({"category": "Tub Doors", "products": sorted_doors})
     
     if compatible_walls:
-        results.append({"category": "Walls", "products": compatible_walls})
+        # Sort the walls by ranking
+        sorted_walls = sorted(compatible_walls, key=lambda x: x.get('_ranking', 999))
+        results.append({"category": "Walls", "products": sorted_walls})
     
     return results
