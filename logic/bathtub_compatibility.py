@@ -83,12 +83,18 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 if not door_id:
                     continue
 
-                if (
-                    bathtub_install == "Alcove" and
-                    pd.notna(bathtub_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
-                    door_min_width <= bathtub_width <= door_max_width and
-                    series_compatible(bathtub_series, door_series)
-                ):
+                # Safe comparison with pandas scalars
+                is_alcove = bathtub_install == "Alcove"
+                width_valid = False
+                if pd.notna(bathtub_width) and pd.notna(door_min_width) and pd.notna(door_max_width):
+                    try:
+                        width_valid = float(door_min_width) <= float(bathtub_width) <= float(door_max_width)
+                    except (ValueError, TypeError):
+                        width_valid = False
+                
+                series_valid = series_compatible(bathtub_series, door_series)
+                
+                if is_alcove and width_valid and series_valid:
                     # Add the SKU to the list
                     compatible_door_skus.append(door_id)
                     # Convert door row to dict for the result
@@ -124,21 +130,31 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 if not wall_id:
                     continue
 
-                if (
-                    "tub" in wall_type and
-                    series_compatible(bathtub_series, wall_series) and
-                    bathtub_brand_family_match(bathtub_brand, bathtub_family, wall_brand, wall_family) and
-                    (
-                        bathtub_nominal == wall_nominal or
-                        (wall_cut == "Yes" and
-                         pd.notna(bathtub_length) and pd.notna(wall_length) and
-                         pd.notna(bathtub_width_actual) and pd.notna(wall_width) and
-                         bathtub_length >= wall_length - tolerance and
-                         bathtub_length <= wall_length + tolerance and
-                         bathtub_width_actual >= wall_width - tolerance and
-                         bathtub_width_actual <= wall_width + tolerance)
-                    )
-                ):
+                # Safe comparison with pandas scalars
+                is_tub_wall = "tub" in wall_type if wall_type else False
+                series_valid = series_compatible(bathtub_series, wall_series)
+                brand_family_valid = bathtub_brand_family_match(bathtub_brand, bathtub_family, wall_brand, wall_family)
+                
+                # Check nominal dimensions
+                nominal_match = str(bathtub_nominal) == str(wall_nominal) if bathtub_nominal and wall_nominal else False
+                
+                # Check cut-to-size with tolerance
+                cut_size_match = False
+                if wall_cut == "Yes" and pd.notna(bathtub_length) and pd.notna(wall_length) and pd.notna(bathtub_width_actual) and pd.notna(wall_width):
+                    try:
+                        bl = float(bathtub_length)
+                        wl = float(wall_length)
+                        bw = float(bathtub_width_actual)
+                        ww = float(wall_width)
+                        t = float(tolerance)
+                        
+                        length_match = bl >= (wl - t) and bl <= (wl + t)
+                        width_match = bw >= (ww - t) and bw <= (ww + t)
+                        cut_size_match = length_match and width_match
+                    except (ValueError, TypeError):
+                        cut_size_match = False
+                
+                if is_tub_wall and series_valid and brand_family_valid and (nominal_match or cut_size_match):
                     # Add the SKU to the list
                     compatible_wall_skus.append(wall_id)
                     # Convert wall row to dict for the result
