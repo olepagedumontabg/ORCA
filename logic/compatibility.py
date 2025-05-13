@@ -258,9 +258,18 @@ def find_compatible_products(sku):
                     else:
                         product_info = get_product_details(data, sku_item)
                         if product_info:
-                            enhanced_skus.append({
+                            # Get ranking value for non-combo product
+                            ranking_value = 999  # Default high ranking if not specified
+                            if "Ranking" in product_info and product_info["Ranking"] is not None:
+                                try:
+                                    ranking_value = float(product_info["Ranking"])
+                                except (ValueError, TypeError):
+                                    logger.debug(f"Invalid ranking value for {sku_item}: {product_info.get('Ranking')}")
+                            
+                            product_dict = {
                                 "sku": sku_item,
                                 "is_combo": False,
+                                "_ranking": ranking_value,  # Internal use only, not sent to frontend
                                 "name": product_info.get("Product Name", "") if product_info.get("Product Name") is not None else "",
                                 "image_url": image_handler.generate_image_url(product_info),
                                 "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info.get("Nominal Dimensions") is not None else "",
@@ -268,7 +277,8 @@ def find_compatible_products(sku):
                                 "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
                                 "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
                                 "door_type": get_fixed_door_type(product_info)
-                            })
+                            }
+                            enhanced_skus.append(product_dict)
                 
                 compatible_products.append({
                     "category": category,
@@ -297,9 +307,18 @@ def find_compatible_products(sku):
                 for door_sku in [door.strip() for door in compatible_doors if door.strip()]:
                     door_info = get_product_details(data, door_sku)
                     if door_info:
+                        # Get ranking value for explicitly listed compatible product
+                        ranking_value = 999  # Default high ranking if not specified
+                        if "Ranking" in door_info and door_info["Ranking"] is not None:
+                            try:
+                                ranking_value = float(door_info["Ranking"])
+                            except (ValueError, TypeError):
+                                logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}")
+                                
                         enhanced_skus.append({
                             "sku": door_sku,
                             "is_combo": False,
+                            "_ranking": ranking_value,  # Internal use only, not sent to frontend
                             "name": door_info.get("Product Name", "") if door_info.get("Product Name") is not None else "",
                             "image_url": image_handler.generate_image_url(door_info),
                             "nominal_dimensions": door_info.get("Nominal Dimensions", "") if door_info.get("Nominal Dimensions") is not None else "",
@@ -329,9 +348,18 @@ def find_compatible_products(sku):
                 for wall_sku in [wall.strip() for wall in compatible_walls if wall.strip()]:
                     wall_info = get_product_details(data, wall_sku)
                     if wall_info:
+                        # Get ranking value for walls
+                        ranking_value = 999  # Default high ranking if not specified
+                        if "Ranking" in wall_info and wall_info["Ranking"] is not None:
+                            try:
+                                ranking_value = float(wall_info["Ranking"])
+                            except (ValueError, TypeError):
+                                logger.debug(f"Invalid ranking value for wall {wall_sku}: {wall_info.get('Ranking')}")
+                                
                         enhanced_skus.append({
                             "sku": wall_sku,
                             "is_combo": False,
+                            "_ranking": ranking_value,  # Internal use only, not sent to frontend
                             "name": wall_info.get("Product Name", ""),
                             "image_url": image_handler.generate_image_url(wall_info),
                             "nominal_dimensions": wall_info.get("Nominal Dimensions", ""),
