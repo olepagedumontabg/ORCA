@@ -36,7 +36,8 @@ def test_bathtub_compatibility(sku):
         json_string = html[start_index:end_index]
         
         try:
-            data = json.loads(json_string)
+            # Direct JSON response from the server
+            data = response.json()
             print(f"\nCompatibility data for SKU {sku}:")
             print(f"Product name: {data.get('product', {}).get('name', 'N/A')}")
             
@@ -53,8 +54,8 @@ def test_bathtub_compatibility(sku):
                 print("No compatible products found.")
                 
             return True
-        except json.JSONDecodeError:
-            print(f"Error parsing JSON from response for SKU {sku}")
+        except Exception as e:
+            print(f"Error parsing response: {e}")
             return False
     else:
         print(f"Error searching for SKU {sku}: {response.status_code}")
