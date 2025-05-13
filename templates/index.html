@@ -33,16 +33,8 @@
 <body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Fixed header -->
     <header class="bg-white text-gray-800 shadow-md fixed top-0 left-0 right-0 z-10">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex-1"></div>
-            <div class="flex-1 flex justify-center">
-                <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="American Bath Group Logo" class="h-20">
-            </div>
-            <div class="flex-1 flex justify-end">
-                <a href="/bathtub" class="text-primary hover:underline text-sm font-medium">
-                    <i class="fas fa-bath mr-1"></i> Bathtub Compatibility
-                </a>
-            </div>
+        <div class="container mx-auto px-4 py-4 flex justify-center items-center">
+            <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="American Bath Group Logo" class="h-20">
         </div>
     </header>
 
@@ -53,8 +45,8 @@
                 <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Modern Bathroom" class="w-full object-cover object-center h-[400px]">
                 <div class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
                     <div class="text-white p-8">
-                        <h2 class="text-3xl font-bold mb-2">Shower Base Compatibility Finder</h2>
-                        <p class="text-lg max-w-md">Find matching doors, walls, and return panels for your shower base</p>
+                        <h2 class="text-3xl font-bold mb-2">Compatibility Finder</h2>
+                        <p class="text-lg max-w-md">Find matching bathroom products with our easy-to-use compatibility tool</p>
                     </div>
                 </div>
             </div>

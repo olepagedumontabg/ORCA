@@ -51,11 +51,6 @@ def simple():
     """Render the simplified page for testing"""
     return render_template('simple.html')
 
-@app.route('/bathtub')
-def bathtub():
-    """Render the bathtub compatibility test page"""
-    return render_template('bathtub.html')
-
 @app.route('/suggest', methods=['GET'])
 def suggest_skus():
     """Provide SKU suggestions based on partial input (SKU or product name)"""
