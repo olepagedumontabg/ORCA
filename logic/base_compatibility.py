@@ -88,32 +88,54 @@ def find_base_compatibilities(data, base_info):
                         logger.debug(f"    ✓ Added door {door_id} to matching doors")
 
                 # Corner installation match with return panel
-                if (
-                    "shower" in door_type and
-                    "corner" in base_install and
+                corner_match = (
+                    # Don't check door_type for now as it might be missing
+                    # "shower" in door_type and
+                    "corner" in base_install and 
                     door_has_return == "Yes" and
                     pd.notna(base_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
                     door_min_width <= base_width <= door_max_width and
                     series_compatible(base_series, door_series)
-                ):
+                )
+                
+                logger.debug(f"    Corner match: {corner_match}")
+                if corner_match:
                     # For corner installations with return panels, we need to check return panel compatibility
                     if 'Return Panels' in data:
                         panels_df = data['Return Panels']
+                        logger.debug(f"    Checking {len(panels_df)} return panels for compatibility")
+                        
                         for _, panel in panels_df.iterrows():
                             panel_size = panel.get("Return Panel Size")
                             panel_family = panel.get("Family")
                             panel_id = str(panel.get("Unique ID", "")).strip()
+                            panel_name = panel.get("Product Name", "")
+                            
+                            logger.debug(f"      Return panel: {panel_id} - {panel_name}")
+                            logger.debug(f"      Panel size: {panel_size}, Family: {panel_family}")
 
-                            if (
+                            # Check panel compatibility for corner installation
+                            panel_match = (
+                                pd.notna(base_fit_return) and
+                                pd.notna(panel_size) and
                                 base_fit_return == panel_size and
                                 door_family == panel_family and
                                 door_id and panel_id
-                            ):
-                                matching_doors.append(f"{door_id}|{panel_id}")
+                            )
+                            
+                            logger.debug(f"      Panel match: {panel_match}")
+                            logger.debug(f"      Base fits return panel size: {base_fit_return} == {panel_size}: {base_fit_return == panel_size if pd.notna(base_fit_return) and pd.notna(panel_size) else 'Cannot compare'}")
+                            logger.debug(f"      Door family match: {door_family} == {panel_family}: {door_family == panel_family if door_family and panel_family else 'Cannot compare'}")
+                            
+                            if panel_match:
+                                combo_id = f"{door_id}|{panel_id}"
+                                matching_doors.append(combo_id)
+                                logger.debug(f"      ✓ Added combo product {combo_id} to matching doors")
             
         # ---------- Enclosures ----------
         if 'Enclosures' in data and "corner" in base_install:
             enclosures_df = data['Enclosures']
+            logger.debug(f"Checking compatibility with {len(enclosures_df)} enclosures")
             
             for _, enclosure in enclosures_df.iterrows():
                 enc_series = enclosure.get("Series")
@@ -121,14 +143,26 @@ def find_base_compatibilities(data, base_info):
                 enc_door_width = enclosure.get("Door Width")
                 enc_return_width = enclosure.get("Return Panel Width")
                 enc_id = str(enclosure.get("Unique ID", "")).strip()
+                enc_name = enclosure.get("Product Name", "")
+
+                logger.debug(f"  Checking enclosure: {enc_id} - {enc_name}")
+                logger.debug(f"    Series: {enc_series}, Nominal Dimensions: {enc_nominal}")
+                logger.debug(f"    Door Width: {enc_door_width}, Return Width: {enc_return_width}")
+                logger.debug(f"    Base nominal: {base_nominal}, Base size: {base_length} x {base_width_actual}")
 
                 if not enc_id:
+                    logger.debug(f"    ✗ Skipping enclosure with no ID")
                     continue
 
-                if not series_compatible(base_series, enc_series):
+                series_match = series_compatible(base_series, enc_series)
+                logger.debug(f"    Series match: {series_match}")
+                
+                if not series_match:
+                    logger.debug(f"    ✗ Skipping enclosure due to series mismatch")
                     continue
 
                 nominal_match = base_nominal == enc_nominal
+                logger.debug(f"    Nominal dimensions match: {nominal_match}")
 
                 dimension_match = (
                     pd.notna(base_length) and pd.notna(enc_door_width) and
@@ -138,9 +172,25 @@ def find_base_compatibilities(data, base_info):
                     base_width_actual >= enc_return_width and
                     (base_width_actual - enc_return_width) <= tolerance
                 )
+                
+                logger.debug(f"    Dimension match calculations:")
+                if pd.notna(base_length) and pd.notna(enc_door_width):
+                    logger.debug(f"      Door width check: {base_length} >= {enc_door_width}: {base_length >= enc_door_width}")
+                    logger.debug(f"      Door tolerance check: {base_length} - {enc_door_width} <= {tolerance}: {(base_length - enc_door_width) <= tolerance if base_length >= enc_door_width else 'N/A'}")
+                else:
+                    logger.debug(f"      Door width check: Cannot compare (missing data)")
+                    
+                if pd.notna(base_width_actual) and pd.notna(enc_return_width):
+                    logger.debug(f"      Return width check: {base_width_actual} >= {enc_return_width}: {base_width_actual >= enc_return_width}")
+                    logger.debug(f"      Return tolerance check: {base_width_actual} - {enc_return_width} <= {tolerance}: {(base_width_actual - enc_return_width) <= tolerance if base_width_actual >= enc_return_width else 'N/A'}")
+                else:
+                    logger.debug(f"      Return width check: Cannot compare (missing data)")
+                
+                logger.debug(f"    Overall dimension match: {dimension_match}")
 
                 if nominal_match or dimension_match:
                     matching_doors.append(enc_id)
+                    logger.debug(f"    ✓ Added enclosure {enc_id} to matching doors")
         
         # ---------- Walls ----------
         if 'Walls' in data:
