@@ -290,7 +290,7 @@
                             <img 
                                 :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name)" 
                                 :alt="productDetails?.name || 'Product Image'" 
-                                class="rounded-lg shadow-md w-full object-cover h-48 object-center"
+                                class="rounded-lg shadow-md w-full object-cover aspect-square object-center"
                             >
                         </div>
                         <div class="flex-1">
@@ -356,7 +356,7 @@
                                         <!-- Regular product -->
                                         <template x-if="!isComboProduct(product)">
                                             <div>
-                                                <div class="h-48 overflow-hidden">
+                                                <div class="aspect-square overflow-hidden">
                                                     <img 
                                                         :src="product.image_url || getPlaceholderImage(product.name)" 
                                                         :alt="product.name || 'Product Image'" 
@@ -369,8 +369,14 @@
                                                         <span class="font-medium">SKU:</span> <span x-text="product.sku"></span>
                                                     </div>
                                                     <div class="flex justify-between items-center mt-auto">
-                                                        <span class="text-xs text-gray-500" x-text="product.brand || ''"></span>
-                                                        <span class="text-xs text-gray-500" x-text="product.series || ''"></span>
+                                                        <span class="text-xs text-gray-500">
+                                                            <span class="font-medium">Brand:</span> 
+                                                            <span x-text="product.brand || 'N/A'"></span>
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            <span class="font-medium">Series:</span> 
+                                                            <span x-text="product.series || 'N/A'"></span>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -379,7 +385,7 @@
                                         <!-- Combo product (door + return panel) -->
                                         <template x-if="isComboProduct(product)">
                                             <div>
-                                                <div class="h-48 flex">
+                                                <div class="aspect-square flex">
                                                     <div class="w-2/3 h-full overflow-hidden">
                                                         <img 
                                                             :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
@@ -408,7 +414,17 @@
                                                         <span x-text="product.secondary_product.sku"></span>
                                                     </div>
                                                     <div class="border-t mt-2 pt-2 flex justify-between">
-                                                        <span class="text-xs font-medium text-blue-600">Door + Return Panel</span>
+                                                        <div class="flex flex-col">
+                                                            <span class="text-xs font-medium text-blue-600">Door + Return Panel</span>
+                                                            <span class="text-xs text-gray-500">
+                                                                <span class="font-medium">Brand:</span> 
+                                                                <span x-text="product.main_product.brand || 'N/A'"></span>
+                                                            </span>
+                                                        </div>
+                                                        <span class="text-xs text-gray-500">
+                                                            <span class="font-medium">Series:</span> 
+                                                            <span x-text="product.main_product.series || 'N/A'"></span>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
