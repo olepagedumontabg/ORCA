@@ -130,6 +130,9 @@ function compatibilityApp() {
                 return;
             }
             
+            // Hide suggestions dropdown when submitting
+            this.showSuggestions = false;
+            
             this.searchSku(this.searchInput);
         },
         
