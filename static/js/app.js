@@ -112,9 +112,13 @@ function compatibilityApp() {
             else if (event.keyCode === 13 && this.highlightedSuggestion >= 0) {
                 event.preventDefault();
                 this.selectSuggestion(this.suggestions[this.highlightedSuggestion], this.highlightedSuggestion);
+                this.suggestions = [];
+                this.showSuggestions = false;
+                this.submitSearch();
             }
             // Escape key
             else if (event.keyCode === 27) {
+                this.suggestions = [];
                 this.showSuggestions = false;
             }
         },
@@ -134,7 +138,8 @@ function compatibilityApp() {
                 this.searchInput = skuMatch ? skuMatch[1].trim() : suggestion;
             }
             
-            // Hide suggestions dropdown after selection
+            // Clear suggestions list and hide dropdown
+            this.suggestions = [];
             this.showSuggestions = false;
         },
         

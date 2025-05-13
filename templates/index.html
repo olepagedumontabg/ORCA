@@ -231,7 +231,7 @@
                             <ul class="py-1">
                                 <template x-for="(suggestion, index) in suggestions" :key="index">
                                     <li 
-                                        @mousedown.prevent="selectSuggestion(suggestion, index); showSuggestions = false; submitSearch()"
+                                        @mousedown.prevent="suggestions = []; showSuggestions = false; selectSuggestion(suggestion, index); submitSearch()"
                                         :class="{'bg-gray-100': index === highlightedSuggestion}"
                                         class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                                         x-text="suggestion"
