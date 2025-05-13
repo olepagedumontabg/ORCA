@@ -235,6 +235,40 @@ function compatibilityApp() {
         },
         
         /**
+         * Normalize product properties to handle inconsistencies in naming from different sources
+         * Ensures consistent keys regardless of the source (API, Excel file, etc.)
+         * @param {object} product - The product to normalize
+         */
+        normalizeProductProperties(product) {
+            if (!product) return;
+            
+            // Standard property mappings (source -> target)
+            const propertyMap = {
+                'Product Name': 'name',
+                'Glass Thickness': 'glass_thickness',
+                'Door Type': 'door_type',
+                'Image URL': 'image_url',
+                'Brand': 'brand',
+                'Series': 'series',
+                'Nominal Dimensions': 'nominal_dimensions'
+            };
+            
+            // Apply mappings - ensures each property exists in lowercase form for consistency
+            for (const [sourceProp, targetProp] of Object.entries(propertyMap)) {
+                // If the source property exists but the target doesn't, create it
+                if (product[sourceProp] !== undefined && product[targetProp] === undefined) {
+                    product[targetProp] = product[sourceProp];
+                }
+                // If the target property exists but the source doesn't, create it (for compatibility with old code)
+                else if (product[targetProp] !== undefined && product[sourceProp] === undefined) {
+                    product[sourceProp] = product[targetProp];
+                }
+            }
+            
+            return product;
+        },
+        
+        /**
          * Get a placeholder image URL for products without images
          * Uses a better product-specific placeholder based on the product name if available
          * @param {string} productName - Optional product name to use in the placeholder
@@ -355,6 +389,10 @@ function compatibilityApp() {
             if (!product) return false;
             
             console.log("filterMatchesProduct checking product:", product);
+            
+            // Normalize product keys first - this handles inconsistencies from different data sources
+            // This is especially important for bathtub products
+            this.normalizeProductProperties(product);
             
             // We shouldn't get combo products here, as they're handled in applyFilters
             // But just in case, we'll handle them properly

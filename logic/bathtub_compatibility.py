@@ -95,9 +95,35 @@ def find_bathtub_compatibilities(data, tub_info):
                 # Add glass thickness and door type for filtering
                 if 'Glass Thickness' in door and pd.notna(door['Glass Thickness']):
                     door_product['glass_thickness'] = door['Glass Thickness']
+                    # Also add lowercase version for JS compatibility
+                    door_product['glass_thickness'] = door['Glass Thickness']
+                elif 'Product Name' in door and pd.notna(door['Product Name']):
+                    # Extract from product name if possible
+                    product_name = door['Product Name']
+                    if '8mm' in product_name or '8 mm' in product_name:
+                        door_product['Glass Thickness'] = '8mm'
+                        door_product['glass_thickness'] = '8mm'
+                    elif '6mm' in product_name or '6 mm' in product_name:
+                        door_product['Glass Thickness'] = '6mm'
+                        door_product['glass_thickness'] = '6mm'
+                    elif '10mm' in product_name or '10 mm' in product_name:
+                        door_product['Glass Thickness'] = '10mm'
+                        door_product['glass_thickness'] = '10mm'
                 
                 if 'Door Type' in door and pd.notna(door['Door Type']):
                     door_product['door_type'] = door['Door Type']
+                elif 'Product Name' in door and pd.notna(door['Product Name']):
+                    # Extract door type from product name if possible
+                    product_name = door['Product Name'].lower()
+                    if 'pivot' in product_name:
+                        door_product['Door Type'] = 'Pivot'
+                        door_product['door_type'] = 'Pivot'
+                    elif 'sliding' in product_name:
+                        door_product['Door Type'] = 'Sliding'
+                        door_product['door_type'] = 'Sliding'
+                    elif 'bypass' in product_name:
+                        door_product['Door Type'] = 'Bypass'
+                        door_product['door_type'] = 'Bypass'
                 
                 door_matches.append(door_product)
                 

@@ -265,7 +265,8 @@ def find_compatible_products(sku):
                             "brand": product.get("Brand", "") if product.get("Brand") is not None else "",
                             "series": product.get("Series", "") if product.get("Series") is not None else "",
                             "glass_thickness": product.get("Glass Thickness", "") if product.get("Glass Thickness") is not None else "",
-                            "door_type": get_fixed_door_type(product)
+                            "door_type": get_fixed_door_type(product),
+                            "category": category  # Add category info to each product
                         }
                         enhanced_skus.append(product_dict)
                 
