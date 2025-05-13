@@ -268,6 +268,13 @@ def find_compatible_products(sku):
                             "door_type": get_fixed_door_type(product)
                         }
                         enhanced_skus.append(product_dict)
+                
+                # Add this category to the compatible products
+                if enhanced_skus:
+                    compatible_products.append({
+                        "category": category,
+                        "products": enhanced_skus
+                    })
             elif "skus" in category_info:
                 # Legacy format with skus list
                 logger.debug(f"Processing legacy format with skus list for category {category}")
