@@ -68,16 +68,24 @@ def search():
             
             # Deep clean function to replace NaN, None and other problematic values
             def deep_clean(obj):
-                if pd.isna(obj):
-                    return None
-                elif isinstance(obj, (list, tuple)):
+                # Handle arrays and pandas objects safely
+                if isinstance(obj, (list, tuple)):
                     return [deep_clean(item) for item in obj]
                 elif isinstance(obj, dict):
                     return {k: deep_clean(v) for k, v in obj.items()}
-                elif isinstance(obj, float) and pd.isna(obj):  # Catch any float NaN
-                    return None
+                # Check for None first to avoid unnecessary pd.isna calls
                 elif obj is None:
                     return None
+                # Use safer check for NaN values
+                elif isinstance(obj, (float, int)) and (pd.isna(obj) if hasattr(pd, 'isna') else False):
+                    return None
+                # Safely handle pandas objects
+                elif hasattr(pd, 'isna') and hasattr(pd, 'api') and hasattr(pd.api, 'types'):
+                    # Handle pandas Series or DataFrame
+                    if pd.api.types.is_scalar(obj) and pd.isna(obj):
+                        return None
+                    else:
+                        return obj
                 else:
                     return obj
             
@@ -86,10 +94,21 @@ def search():
             
             # Serialize to JSON with error handling
             try:
-                # First, convert to JSON string and back to ensure all values are JSON-compatible
-                clean_json_str = json.dumps(clean_response, default=lambda x: None if pd.isna(x) else str(x) if isinstance(x, (complex, pd._libs.missing.NAType)) else x)
+                # Create a custom JSON encoder that safely handles all types
+                def custom_json_default(obj):
+                    if pd.isna(obj) if hasattr(pd, 'isna') else False:
+                        return None
+                    elif hasattr(obj, 'isoformat'):  # Handle date/time objects
+                        return obj.isoformat()
+                    elif isinstance(obj, (complex, bytes, bytearray)):
+                        return str(obj)
+                    else:
+                        return str(obj)  # Last resort, convert to string
+                
+                # Convert to JSON string and back to ensure all values are JSON-compatible
+                clean_json_str = json.dumps(clean_response, default=custom_json_default)
                 return jsonify(json.loads(clean_json_str))
-            except TypeError as e:
+            except Exception as e:
                 logger.error(f"JSON serialization error: {str(e)}")
                 # Fallback to a simpler response with string conversion
                 safe_response = {
