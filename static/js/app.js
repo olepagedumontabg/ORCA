@@ -189,9 +189,26 @@ function compatibilityApp() {
                 // Search history has been removed
                 
                 if (data.success) {
-                    // Display results
-                    this.productDetails = data.product;
+                    // Normalize product details to handle different property naming conventions
+                    this.productDetails = this.normalizeProductProperties(data.product);
+
+                    // Process compatible products
                     this.compatibleProducts = data.compatibles || [];
+                    
+                    // Ensure category information is attached to product details
+                    if (this.productDetails && !this.productDetails.category && data.compatibles && data.compatibles.length > 0) {
+                        console.log("Attempting to extract category from compatibles");
+                        // Try to determine category from compatible products
+                        const firstCategory = data.compatibles[0]?.category;
+                        if (firstCategory && firstCategory.includes("Bathtubs")) {
+                            this.productDetails.category = "Bathtubs";
+                        } else if (firstCategory && firstCategory.includes("Shower Bases")) {
+                            this.productDetails.category = "Shower Bases";
+                        }
+                    }
+                    
+                    console.log("Product details after normalization:", this.productDetails);
+                    
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
                     this.currentSku = data.sku;
                     this.errorMessage = '';
@@ -549,6 +566,8 @@ function compatibilityApp() {
          * Extract available filter options from the results
          */
         extractFilterOptions() {
+            console.log("Extracting filter options from compatible products:", this.compatibleProducts);
+            
             // Reset available filters
             this.availableFilters.series = [];
             this.availableFilters.brands = [];
@@ -571,9 +590,15 @@ function compatibilityApp() {
                 if (!category.products) return;
                 
                 category.products.forEach(product => {
+                    // Normalize product properties first
+                    this.normalizeProductProperties(product);
+                    
                     // Handle combo products
                     if (this.isComboProduct(product)) {
                         if (product.main_product) {
+                            // Normalize main product properties
+                            this.normalizeProductProperties(product.main_product);
+                            
                             if (product.main_product.series) seriesSet.add(product.main_product.series);
                             if (product.main_product.brand) brandsSet.add(product.main_product.brand);
                             if (product.main_product.glass_thickness) glassThicknessSet.add(product.main_product.glass_thickness);
@@ -581,6 +606,35 @@ function compatibilityApp() {
                             if (product.main_product.door_type && 
                                 ['Sliding', 'Pivot', 'Bypass'].includes(product.main_product.door_type)) {
                                 doorTypeSet.add(product.main_product.door_type);
+                            }
+                            
+                            // If this is in Tub Doors category, extract info from product name if not present
+                            if (category.category === 'Tub Doors' && product.main_product.name) {
+                                const name = product.main_product.name.toLowerCase();
+                                // Check for glass thickness in name
+                                if (!product.main_product.glass_thickness) {
+                                    if (name.includes('8mm') || name.includes('8 mm')) {
+                                        product.main_product.glass_thickness = '8mm';
+                                        glassThicknessSet.add('8mm');
+                                    } else if (name.includes('6mm') || name.includes('6 mm')) {
+                                        product.main_product.glass_thickness = '6mm';
+                                        glassThicknessSet.add('6mm');
+                                    }
+                                }
+                                
+                                // Check for door type in name
+                                if (!product.main_product.door_type) {
+                                    if (name.includes('pivot')) {
+                                        product.main_product.door_type = 'Pivot';
+                                        doorTypeSet.add('Pivot');
+                                    } else if (name.includes('sliding')) {
+                                        product.main_product.door_type = 'Sliding';
+                                        doorTypeSet.add('Sliding');
+                                    } else if (name.includes('bypass')) {
+                                        product.main_product.door_type = 'Bypass';
+                                        doorTypeSet.add('Bypass');
+                                    }
+                                }
                             }
                         }
                         if (product.secondary_product) {
@@ -603,6 +657,38 @@ function compatibilityApp() {
                         if (product.door_type && 
                             ['Sliding', 'Pivot', 'Bypass'].includes(product.door_type)) {
                             doorTypeSet.add(product.door_type);
+                        }
+                        
+                        // If this is in Tub Doors category, extract info from product name if not present
+                        if (category.category === 'Tub Doors' && product.name) {
+                            const name = product.name.toLowerCase();
+                            // Check for glass thickness in name
+                            if (!product.glass_thickness) {
+                                if (name.includes('8mm') || name.includes('8 mm')) {
+                                    product.glass_thickness = '8mm';
+                                    glassThicknessSet.add('8mm');
+                                } else if (name.includes('6mm') || name.includes('6 mm')) {
+                                    product.glass_thickness = '6mm';
+                                    glassThicknessSet.add('6mm');
+                                } else if (name.includes('10mm') || name.includes('10 mm')) {
+                                    product.glass_thickness = '10mm';
+                                    glassThicknessSet.add('10mm');
+                                }
+                            }
+                            
+                            // Check for door type in name
+                            if (!product.door_type) {
+                                if (name.includes('pivot')) {
+                                    product.door_type = 'Pivot';
+                                    doorTypeSet.add('Pivot');
+                                } else if (name.includes('sliding')) {
+                                    product.door_type = 'Sliding';
+                                    doorTypeSet.add('Sliding');
+                                } else if (name.includes('bypass')) {
+                                    product.door_type = 'Bypass';
+                                    doorTypeSet.add('Bypass');
+                                }
+                            }
                         }
                     }
                 });
