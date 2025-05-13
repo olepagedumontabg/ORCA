@@ -16,6 +16,7 @@ function compatibilityApp() {
         
         // Autocomplete suggestions
         suggestions: [],
+        rawSkus: [],         // Array to store the raw SKU values
         showSuggestions: false,
         highlightedSuggestion: -1,
         
@@ -71,12 +72,18 @@ function compatibilityApp() {
             fetch(`/suggest?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(data => {
-                    this.suggestions = data.suggestions || [];
+                    // Store raw SKUs for selection
+                    this.rawSkus = data.suggestions || [];
+                    
+                    // Use display suggestions (SKU - Product Name) for showing in dropdown
+                    this.suggestions = data.displaySuggestions || this.rawSkus;
+                    
                     this.showSuggestions = this.suggestions.length > 0;
                 })
                 .catch(error => {
                     console.error('Error fetching suggestions:', error);
                     this.suggestions = [];
+                    this.rawSkus = [];
                     this.showSuggestions = false;
                 });
         },
@@ -114,10 +121,19 @@ function compatibilityApp() {
         
         /**
          * Select a suggestion from the dropdown
-         * @param {string} suggestion - The selected suggestion
+         * @param {string} suggestion - The selected suggestion (display format: "SKU - Product Name")
+         * @param {number} index - The index of the suggestion in the list
          */
-        selectSuggestion(suggestion) {
-            this.searchInput = suggestion;
+        selectSuggestion(suggestion, index) {
+            // If we have raw SKUs stored and the index is valid, use the raw SKU
+            if (this.rawSkus && this.rawSkus.length > index && index >= 0) {
+                this.searchInput = this.rawSkus[index];
+            } else {
+                // Otherwise extract the SKU from the suggestion text (everything before " - ")
+                const skuMatch = suggestion.match(/^(.*?)(?:\s+-\s+|$)/);
+                this.searchInput = skuMatch ? skuMatch[1].trim() : suggestion;
+            }
+            
             this.showSuggestions = false;
         },
         

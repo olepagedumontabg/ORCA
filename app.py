@@ -59,34 +59,54 @@ def suggest_skus():
         
         if not query or len(query) < 3:
             # Return empty results if query is too short
-            return jsonify({'suggestions': []})
+            return jsonify({'suggestions': [], 'displaySuggestions': []})
         
         # Get all SKUs from the data
         data = compatibility.load_data()
-        all_skus = set()
         
-        # Collect all SKUs from all sheets
+        # Dictionary to store SKU and product name pairs
+        sku_product_map = {}
+        
+        # Collect SKUs and product names from all sheets
         for sheet_name, df in data.items():
             # Look for 'Unique ID' column which contains the SKUs
             if 'Unique ID' in df.columns:
-                skus = df['Unique ID'].astype(str).tolist()
-                all_skus.update(skus)
+                # Check if 'Product Name' column exists
+                product_name_col = 'Product Name' if 'Product Name' in df.columns else None
+                
+                # Iterate through rows to collect SKU and product name pairs
+                for _, row in df.iterrows():
+                    sku = str(row['Unique ID'])
+                    product_name = str(row[product_name_col]) if product_name_col else ''
+                    sku_product_map[sku] = product_name
         
         # Filter SKUs that match the query
-        matching_skus = [sku for sku in all_skus if query in sku]
+        matching_skus = [sku for sku in sku_product_map.keys() if query in sku]
         
         # Sort and limit results
         matching_skus.sort()
         matching_skus = matching_skus[:10]  # Limit to top 10 matches
         
+        # Create display suggestions with SKU and product name
+        display_suggestions = []
+        for sku in matching_skus:
+            product_name = sku_product_map.get(sku, '')
+            if product_name:
+                display_suggestions.append(f"{sku} - {product_name}")
+            else:
+                display_suggestions.append(sku)
+        
         # Log the number of suggestions for debugging
         logger.debug(f"Found {len(matching_skus)} suggestions for query '{query}'")
         
-        return jsonify({'suggestions': matching_skus})
+        return jsonify({
+            'suggestions': matching_skus,  # Original SKUs for selection
+            'displaySuggestions': display_suggestions  # Formatted display strings
+        })
     
     except Exception as e:
         logger.error(f"Error in suggest_skus: {str(e)}")
-        return jsonify({'suggestions': [], 'error': str(e)})
+        return jsonify({'suggestions': [], 'displaySuggestions': [], 'error': str(e)})
 
 @app.route('/search', methods=['POST'])
 def search():
