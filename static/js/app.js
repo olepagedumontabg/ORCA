@@ -134,6 +134,7 @@ function compatibilityApp() {
                 this.searchInput = skuMatch ? skuMatch[1].trim() : suggestion;
             }
             
+            // Hide suggestions dropdown after selection
             this.showSuggestions = false;
         },
         
