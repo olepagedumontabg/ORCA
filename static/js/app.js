@@ -43,15 +43,218 @@ function compatibilityApp() {
          * Initialize the application
          */
         init() {
-            // Initialize application
-            this.$watch('searchInput', (value) => {
-                if (value && value.length >= 3) {
-                    this.getSuggestions(value);
-                } else {
-                    this.suggestions = [];
-                    this.showSuggestions = false;
+            // Add a global click listener to close suggestions when clicking outside
+            document.addEventListener('click', (event) => {
+                const containers = [
+                    document.getElementById('suggestionsContainer'),
+                    document.getElementById('suggestionsCompactContainer')
+                ];
+                
+                const inputs = [
+                    document.getElementById('skuInput'),
+                    document.getElementById('skuInputCompact')
+                ];
+                
+                // If the click is outside containers and inputs, hide suggestions
+                if (!containers.some(container => container && container.contains(event.target)) &&
+                    !inputs.some(input => input && input.contains(event.target))) {
+                    this.closeSuggestions();
                 }
             });
+        },
+        
+        /**
+         * Close all suggestion dropdowns
+         */
+        closeSuggestions() {
+            const containers = [
+                document.getElementById('suggestionsContainer'),
+                document.getElementById('suggestionsCompactContainer')
+            ];
+            
+            containers.forEach(container => {
+                if (container) {
+                    container.classList.add('hidden');
+                }
+            });
+            
+            this.highlightedSuggestion = -1;
+            this.suggestions = [];
+        },
+        
+        /**
+         * Clear search input and suggestions
+         */
+        clearSearch() {
+            this.searchInput = '';
+            this.closeSuggestions();
+        },
+        
+        /**
+         * Handle input events on search fields
+         * @param {Event} event - Input event
+         */
+        onSearchInput(event) {
+            const value = event.target.value;
+            
+            if (value.length >= 3) {
+                this.getSuggestionsDirect(value, event.target.id);
+            } else {
+                this.closeSuggestions();
+            }
+        },
+        
+        /**
+         * Get suggestions and update DOM directly
+         * @param {string} query - The search query
+         * @param {string} inputId - ID of the input field that triggered the search
+         */
+        getSuggestionsDirect(query, inputId) {
+            // Don't fetch if query is too short
+            if (!query || query.length < 3) {
+                this.closeSuggestions();
+                return;
+            }
+            
+            fetch(`/suggest?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Store raw SKUs for selection
+                    this.rawSkus = data.suggestions || [];
+                    
+                    // Use display suggestions (SKU - Product Name) for showing in dropdown
+                    this.suggestions = data.displaySuggestions || this.rawSkus;
+                    
+                    // Determine which container to use based on input ID
+                    const isCompact = inputId === 'skuInputCompact';
+                    const containerSelector = isCompact ? 'suggestionsCompactContainer' : 'suggestionsContainer';
+                    const listSelector = isCompact ? 'suggestionsCompactList' : 'suggestionsList';
+                    
+                    const container = document.getElementById(containerSelector);
+                    const list = document.getElementById(listSelector);
+                    
+                    if (container && list) {
+                        // Clear previous suggestions
+                        list.innerHTML = '';
+                        
+                        if (this.suggestions.length > 0) {
+                            // Add new suggestions
+                            this.suggestions.forEach((suggestion, index) => {
+                                const li = document.createElement('li');
+                                li.className = 'px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer';
+                                li.textContent = suggestion;
+                                
+                                // Add click handler
+                                li.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    this.selectSuggestionDirect(suggestion, index);
+                                });
+                                
+                                list.appendChild(li);
+                            });
+                            
+                            // Show the container
+                            container.classList.remove('hidden');
+                        } else {
+                            // Hide the container if no suggestions
+                            container.classList.add('hidden');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching suggestions:', error);
+                    this.closeSuggestions();
+                });
+        },
+        
+        /**
+         * Handle keyboard events for search and suggestions
+         * @param {Event} event - Keyboard event
+         */
+        onSearchKeydown(event) {
+            // Determine which container to use
+            const isCompact = event.target.id === 'skuInputCompact';
+            const containerSelector = isCompact ? 'suggestionsCompactContainer' : 'suggestionsContainer';
+            const listSelector = isCompact ? 'suggestionsCompactList' : 'suggestionsList';
+            
+            const container = document.getElementById(containerSelector);
+            const list = document.getElementById(listSelector);
+            
+            if (!container || container.classList.contains('hidden')) {
+                // If Enter key is pressed and we're not showing suggestions, submit the form
+                if (event.keyCode === 13) {
+                    this.submitSearch();
+                    return;
+                }
+                
+                return;
+            }
+            
+            const items = list.querySelectorAll('li');
+            
+            // Arrow down
+            if (event.keyCode === 40) {
+                event.preventDefault();
+                this.highlightedSuggestion = Math.min(
+                    this.highlightedSuggestion + 1, 
+                    items.length - 1
+                );
+                this.updateHighlightedItem(items);
+            }
+            // Arrow up
+            else if (event.keyCode === 38) {
+                event.preventDefault();
+                this.highlightedSuggestion = Math.max(this.highlightedSuggestion - 1, -1);
+                this.updateHighlightedItem(items);
+            }
+            // Enter key
+            else if (event.keyCode === 13) {
+                if (this.highlightedSuggestion >= 0 && this.highlightedSuggestion < items.length) {
+                    event.preventDefault();
+                    const suggestion = items[this.highlightedSuggestion].textContent;
+                    this.selectSuggestionDirect(suggestion, this.highlightedSuggestion);
+                } else if (items.length === 1) {
+                    event.preventDefault();
+                    const suggestion = items[0].textContent;
+                    this.selectSuggestionDirect(suggestion, 0);
+                } else {
+                    this.submitSearch();
+                }
+            }
+            // Escape key
+            else if (event.keyCode === 27) {
+                event.preventDefault();
+                this.closeSuggestions();
+            }
+        },
+        
+        /**
+         * Update the highlighted item in the suggestions list
+         * @param {NodeList} items - List items to update
+         */
+        updateHighlightedItem(items) {
+            items.forEach((item, index) => {
+                if (index === this.highlightedSuggestion) {
+                    item.classList.add('bg-gray-100');
+                    // Scroll item into view if needed
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('bg-gray-100');
+                }
+            });
+        },
+        
+        /**
+         * Select a suggestion directly from DOM elements
+         * @param {string} suggestion - The selected suggestion text
+         * @param {number} index - The index of the suggestion
+         */
+        selectSuggestionDirect(suggestion, index) {
+            // Update the search input with the selected suggestion
+            this.searchInput = suggestion;
+            
+            // Close suggestions dropdown
+            this.closeSuggestions();
         },
         
         /**

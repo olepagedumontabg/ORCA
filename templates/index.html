@@ -216,9 +216,8 @@
                                 id="skuInput" 
                                 name="sku" 
                                 x-model="searchInput"
-                                @keydown="handleSuggestionKeydown"
-                                @focus="if (searchInput.length >= 3) { showSuggestions = true; }"
-                                @blur="setTimeout(() => { showSuggestions = false; suggestions = []; }, 200)"
+                                @input="onSearchInput($event)"
+                                @keydown="onSearchKeydown($event)"
                                 placeholder="Enter SKU or Product Name..." 
                                 class="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl"
                                 autocomplete="off"
@@ -228,7 +227,7 @@
                             <!-- Reset search button when there's input -->
                             <button 
                                 type="button" 
-                                @click="searchInput = ''; showSuggestions = false; suggestions = [];"
+                                @click="clearSearch()"
                                 x-show="searchInput.length > 0"
                                 class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                             >
@@ -237,24 +236,12 @@
                                 </svg>
                             </button>
                             
-                            <!-- Suggestion Results Container -->
-                            <template x-if="showSuggestions && suggestions.length > 0">
-                                <div 
-                                    id="suggestionDropdown"
-                                    class="suggestion-dropdown absolute z-10 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200"
-                                >
-                                    <ul class="py-1">
-                                        <template x-for="(suggestion, index) in suggestions" :key="index">
-                                            <li 
-                                                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                                :class="{'bg-gray-100': index === highlightedSuggestion}"
-                                                x-text="suggestion"
-                                                @click.stop="selectSuggestion(suggestion, index);"
-                                            ></li>
-                                        </template>
-                                    </ul>
-                                </div>
-                            </template>
+                            <!-- Hard-coded, non-reactive suggestions dropdown -->
+                            <div id="suggestionsContainer" class="hidden absolute z-10 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
+                                <ul id="suggestionsList" class="py-1">
+                                    <!-- Suggestions will be inserted here by JavaScript -->
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     
@@ -308,9 +295,8 @@
                                     type="text" 
                                     id="skuInputCompact" 
                                     x-model="searchInput"
-                                    @keydown="handleSuggestionKeydown"
-                                    @focus="if (searchInput.length >= 3) { showSuggestions = true; }"
-                                    @blur="setTimeout(() => { showSuggestions = false; suggestions = []; }, 200)"
+                                    @input="onSearchInput($event)"
+                                    @keydown="onSearchKeydown($event)"
                                     placeholder="Enter SKU or Product Name..." 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                                     autocomplete="off"
@@ -320,7 +306,7 @@
                                 <!-- Reset search button -->
                                 <button 
                                     type="button" 
-                                    @click="searchInput = ''; showSuggestions = false; suggestions = [];"
+                                    @click="clearSearch()"
                                     x-show="searchInput.length > 0"
                                     class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 >
@@ -329,24 +315,12 @@
                                     </svg>
                                 </button>
                                 
-                                <!-- Suggestion Results Container for Compact Search -->
-                                <template x-if="showSuggestions && suggestions.length > 0">
-                                    <div 
-                                        id="suggestionCompactDropdown"
-                                        class="suggestion-dropdown absolute z-20 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200"
-                                    >
-                                        <ul class="py-1">
-                                            <template x-for="(suggestion, index) in suggestions" :key="index">
-                                                <li 
-                                                    class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                                    :class="{'bg-gray-100': index === highlightedSuggestion}"
-                                                    x-text="suggestion"
-                                                    @click.stop="selectSuggestion(suggestion, index);"
-                                                ></li>
-                                            </template>
-                                        </ul>
-                                    </div>
-                                </template>
+                                <!-- Hard-coded, non-reactive suggestions dropdown for compact search -->
+                                <div id="suggestionsCompactContainer" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
+                                    <ul id="suggestionsCompactList" class="py-1">
+                                        <!-- Suggestions will be inserted here by JavaScript -->
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                         <button 
