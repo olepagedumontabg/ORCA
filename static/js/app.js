@@ -250,8 +250,12 @@ function compatibilityApp() {
          * @param {number} index - The index of the suggestion
          */
         selectSuggestionDirect(suggestion, index) {
-            // Update the search input with the selected suggestion
-            this.searchInput = suggestion;
+            // Extract just the SKU part (everything before the " - ")
+            const skuMatch = suggestion.match(/^(.*?)(?:\s+-\s+|$)/);
+            const extractedSku = skuMatch ? skuMatch[1].trim() : suggestion;
+            
+            // Update the search input with just the SKU
+            this.searchInput = extractedSku;
             
             // Close suggestions dropdown
             this.closeSuggestions();
