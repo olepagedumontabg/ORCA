@@ -6,6 +6,7 @@ import re
 import time
 from datetime import datetime
 from logic import base_compatibility
+from logic import bathtub_compatibility
 from logic import image_handler
 
 # Global flag to indicate whether the data update service is available
@@ -210,85 +211,120 @@ def find_compatible_products(sku):
         if product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
             compatible_categories = base_compatibility.find_base_compatibilities(data, product_info)
+        elif product_category == 'Bathtubs':
+            # Use the dedicated bathtub compatibility logic
+            compatible_categories = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
             
             # Enhance the results with additional product details
             for category_info in compatible_categories:
                 category = category_info["category"]
                 enhanced_skus = []
                 
-                for sku_item in category_info["skus"]:
-                    # Check if this is a combined SKU (door + return panel)
-                    if "|" in sku_item:
-                        door_sku, panel_sku = sku_item.split("|")
-                        door_info = get_product_details(data, door_sku)
-                        panel_info = get_product_details(data, panel_sku)
-                        
-                        if door_info and panel_info:
-                            # Get the ranking from the door component (if available)
+                # Check if this is the new format (from bathtub_compatibility) with products list
+                if "products" in category_info:
+                    for product in category_info["products"]:
+                        sku_item = product.get("sku", "")
+                        if sku_item:
+                            # Get ranking value for product
                             ranking_value = 999  # Default high ranking if not specified
-                            if "Ranking" in door_info and door_info["Ranking"] is not None:
+                            if "Ranking" in product and product["Ranking"] is not None:
                                 try:
                                     # Make sure we're converting to float properly
-                                    ranking_str = str(door_info["Ranking"]).strip()
-                                    if ranking_str:
-                                        ranking_value = float(ranking_str)
-                                        logger.debug(f"Using ranking {ranking_value} for combo {door_sku}|{panel_sku}")
-                                except (ValueError, TypeError) as e:
-                                    logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}, error: {str(e)}")
-                                    
-                            combo_product = {
-                                "sku": sku_item,
-                                "is_combo": True,
-                                "_ranking": ranking_value,  # Internal use only, not sent to frontend
-                                "main_product": {
-                                    "sku": door_sku,
-                                    "name": door_info.get("Product Name", ""),
-                                    "image_url": image_handler.generate_image_url(door_info),
-                                    "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
-                                    "brand": door_info.get("Brand", ""),
-                                    "series": door_info.get("Series", ""),
-                                    "glass_thickness": door_info.get("Glass Thickness", ""),
-                                    "door_type": get_fixed_door_type(door_info)
-                                },
-                                "secondary_product": {
-                                    "sku": panel_sku,
-                                    "name": panel_info.get("Product Name", ""),
-                                    "image_url": image_handler.generate_image_url(panel_info),
-                                    "nominal_dimensions": panel_info.get("Nominal Dimensions", ""),
-                                    "brand": panel_info.get("Brand", ""),
-                                    "series": panel_info.get("Series", ""),
-                                    "glass_thickness": panel_info.get("Glass Thickness", "")
-                                }
-                            }
-                            enhanced_skus.append(combo_product)
-                    else:
-                        product_info = get_product_details(data, sku_item)
-                        if product_info:
-                            # Get ranking value for non-combo product
-                            ranking_value = 999  # Default high ranking if not specified
-                            if "Ranking" in product_info and product_info["Ranking"] is not None:
-                                try:
-                                    # Make sure we're converting to float properly
-                                    ranking_str = str(product_info["Ranking"]).strip()
+                                    ranking_str = str(product["Ranking"]).strip()
                                     if ranking_str:
                                         ranking_value = float(ranking_str)
                                         logger.debug(f"Using ranking {ranking_value} for product {sku_item}")
                                 except (ValueError, TypeError) as e:
-                                    logger.debug(f"Invalid ranking value for {sku_item}: {product_info.get('Ranking')}, error: {str(e)}")
+                                    logger.debug(f"Invalid ranking value for {sku_item}: {product.get('Ranking')}, error: {str(e)}")
                             
                             product_dict = {
                                 "sku": sku_item,
                                 "is_combo": False,
                                 "_ranking": ranking_value,  # Internal use only, not sent to frontend
-                                "name": product_info.get("Product Name", "") if product_info.get("Product Name") is not None else "",
-                                "image_url": image_handler.generate_image_url(product_info),
-                                "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info.get("Nominal Dimensions") is not None else "",
-                                "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
-                                "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
-                                "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
-                                "door_type": get_fixed_door_type(product_info)
+                                "name": product.get("Product Name", "") if product.get("Product Name") is not None else "",
+                                "image_url": image_handler.generate_image_url(product),
+                                "nominal_dimensions": product.get("Nominal Dimensions", "") if product.get("Nominal Dimensions") is not None else "",
+                                "brand": product.get("Brand", "") if product.get("Brand") is not None else "",
+                                "series": product.get("Series", "") if product.get("Series") is not None else "",
+                                "glass_thickness": product.get("Glass Thickness", "") if product.get("Glass Thickness") is not None else "",
+                                "door_type": get_fixed_door_type(product)
                             }
                             enhanced_skus.append(product_dict)
+                else:
+                    # Legacy format with skus list
+                    for sku_item in category_info["skus"]:
+                        # Check if this is a combined SKU (door + return panel)
+                        if "|" in sku_item:
+                            door_sku, panel_sku = sku_item.split("|")
+                            door_info = get_product_details(data, door_sku)
+                            panel_info = get_product_details(data, panel_sku)
+                            
+                            if door_info and panel_info:
+                                # Get the ranking from the door component (if available)
+                                ranking_value = 999  # Default high ranking if not specified
+                                if "Ranking" in door_info and door_info["Ranking"] is not None:
+                                    try:
+                                        # Make sure we're converting to float properly
+                                        ranking_str = str(door_info["Ranking"]).strip()
+                                        if ranking_str:
+                                            ranking_value = float(ranking_str)
+                                            logger.debug(f"Using ranking {ranking_value} for combo {door_sku}|{panel_sku}")
+                                    except (ValueError, TypeError) as e:
+                                        logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}, error: {str(e)}")
+                                        
+                                combo_product = {
+                                    "sku": sku_item,
+                                    "is_combo": True,
+                                    "_ranking": ranking_value,  # Internal use only, not sent to frontend
+                                    "main_product": {
+                                        "sku": door_sku,
+                                        "name": door_info.get("Product Name", ""),
+                                        "image_url": image_handler.generate_image_url(door_info),
+                                        "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
+                                        "brand": door_info.get("Brand", ""),
+                                        "series": door_info.get("Series", ""),
+                                        "glass_thickness": door_info.get("Glass Thickness", ""),
+                                        "door_type": get_fixed_door_type(door_info)
+                                    },
+                                    "secondary_product": {
+                                        "sku": panel_sku,
+                                        "name": panel_info.get("Product Name", ""),
+                                        "image_url": image_handler.generate_image_url(panel_info),
+                                        "nominal_dimensions": panel_info.get("Nominal Dimensions", ""),
+                                        "brand": panel_info.get("Brand", ""),
+                                        "series": panel_info.get("Series", ""),
+                                        "glass_thickness": panel_info.get("Glass Thickness", "")
+                                    }
+                                }
+                                enhanced_skus.append(combo_product)
+                        else:
+                            product_info = get_product_details(data, sku_item)
+                            if product_info:
+                                # Get ranking value for non-combo product
+                                ranking_value = 999  # Default high ranking if not specified
+                                if "Ranking" in product_info and product_info["Ranking"] is not None:
+                                    try:
+                                        # Make sure we're converting to float properly
+                                        ranking_str = str(product_info["Ranking"]).strip()
+                                        if ranking_str:
+                                            ranking_value = float(ranking_str)
+                                            logger.debug(f"Using ranking {ranking_value} for product {sku_item}")
+                                    except (ValueError, TypeError) as e:
+                                        logger.debug(f"Invalid ranking value for {sku_item}: {product_info.get('Ranking')}, error: {str(e)}")
+                                
+                                product_dict = {
+                                    "sku": sku_item,
+                                    "is_combo": False,
+                                    "_ranking": ranking_value,  # Internal use only, not sent to frontend
+                                    "name": product_info.get("Product Name", "") if product_info.get("Product Name") is not None else "",
+                                    "image_url": image_handler.generate_image_url(product_info),
+                                    "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info.get("Nominal Dimensions") is not None else "",
+                                    "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
+                                    "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
+                                    "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
+                                    "door_type": get_fixed_door_type(product_info)
+                                }
+                                enhanced_skus.append(product_dict)
                 
                 # Sort products by ranking value (lowest ranking first)
                 enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
