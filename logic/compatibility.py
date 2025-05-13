@@ -317,6 +317,10 @@ def find_compatible_products(sku):
                             }
                             enhanced_skus.append(product_dict)
                 
+                # Sort products by ranking value (lowest ranking first)
+                enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                logger.debug(f"Sorted {len(enhanced_skus)} products by ranking for category {category}")
+                
                 compatible_products.append({
                     "category": category,
                     "products": enhanced_skus
@@ -370,6 +374,10 @@ def find_compatible_products(sku):
                         })
                 
                 if enhanced_skus:
+                    # Sort products by ranking value (lowest ranking first)
+                    enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                    logger.debug(f"Sorted {len(enhanced_skus)} products by ranking for Doors category")
+                    
                     compatible_products.append({
                         "category": "Doors",
                         "products": enhanced_skus
@@ -413,6 +421,10 @@ def find_compatible_products(sku):
                         })
                 
                 if enhanced_skus:
+                    # Sort products by ranking value (lowest ranking first)
+                    enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                    logger.debug(f"Sorted {len(enhanced_skus)} products by ranking for Walls category")
+                    
                     compatible_products.append({
                         "category": "Walls", 
                         "products": enhanced_skus
