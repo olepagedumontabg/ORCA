@@ -239,6 +239,11 @@ function compatibilityApp() {
         filterMatchesProduct(product) {
             if (!product) return false;
             
+            // For combo products, check the main product for all filters
+            if (this.isComboProduct(product) && product.main_product) {
+                return this.filterMatchesMainProduct(product.main_product);
+            }
+            
             // Series filter - multi-select
             if (this.filters.selectedSeries.length > 0 && product.series) {
                 let seriesMatch = false;
@@ -287,7 +292,65 @@ function compatibilityApp() {
                 if (!doorTypeMatch) return false;
             }
             
-
+            // All filters passed
+            return true;
+        },
+        
+        /**
+         * Check if a main product in a combo matches the filters
+         * @param {object} mainProduct - The main product to check
+         * @returns {boolean} True if the product matches all filters
+         */
+        filterMatchesMainProduct(mainProduct) {
+            if (!mainProduct) return false;
+            
+            // Series filter - multi-select
+            if (this.filters.selectedSeries.length > 0 && mainProduct.series) {
+                let seriesMatch = false;
+                for (let selectedSeries of this.filters.selectedSeries) {
+                    if (mainProduct.series.toLowerCase() === selectedSeries.toLowerCase()) {
+                        seriesMatch = true;
+                        break;
+                    }
+                }
+                if (!seriesMatch) return false;
+            }
+            
+            // Brand filter - multi-select
+            if (this.filters.selectedBrands.length > 0 && mainProduct.brand) {
+                let brandMatch = false;
+                for (let selectedBrand of this.filters.selectedBrands) {
+                    if (mainProduct.brand.toLowerCase() === selectedBrand.toLowerCase()) {
+                        brandMatch = true;
+                        break;
+                    }
+                }
+                if (!brandMatch) return false;
+            }
+            
+            // Glass thickness filter - multi-select
+            if (this.filters.selectedGlassThicknesses.length > 0 && mainProduct.glass_thickness) {
+                let thicknessMatch = false;
+                for (let selectedThickness of this.filters.selectedGlassThicknesses) {
+                    if (mainProduct.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
+                        thicknessMatch = true;
+                        break;
+                    }
+                }
+                if (!thicknessMatch) return false;
+            }
+            
+            // Door type filter - multi-select
+            if (this.filters.selectedDoorTypes.length > 0 && mainProduct.door_type) {
+                let doorTypeMatch = false;
+                for (let selectedType of this.filters.selectedDoorTypes) {
+                    if (mainProduct.door_type.toLowerCase() === selectedType.toLowerCase()) {
+                        doorTypeMatch = true;
+                        break;
+                    }
+                }
+                if (!doorTypeMatch) return false;
+            }
             
             // All filters passed
             return true;

@@ -413,28 +413,18 @@
                                                         <span>+</span>
                                                         <span x-text="product.secondary_product.sku"></span>
                                                     </div>
-                                                    <div class="border-t mt-2 pt-2">
-                                                        <div class="mb-1.5">
+                                                    <div class="border-t mt-2 pt-2 flex justify-between">
+                                                        <div class="flex flex-col">
                                                             <span class="text-xs font-medium text-blue-600">Door + Return Panel</span>
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                                                            <div class="text-gray-500">
+                                                            <span class="text-xs text-gray-500">
                                                                 <span class="font-medium">Brand:</span> 
                                                                 <span x-text="product.main_product.brand || 'N/A'"></span>
-                                                            </div>
-                                                            <div class="text-gray-500">
-                                                                <span class="font-medium">Series:</span> 
-                                                                <span x-text="product.main_product.series || 'N/A'"></span>
-                                                            </div>
-                                                            <div class="text-gray-500">
-                                                                <span class="font-medium">Glass Thickness:</span> 
-                                                                <span x-text="product.main_product.glass_thickness || 'N/A'"></span>
-                                                            </div>
-                                                            <div class="text-gray-500">
-                                                                <span class="font-medium">Door Type:</span> 
-                                                                <span x-text="product.main_product.door_type || 'N/A'"></span>
-                                                            </div>
+                                                            </span>
                                                         </div>
+                                                        <span class="text-xs text-gray-500">
+                                                            <span class="font-medium">Series:</span> 
+                                                            <span x-text="product.main_product.series || 'N/A'"></span>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
