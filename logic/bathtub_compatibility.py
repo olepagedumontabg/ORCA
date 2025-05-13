@@ -120,7 +120,21 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 door_data = door.to_dict()
                 # Remove any NaN values
                 door_data = {k: v for k, v in door_data.items() if pd.notna(v)}
-                compatible_doors.append(door_data)
+                
+                # Create a properly formatted product entry for the frontend
+                product_dict = {
+                    "sku": door_id,
+                    "is_combo": False,
+                    "_ranking": door_data.get("Ranking", 999),
+                    "name": door_data.get("Product Name", ""),
+                    "image_url": "",  # We'll rely on image_handler elsewhere
+                    "nominal_dimensions": "",
+                    "brand": door_data.get("Brand", ""),
+                    "series": door_data.get("Series", ""),
+                    "glass_thickness": door_data.get("Glass Thickness", ""),
+                    "door_type": door_data.get("Door Type", "")
+                }
+                compatible_doors.append(product_dict)
         except Exception as e:
             logger.error(f"Error processing tub door: {e}")
     
