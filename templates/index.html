@@ -386,14 +386,14 @@
                                         <template x-if="isComboProduct(product)">
                                             <div>
                                                 <div class="aspect-square flex">
-                                                    <div class="w-2/3 h-full overflow-hidden">
+                                                    <div class="w-1/2 h-full overflow-hidden">
                                                         <img 
                                                             :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
                                                             :alt="product.main_product.name || 'Door Image'" 
                                                             class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
                                                         >
                                                     </div>
-                                                    <div class="w-1/3 h-full overflow-hidden border-l">
+                                                    <div class="w-1/2 h-full overflow-hidden border-l">
                                                         <img 
                                                             :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.name)" 
                                                             :alt="product.secondary_product.name || 'Return Panel Image'" 
@@ -413,18 +413,28 @@
                                                         <span>+</span>
                                                         <span x-text="product.secondary_product.sku"></span>
                                                     </div>
-                                                    <div class="border-t mt-2 pt-2 flex justify-between">
-                                                        <div class="flex flex-col">
+                                                    <div class="border-t mt-2 pt-2">
+                                                        <div class="mb-1.5">
                                                             <span class="text-xs font-medium text-blue-600">Door + Return Panel</span>
-                                                            <span class="text-xs text-gray-500">
+                                                        </div>
+                                                        <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                                                            <div class="text-gray-500">
                                                                 <span class="font-medium">Brand:</span> 
                                                                 <span x-text="product.main_product.brand || 'N/A'"></span>
-                                                            </span>
+                                                            </div>
+                                                            <div class="text-gray-500">
+                                                                <span class="font-medium">Series:</span> 
+                                                                <span x-text="product.main_product.series || 'N/A'"></span>
+                                                            </div>
+                                                            <div class="text-gray-500">
+                                                                <span class="font-medium">Glass Thickness:</span> 
+                                                                <span x-text="product.main_product.glass_thickness || 'N/A'"></span>
+                                                            </div>
+                                                            <div class="text-gray-500">
+                                                                <span class="font-medium">Door Type:</span> 
+                                                                <span x-text="product.main_product.door_type || 'N/A'"></span>
+                                                            </div>
                                                         </div>
-                                                        <span class="text-xs text-gray-500">
-                                                            <span class="font-medium">Series:</span> 
-                                                            <span x-text="product.main_product.series || 'N/A'"></span>
-                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
