@@ -298,7 +298,7 @@ def find_compatible_products(sku):
                                     "main_product": {
                                         "sku": door_sku,
                                         "name": door_info.get("Product Name", ""),
-                                        "image_url": image_handler.generate_image_url(door_info),
+                                        "image_url": door_info.get("Image URL", "") if door_info.get("Image URL") else image_handler.generate_image_url(door_info),
                                         "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
                                         "brand": door_info.get("Brand", ""),
                                         "series": door_info.get("Series", ""),
@@ -308,7 +308,7 @@ def find_compatible_products(sku):
                                     "secondary_product": {
                                         "sku": panel_sku,
                                         "name": panel_info.get("Product Name", ""),
-                                        "image_url": image_handler.generate_image_url(panel_info),
+                                        "image_url": panel_info.get("Image URL", "") if panel_info.get("Image URL") else image_handler.generate_image_url(panel_info),
                                         "nominal_dimensions": panel_info.get("Nominal Dimensions", ""),
                                         "brand": panel_info.get("Brand", ""),
                                         "series": panel_info.get("Series", ""),
@@ -336,7 +336,7 @@ def find_compatible_products(sku):
                                 "is_combo": False,
                                 "_ranking": ranking_value,  # Internal use only, not sent to frontend
                                 "name": product_info.get("Product Name", "") if product_info.get("Product Name") is not None else "",
-                                "image_url": image_handler.generate_image_url(product_info),
+                                "image_url": product_info.get("Image URL", "") if product_info.get("Image URL") else image_handler.generate_image_url(product_info),
                                 "nominal_dimensions": product_info.get("Nominal Dimensions", "") if product_info.get("Nominal Dimensions") is not None else "",
                                 "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
                                 "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
