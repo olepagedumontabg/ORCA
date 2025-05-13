@@ -87,6 +87,18 @@ def find_bathtub_compatibilities(data, tub_info):
                 # Create a product dictionary with all available info
                 door_product = {k: v for k, v in door.items() if pd.notna(v)}
                 door_product['sku'] = door_id
+                
+                # Ensure Image URL is included if it exists
+                if 'Image URL' in door and pd.notna(door['Image URL']):
+                    door_product['Image URL'] = door['Image URL']
+                
+                # Add glass thickness and door type for filtering
+                if 'Glass Thickness' in door and pd.notna(door['Glass Thickness']):
+                    door_product['glass_thickness'] = door['Glass Thickness']
+                
+                if 'Door Type' in door and pd.notna(door['Door Type']):
+                    door_product['door_type'] = door['Door Type']
+                
                 door_matches.append(door_product)
                 
     if door_matches:
@@ -138,6 +150,11 @@ def find_bathtub_compatibilities(data, tub_info):
                 # Create a product dictionary with all available info
                 wall_product = {k: v for k, v in wall.items() if pd.notna(v)}
                 wall_product['sku'] = wall_id
+                
+                # Ensure Image URL is included if it exists
+                if 'Image URL' in wall and pd.notna(wall['Image URL']):
+                    wall_product['Image URL'] = wall['Image URL']
+                
                 wall_matches.append(wall_product)
                 
     if wall_matches:
