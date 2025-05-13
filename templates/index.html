@@ -209,7 +209,7 @@
         <!-- Search and results area -->
         <div class="flex-grow">
             <!-- Search form -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="mb-6">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
                     <div class="relative">
                         <label for="skuInput" class="block text-sm font-medium text-gray-700 mb-1">Enter SKU Number</label>
@@ -249,7 +249,7 @@
             </div>
 
             <!-- Results area -->
-            <div class="bg-white rounded-lg shadow-md p-6" id="resultsContainer">
+            <div id="resultsContainer">
                 <!-- No search performed yet message -->
                 <div x-show="!hasSearched && !errorMessage" class="text-center py-10 text-gray-500">
                     <i class="fas fa-search text-4xl mb-3"></i>
