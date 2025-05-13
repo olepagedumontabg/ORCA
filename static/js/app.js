@@ -222,9 +222,13 @@ function compatibilityApp() {
                 category.products = category.products.filter(product => {
                     // Return early if it's a combo product - special handling
                     if (this.isComboProduct(product)) {
-                        const matches = this.filterMatchesMainProduct(product.main_product);
-                        console.log(`  Combo product ${product.sku} match: ${matches}`, product.main_product);
-                        return matches;
+                        // For combo products, use main_product for filtering attributes
+                        if (product.main_product) {
+                            const matches = this.filterMatchesMainProduct(product.main_product);
+                            console.log(`  Combo product ${product.sku} match: ${matches}`, product.main_product);
+                            return matches;
+                        }
+                        return false;
                     }
                     
                     // Regular product filtering
@@ -284,7 +288,14 @@ function compatibilityApp() {
             }
             
             // Glass thickness filter - multi-select
-            if (this.filters.selectedGlassThicknesses.length > 0 && product.glass_thickness) {
+            if (this.filters.selectedGlassThicknesses.length > 0) {
+                // Skip glass thickness filtering if the product doesn't have glass_thickness
+                if (!product.glass_thickness) {
+                    console.log(`  Product ${product.sku} has no glass_thickness, skipping filter`);
+                    // If no glass thickness is defined, don't filter this product out
+                    return true;
+                }
+                
                 let thicknessMatch = false;
                 for (let selectedThickness of this.filters.selectedGlassThicknesses) {
                     if (product.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
@@ -296,7 +307,14 @@ function compatibilityApp() {
             }
             
             // Door type filter - multi-select
-            if (this.filters.selectedDoorTypes.length > 0 && product.door_type) {
+            if (this.filters.selectedDoorTypes.length > 0) {
+                // Skip door type filtering if the product doesn't have a door_type
+                if (!product.door_type) {
+                    console.log(`  Product ${product.sku} has no door_type, skipping filter`);
+                    // If no door type is defined, don't filter this product out
+                    return true;
+                }
+                
                 let doorTypeMatch = false;
                 for (let selectedType of this.filters.selectedDoorTypes) {
                     if (product.door_type.toLowerCase() === selectedType.toLowerCase()) {
@@ -344,7 +362,14 @@ function compatibilityApp() {
             }
             
             // Glass thickness filter - multi-select
-            if (this.filters.selectedGlassThicknesses.length > 0 && mainProduct.glass_thickness) {
+            if (this.filters.selectedGlassThicknesses.length > 0) {
+                // Skip glass thickness filtering if the product doesn't have glass_thickness
+                if (!mainProduct.glass_thickness) {
+                    console.log(`  Main Product ${mainProduct.sku} has no glass_thickness, skipping filter`);
+                    // If no glass thickness is defined, don't filter this product out
+                    return true;
+                }
+                
                 let thicknessMatch = false;
                 for (let selectedThickness of this.filters.selectedGlassThicknesses) {
                     if (mainProduct.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
@@ -356,7 +381,14 @@ function compatibilityApp() {
             }
             
             // Door type filter - multi-select
-            if (this.filters.selectedDoorTypes.length > 0 && mainProduct.door_type) {
+            if (this.filters.selectedDoorTypes.length > 0) {
+                // Skip door type filtering if the product doesn't have a door_type
+                if (!mainProduct.door_type) {
+                    console.log(`  Main Product ${mainProduct.sku} has no door_type, skipping filter`);
+                    // If no door type is defined, don't filter this product out
+                    return true;
+                }
+                
                 let doorTypeMatch = false;
                 for (let selectedType of this.filters.selectedDoorTypes) {
                     if (mainProduct.door_type.toLowerCase() === selectedType.toLowerCase()) {
