@@ -33,42 +33,64 @@ def test_sku(sku):
         if product_name_match:
             print(f"  Product: {product_name_match.group(1).strip()}")
             
-        # Check if we have compatibility data
-        if "var compatibilityData" in response.text:
-            print("  Found compatibilityData variable in response")
-            
-            # Try to extract the JSON data
-            json_match = re.search(r'var\s+compatibilityData\s*=\s*({.*?});', response.text, re.DOTALL)
-            if json_match:
-                try:
-                    data = json.loads(json_match.group(1))
-                    product = data.get('product', {})
-                    print(f"  Product details: SKU={product.get('sku')}, Name={product.get('name')}")
-                    
-                    compatibles = data.get('compatibles', [])
-                    if compatibles:
-                        print(f"  Found {len(compatibles)} compatible categories:")
-                        for category in compatibles:
-                            print(f"    - {category.get('category')}: {len(category.get('products', []))} products")
-                    else:
-                        print("  No compatible products found in data")
-                except json.JSONDecodeError:
-                    print("  Error parsing JSON data")
-        else:
-            print("  No compatibilityData variable found")
-            
-            # Check for other key elements
-            if "<form" in response.text:
-                print("  Contains a form element")
-            if "No compatible products found" in response.text:
-                print("  Contains 'No compatible products found' message")
-            if "product-details" in response.text:
-                print("  Contains product details section")
+        # Try to parse as JSON first
+        try:
+            data = json.loads(response.text)
+            if data.get('success') == True:
+                print("  Success! Found JSON response with valid data")
+                product = data.get('product', {})
+                print(f"  Product details: SKU={product.get('sku')}, Name={product.get('name')}, Category={product.get('category')}")
                 
-            # Try to get page title
-            title_match = re.search(r'<title>([^<]+)</title>', response.text)
-            if title_match:
-                print(f"  Page title: {title_match.group(1).strip()}")
+                compatibles = data.get('compatibles', [])
+                if compatibles:
+                    print(f"  Found {len(compatibles)} compatible categories:")
+                    for category in compatibles:
+                        print(f"    - {category.get('category')}: {len(category.get('products', []))} products")
+                else:
+                    print("  No compatible products found in data")
+            else:
+                print(f"  JSON response indicates failure: {data.get('message', 'No message provided')}")
+                
+        except json.JSONDecodeError:
+            # Not JSON, try HTML/JavaScript format
+            print("  Not a JSON response, checking for HTML/JavaScript format")
+            
+            # Check if we have compatibility data
+            if "var compatibilityData" in response.text:
+                print("  Found compatibilityData variable in response")
+                
+                # Try to extract the JSON data
+                json_match = re.search(r'var\s+compatibilityData\s*=\s*({.*?});', response.text, re.DOTALL)
+                if json_match:
+                    try:
+                        data = json.loads(json_match.group(1))
+                        product = data.get('product', {})
+                        print(f"  Product details: SKU={product.get('sku')}, Name={product.get('name')}")
+                        
+                        compatibles = data.get('compatibles', [])
+                        if compatibles:
+                            print(f"  Found {len(compatibles)} compatible categories:")
+                            for category in compatibles:
+                                print(f"    - {category.get('category')}: {len(category.get('products', []))} products")
+                        else:
+                            print("  No compatible products found in data")
+                    except json.JSONDecodeError:
+                        print("  Error parsing JSON data")
+            else:
+                print("  No compatibilityData variable found")
+                
+                # Check for other key elements
+                if "<form" in response.text:
+                    print("  Contains a form element")
+                if "No compatible products found" in response.text:
+                    print("  Contains 'No compatible products found' message")
+                if "product-details" in response.text:
+                    print("  Contains product details section")
+                    
+                # Try to get page title
+                title_match = re.search(r'<title>([^<]+)</title>', response.text)
+                if title_match:
+                    print(f"  Page title: {title_match.group(1).strip()}")
                 
         return True
         
