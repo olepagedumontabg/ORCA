@@ -4,6 +4,8 @@ Simpler test for bathtub compatibility
 
 import requests
 import traceback
+import re
+import json
 
 # Simple test function
 def test_sku(sku):
@@ -14,38 +16,68 @@ def test_sku(sku):
     try:
         response = requests.post(url, data=payload)
         
-        if response.status_code == 200:
-            print(f"  Success! Response length: {len(response.text)}")
-            # Check if we got a "no product found" message
-            if "No product found" in response.text:
-                print("  Warning: No product found")
-            # Check if we got any compatibility results
-            elif "compatibilityData" in response.text:
-                print("  Found compatibility data!")
-                # Extract some basic info about the result
-                import re
-                product_name_match = re.search(r'<h1[^>]*>([^<]+)</h1>', response.text)
-                if product_name_match:
-                    print(f"  Product: {product_name_match.group(1).strip()}")
-                # Look for compatible categories
-                categories_match = re.findall(r'data-category="([^"]+)"', response.text)
-                if categories_match:
-                    print(f"  Compatible categories: {', '.join(categories_match)}")
-                else:
-                    print("  No compatible categories found")
-            else:
-                print("  Warning: Response doesn't contain compatibility data")
+        print(f"  Success! Response length: {len(response.text)}")
+        
+        # Check if we got a "no product found" message
+        if "No product found" in response.text:
+            print("  Warning: No product found")
             return True
+            
+        # Save response to a file for analysis
+        with open(f"response_{sku}.html", "w") as f:
+            f.write(response.text)
+        print(f"  Response saved to response_{sku}.html")
+        
+        # Extract the title to identify the product
+        product_name_match = re.search(r'<h1[^>]*>([^<]+)</h1>', response.text)
+        if product_name_match:
+            print(f"  Product: {product_name_match.group(1).strip()}")
+            
+        # Check if we have compatibility data
+        if "var compatibilityData" in response.text:
+            print("  Found compatibilityData variable in response")
+            
+            # Try to extract the JSON data
+            json_match = re.search(r'var\s+compatibilityData\s*=\s*({.*?});', response.text, re.DOTALL)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(1))
+                    product = data.get('product', {})
+                    print(f"  Product details: SKU={product.get('sku')}, Name={product.get('name')}")
+                    
+                    compatibles = data.get('compatibles', [])
+                    if compatibles:
+                        print(f"  Found {len(compatibles)} compatible categories:")
+                        for category in compatibles:
+                            print(f"    - {category.get('category')}: {len(category.get('products', []))} products")
+                    else:
+                        print("  No compatible products found in data")
+                except json.JSONDecodeError:
+                    print("  Error parsing JSON data")
         else:
-            print(f"  Error! Status code: {response.status_code}")
-            print(f"  Response: {response.text[:100]}...")
-            return False
+            print("  No compatibilityData variable found")
+            
+            # Check for other key elements
+            if "<form" in response.text:
+                print("  Contains a form element")
+            if "No compatible products found" in response.text:
+                print("  Contains 'No compatible products found' message")
+            if "product-details" in response.text:
+                print("  Contains product details section")
+                
+            # Try to get page title
+            title_match = re.search(r'<title>([^<]+)</title>', response.text)
+            if title_match:
+                print(f"  Page title: {title_match.group(1).strip()}")
+                
+        return True
+        
     except Exception as e:
         print(f"  Exception: {e}")
         traceback.print_exc()
         return False
-
-# Simple test with a few SKUs
+        
+# Test with a few SKUs
 if __name__ == "__main__":
     # Test with different types of products
     skus = [
