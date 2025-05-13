@@ -62,15 +62,47 @@ def search():
                 'compatibles': results['compatibles']
             }
             
-            # Use pandas.isna() to clean any NaN values that might have slipped through
+            # Import pandas and json at the top of the function for better clarity
             import pandas as pd
             import json
             
-            # First, serialize to JSON, then parse back to ensure all values are clean
-            clean_json_str = json.dumps(clean_response, default=lambda x: None if pd.isna(x) else x)
-            clean_response = json.loads(clean_json_str)
+            # Deep clean function to replace NaN, None and other problematic values
+            def deep_clean(obj):
+                if pd.isna(obj):
+                    return None
+                elif isinstance(obj, (list, tuple)):
+                    return [deep_clean(item) for item in obj]
+                elif isinstance(obj, dict):
+                    return {k: deep_clean(v) for k, v in obj.items()}
+                elif isinstance(obj, float) and pd.isna(obj):  # Catch any float NaN
+                    return None
+                elif obj is None:
+                    return None
+                else:
+                    return obj
             
-            return jsonify(clean_response)
+            # Apply deep cleaning to the entire response
+            clean_response = deep_clean(clean_response)
+            
+            # Serialize to JSON with error handling
+            try:
+                # First, convert to JSON string and back to ensure all values are JSON-compatible
+                clean_json_str = json.dumps(clean_response, default=lambda x: None if pd.isna(x) else str(x) if isinstance(x, (complex, pd._libs.missing.NAType)) else x)
+                return jsonify(json.loads(clean_json_str))
+            except TypeError as e:
+                logger.error(f"JSON serialization error: {str(e)}")
+                # Fallback to a simpler response with string conversion
+                safe_response = {
+                    'success': True,
+                    'sku': str(sku),
+                    'product': {k: str(v) if not isinstance(v, (dict, list)) else v for k, v in results['product'].items()},
+                    'compatibles': [{
+                        'category': c.get('category', ''),
+                        'products': [{k: str(v) if not isinstance(v, (dict, list)) else v for k, v in p.items()} 
+                                     for p in c.get('products', [])]
+                    } for c in results['compatibles']]
+                }
+                return jsonify(safe_response)
         else:
             return jsonify({
                 'success': False,

@@ -71,7 +71,18 @@ function compatibilityApp() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if the response is ok before trying to parse as JSON
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                // Verify that we're getting JSON - check the content type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Expected JSON response but got ${contentType}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 this.isLoading = false;
                 
@@ -102,7 +113,15 @@ function compatibilityApp() {
                 this.isLoading = false;
                 this.productDetails = null;
                 this.compatibleProducts = [];
-                this.errorMessage = 'A network error occurred. Please try again.';
+                
+                // Provide a more specific error message
+                if (error.message.includes('content-type') || error.message.includes('JSON')) {
+                    this.errorMessage = 'Server returned an invalid response format. Please try again or contact support.';
+                } else if (error.message.includes('status')) {
+                    this.errorMessage = `Server error: ${error.message}. Please try again later.`;
+                } else {
+                    this.errorMessage = 'A network error occurred. Please try again.';
+                }
             });
         },
         
