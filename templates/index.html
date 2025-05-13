@@ -211,34 +211,36 @@
                             name="sku" 
                             x-model="searchInput"
                             @keydown="handleSuggestionKeydown"
-                            @click.outside="showSuggestions = false"
+                            @click.outside="showSuggestions = false; suggestions = []"
                             placeholder="Enter SKU or Product Name..." 
                             class="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl"
                             autocomplete="off"
                             required
                         >
                         <!-- Suggestions Dropdown -->
-                        <div 
-                            x-show="showSuggestions" 
-                            class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left"
-                            x-transition:enter="transition ease-out duration-100"
-                            x-transition:enter-start="opacity-0 transform scale-95"
-                            x-transition:enter-end="opacity-100 transform scale-100"
-                            x-transition:leave="transition ease-in duration-75"
-                            x-transition:leave-start="opacity-100 transform scale-100"
-                            x-transition:leave-end="opacity-0 transform scale-95"
-                        >
-                            <ul class="py-1">
-                                <template x-for="(suggestion, index) in suggestions" :key="index">
-                                    <li 
-                                        @mousedown.prevent="suggestions = []; showSuggestions = false; selectSuggestion(suggestion, index); submitSearch()"
-                                        :class="{'bg-gray-100': index === highlightedSuggestion}"
-                                        class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                        x-text="suggestion"
-                                    ></li>
-                                </template>
-                            </ul>
-                        </div>
+                        <template x-if="showSuggestions && suggestions.length > 0">
+                            <div 
+                                class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 transform scale-95"
+                                x-transition:enter-end="opacity-100 transform scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="opacity-100 transform scale-100"
+                                x-transition:leave-end="opacity-0 transform scale-95"
+                            >
+                                <ul class="py-1">
+                                    <template x-for="(suggestion, index) in suggestions" :key="index">
+                                        <li 
+                                            @mousedown.prevent
+                                            @click="selectAndSearch(suggestion, index)"
+                                            :class="{'bg-gray-100': index === highlightedSuggestion}"
+                                            class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                            x-text="suggestion"
+                                        ></li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
                     </div>
                     
                     <div class="flex justify-center">
@@ -291,7 +293,7 @@
                                 id="skuInputCompact" 
                                 x-model="searchInput"
                                 @keydown="handleSuggestionKeydown"
-                                @click.outside="showSuggestions = false"
+                                @click.outside="showSuggestions = false; suggestions = []"
                                 placeholder="Enter SKU or Product Name..." 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                                 autocomplete="off"

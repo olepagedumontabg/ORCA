@@ -111,16 +111,36 @@ function compatibilityApp() {
             // Enter key
             else if (event.keyCode === 13 && this.highlightedSuggestion >= 0) {
                 event.preventDefault();
-                this.selectSuggestion(this.suggestions[this.highlightedSuggestion], this.highlightedSuggestion);
-                this.suggestions = [];
-                this.showSuggestions = false;
-                this.submitSearch();
+                this.selectAndSearch(this.suggestions[this.highlightedSuggestion], this.highlightedSuggestion);
             }
             // Escape key
             else if (event.keyCode === 27) {
                 this.suggestions = [];
                 this.showSuggestions = false;
             }
+        },
+        
+        /**
+         * Select a suggestion from the dropdown and immediately search
+         * @param {string} suggestion - The selected suggestion (display format: "SKU - Product Name")
+         * @param {number} index - The index of the suggestion in the list
+         */
+        selectAndSearch(suggestion, index) {
+            // First clear the dropdown completely
+            this.suggestions = [];
+            this.showSuggestions = false;
+            
+            // If we have raw SKUs stored and the index is valid, use the raw SKU
+            if (this.rawSkus && this.rawSkus.length > index && index >= 0) {
+                this.searchInput = this.rawSkus[index];
+            } else {
+                // Otherwise extract the SKU from the suggestion text (everything before " - ")
+                const skuMatch = suggestion.match(/^(.*?)(?:\s+-\s+|$)/);
+                this.searchInput = skuMatch ? skuMatch[1].trim() : suggestion;
+            }
+            
+            // Immediately submit the search 
+            this.submitSearch();
         },
         
         /**
