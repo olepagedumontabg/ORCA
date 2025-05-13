@@ -111,7 +111,7 @@ function compatibilityApp() {
             // Enter key
             else if (event.keyCode === 13 && this.highlightedSuggestion >= 0) {
                 event.preventDefault();
-                this.selectAndSearch(this.suggestions[this.highlightedSuggestion], this.highlightedSuggestion);
+                this.selectSuggestion(this.suggestions[this.highlightedSuggestion], this.highlightedSuggestion);
             }
             // Escape key
             else if (event.keyCode === 27) {
