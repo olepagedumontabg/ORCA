@@ -196,13 +196,20 @@ def find_compatible_products(sku):
                                     "sku": door_sku,
                                     "name": door_info.get("Product Name", ""),
                                     "image_url": image_handler.generate_image_url(door_info),
-                                    "nominal_dimensions": door_info.get("Nominal Dimensions", "")
+                                    "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
+                                    "brand": door_info.get("Brand", ""),
+                                    "series": door_info.get("Series", ""),
+                                    "glass_thickness": door_info.get("Glass Thickness", ""),
+                                    "door_type": get_fixed_door_type(door_info)
                                 },
                                 "secondary_product": {
                                     "sku": panel_sku,
                                     "name": panel_info.get("Product Name", ""),
                                     "image_url": image_handler.generate_image_url(panel_info),
-                                    "nominal_dimensions": panel_info.get("Nominal Dimensions", "")
+                                    "nominal_dimensions": panel_info.get("Nominal Dimensions", ""),
+                                    "brand": panel_info.get("Brand", ""),
+                                    "series": panel_info.get("Series", ""),
+                                    "glass_thickness": panel_info.get("Glass Thickness", "")
                                 }
                             })
                     else:
