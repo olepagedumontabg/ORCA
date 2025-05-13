@@ -29,6 +29,16 @@ def find_base_compatibilities(data, base_info):
         base_brand = base_info.get("Brand")
         base_family = base_info.get("Family")
         
+        # Debug output for base product details
+        logger.debug(f"Base compatibility details:")
+        logger.debug(f"  Base: {base_info.get('Unique ID')} - {base_info.get('Product Name')}")
+        logger.debug(f"  Max Door Width: {base_width}")
+        logger.debug(f"  Installation: {base_install}")
+        logger.debug(f"  Series: {base_series}")
+        logger.debug(f"  Brand: {base_brand}")
+        logger.debug(f"  Family: {base_family}")
+        logger.debug(f"  Dimensions: {base_nominal} ({base_length} x {base_width_actual})")
+        
         # Set tolerances
         tolerance = 2  # inches
         wall_tolerance = 3  # inches for Walls
@@ -40,6 +50,7 @@ def find_base_compatibilities(data, base_info):
         # ---------- Doors ----------
         if 'Shower Doors' in data:
             doors_df = data['Shower Doors']
+            logger.debug(f"Checking compatibility with {len(doors_df)} shower doors")
             
             for _, door in doors_df.iterrows():
                 door_type = str(door.get("Type", "")).lower()
@@ -48,18 +59,33 @@ def find_base_compatibilities(data, base_info):
                 door_has_return = door.get("Has Return Panel")
                 door_family = door.get("Family")
                 door_series = door.get("Series")
+                door_brand = door.get("Brand")
                 door_id = str(door.get("Unique ID", "")).strip()
+                door_name = door.get("Product Name", "")
+                
+                logger.debug(f"  Checking door: {door_id} - {door_name}")
+                logger.debug(f"    Min Width: {door_min_width}, Max Width: {door_max_width}")
+                logger.debug(f"    Door type: {door_type}, Has Return: {door_has_return}")
+                logger.debug(f"    Series: {door_series}, Brand: {door_brand}, Family: {door_family}")
 
                 # Alcove installation match
-                if (
-                    "shower" in door_type and
+                alcove_match = (
+                    # Don't check door_type for now as it might be missing
+                    # "shower" in door_type and
                     "alcove" in base_install and
                     pd.notna(base_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
                     door_min_width <= base_width <= door_max_width and
                     series_compatible(base_series, door_series)
-                ):
+                )
+                
+                logger.debug(f"    Alcove match: {alcove_match}")
+                logger.debug(f"    Door width range: {door_min_width} <= {base_width} <= {door_max_width}: {door_min_width <= base_width <= door_max_width if pd.notna(base_width) and pd.notna(door_min_width) and pd.notna(door_max_width) else 'Cannot compare'}")
+                logger.debug(f"    Series match: {series_compatible(base_series, door_series)}")
+                
+                if alcove_match:
                     if door_id:
                         matching_doors.append(door_id)
+                        logger.debug(f"    ✓ Added door {door_id} to matching doors")
 
                 # Corner installation match with return panel
                 if (
