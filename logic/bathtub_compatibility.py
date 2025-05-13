@@ -64,7 +64,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
         bathtub_width_actual = bathtub_info.get("Width")
         
         # Check if the necessary data exists
-        if not all([data.get('Tub Doors'), data.get('Walls')]):
+        if 'Tub Doors' not in data or 'Walls' not in data:
             logger.warning("Missing required sheets for bathtub compatibility")
             return compatibles
             
