@@ -22,7 +22,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#2563eb',
+                        primary: '#001A70',
                         secondary: '#475569',
                     }
                 }
@@ -66,7 +66,7 @@
                     <h2 class="text-lg font-semibold text-secondary">Filter Options</h2>
                     <button 
                         @click="resetFilters()"
-                        class="text-xs text-primary hover:text-blue-700 flex items-center"
+                        class="text-xs text-primary hover:text-[#002A9D] flex items-center"
                         title="Reset all filters"
                     >
                         <i class="fas fa-undo mr-1"></i> Reset
@@ -219,7 +219,7 @@
                     <div class="flex justify-center">
                         <button 
                             type="submit" 
-                            class="bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[200px]"
+                            class="bg-primary hover:bg-[#002A9D] text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[200px]"
                             :disabled="isLoading"
                         >
                             <template x-if="isLoading">
@@ -272,7 +272,7 @@
                         </div>
                         <button 
                             type="submit" 
-                            class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:shadow transition duration-150 ease-in-out flex items-center justify-center"
+                            class="bg-primary hover:bg-[#002A9D] text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:shadow transition duration-150 ease-in-out flex items-center justify-center"
                             :disabled="isLoading"
                         >
                             <span x-text="isLoading ? 'Searching...' : 'Find Matches'"></span>
