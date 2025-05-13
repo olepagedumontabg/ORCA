@@ -29,7 +29,7 @@ function compatibilityApp() {
             series: [],
             brands: [],
             glassThicknesses: ['6mm', '8mm'],
-            doorTypes: ['Pivot', 'Round', 'Square', 'Standard'],
+            doorTypes: ['Bypass', 'Pivot', 'Sliding'],
             categories: []
         },
         
@@ -417,7 +417,7 @@ function compatibilityApp() {
             const brandsSet = new Set();
             const glassThicknessSet = new Set(['6mm', '8mm']); // Default values
             const doorTypeSet = new Set([
-                'Pivot', 'Round', 'Square', 'Standard'
+                'Bypass', 'Pivot', 'Sliding'
             ]); // Exact door types from the Excel file
             
             // Categories come from the results
