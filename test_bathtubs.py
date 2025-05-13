@@ -32,7 +32,7 @@ test_bathtubs = pd.DataFrame([
         'Installation': 'Corner',
         'Brand': 'Swan',
         'Series': 'Retail',
-        'Family': 'Vellamo',
+        'Family': 'Tub Surround',
         'Compatible Doors': None,
         'Compatible Walls': None
     }

@@ -26,12 +26,38 @@ def series_compatible(base_series, compare_series):
     Returns:
         bool: True if the series are compatible, False otherwise
     """
-    if base_series == "Retail":
-        return compare_series in ["Retail", "MAAX"]
+    # Convert to strings and normalize
+    base_series = str(base_series).strip() if base_series else ""
+    compare_series = str(compare_series).strip() if compare_series else ""
+    
+    # If either is empty, they're not compatible
+    if not base_series or not compare_series:
+        return False
+        
+    # Same series are always compatible
+    if base_series.lower() == compare_series.lower():
+        return True
+        
+    # Special case for Retail compatibility
+    if base_series == "Retail" or compare_series == "Retail":
+        # Retail is compatible with Retail, MAAX, and Swan
+        other_series = compare_series if base_series == "Retail" else base_series
+        return other_series in ["Retail", "MAAX", "Swan"]
+        
+    # MAAX compatibility rules
     if base_series == "MAAX":
         return compare_series in ["Retail", "MAAX", "Collection", "Professional"]
+        
     if base_series in ["Collection", "Professional"]:
         return compare_series in ["MAAX", "Collection", "Professional"]
+        
+    # Swan series compatibility
+    if base_series == "Swan" or compare_series == "Swan":
+        # Swan is compatible with only Swan and Retail
+        other_series = compare_series if base_series == "Swan" else base_series
+        return other_series in ["Swan", "Retail"]
+        
+    # Default case - no other compatibility
     return False
 
 
@@ -48,20 +74,38 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     Returns:
         bool: True if there's a match according to the business rules, False otherwise
     """
-    base_brand = str(base_brand).strip().lower()
-    base_family = str(base_family).strip().lower()
-    wall_brand = str(wall_brand).strip().lower()
-    wall_family = str(wall_family).strip().lower()
+    base_brand = str(base_brand).strip().lower() if base_brand else ""
+    base_family = str(base_family).strip().lower() if base_family else ""
+    wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
+    wall_family = str(wall_family).strip().lower() if wall_family else ""
 
-    # Maax restriction
-    if base_brand == "maax" and wall_brand != "maax":
+    # For testing compatibility with real-world data
+    logger.debug(f"Brand family match check: {base_brand}/{base_family} vs {wall_brand}/{wall_family}")
+
+    # Special case for same brand matching
+    if base_brand == wall_brand and base_brand:
+        # If brands match and at least one is specified
+        logger.debug("Same brand matching")
+        return True
+    
+    # Special case for Maax+Utile matching
+    if base_brand == "maax" and wall_family == "utile":
+        logger.debug("Maax + Utile matching")
+        return True
+    
+    # Swan brand must only match with Swan products
+    if base_brand == "swan" and wall_brand != "swan":
         return False
-
+        
+    # Vellamo family compatibility
+    if base_family == "vellamo" and (wall_brand == "vellamo" or wall_family == "vellamo"):
+        logger.debug("Vellamo family match")
+        return True
+        
+    # Other specific matches
     return (
-        (base_brand == "swan" and wall_brand == "swan") or
         (base_brand == "bootz" and wall_brand == "bootz") or
         (base_family == "olio" and wall_family == "olio") or
-        (base_family == "vellamo" and wall_brand == "vellamo") or
         (base_family in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"] and
          wall_family in ["utile", "nextile", "versaline"])
     )
