@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compatibility Finder</title>
+    <title>Bathtub Compatibility Finder</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,8 +39,8 @@
                 <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="American Bath Group Logo" class="h-20">
             </div>
             <div class="flex-1 flex justify-end">
-                <a href="/bathtub" class="text-primary hover:underline text-sm font-medium">
-                    <i class="fas fa-bath mr-1"></i> Bathtub Compatibility
+                <a href="/" class="text-primary hover:underline text-sm font-medium">
+                    <i class="fas fa-home mr-1"></i> Shower Base Compatibility
                 </a>
             </div>
         </div>
@@ -53,8 +53,8 @@
                 <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Modern Bathroom" class="w-full object-cover object-center h-[400px]">
                 <div class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
                     <div class="text-white p-8">
-                        <h2 class="text-3xl font-bold mb-2">Shower Base Compatibility Finder</h2>
-                        <p class="text-lg max-w-md">Find matching doors, walls, and return panels for your shower base</p>
+                        <h2 class="text-3xl font-bold mb-2">Bathtub Compatibility Finder</h2>
+                        <p class="text-lg max-w-md">Find matching tub doors and walls that are compatible with your bathtub</p>
                     </div>
                 </div>
             </div>
@@ -197,10 +197,6 @@
                             </template>
                         </div>
                     </div>
-                    
-
-                    
-                    <!-- Active filters removed as requested by client -->
                 </div>
             </div>
             <!-- No filter options shown before search -->
@@ -212,7 +208,7 @@
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
                     <div class="text-center mb-4 relative">
-                        <label for="skuInput" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
+                        <label for="skuInput" class="block text-lg font-medium text-gray-700 mb-2">Enter Bathtub SKU or Product Name</label>
                         <input 
                             type="text" 
                             id="skuInput" 
@@ -220,7 +216,7 @@
                             x-model="searchInput"
                             @keydown="handleSuggestionKeydown"
                             @click.outside="showSuggestions = false"
-                            placeholder="Enter SKU or Product Name..." 
+                            placeholder="Enter Bathtub SKU or Product Name..." 
                             class="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl"
                             autocomplete="off"
                             required
@@ -269,8 +265,8 @@
 
             <!-- Mobile search history (visible only on small screens) -->
             <div class="md:hidden bg-white rounded-lg shadow-md p-4 mb-6">
-                <h2 class="text-lg font-semibold mb-2 text-secondary">Search SKUs</h2>
-                <p class="text-gray-600 text-sm">Enter a product SKU in the search bar above to find compatible products.</p>
+                <h2 class="text-lg font-semibold mb-2 text-secondary">Search Bathtub SKUs</h2>
+                <p class="text-gray-600 text-sm">Enter a bathtub SKU in the search bar above to find compatible doors and walls.</p>
             </div>
 
             <!-- Results area -->
@@ -278,7 +274,7 @@
                 <!-- No search performed yet message -->
                 <div x-show="!hasSearched && !errorMessage" class="text-center py-10 text-gray-500">
                     <i class="fas fa-search text-4xl mb-3"></i>
-                    <p>Enter a SKU above to find compatible products</p>
+                    <p>Enter a bathtub SKU above to find compatible doors and walls</p>
                 </div>
                 
                 <!-- Error message -->
@@ -290,22 +286,28 @@
                 </div>
                 
                 <!-- Compact search form for when results are showing -->
-                <div x-show="compatibleProducts.length > 0 && !errorMessage" class="mb-4">
-                    <form @submit.prevent="submitSearch" class="flex flex-wrap items-end gap-2">
-                        <div class="flex-grow min-w-[200px] relative">
-                            <label for="skuInputCompact" class="block text-sm font-medium text-gray-700 mb-1">Enter SKU or Product Name</label>
+                <div 
+                    x-show="compatibleProducts.length > 0" 
+                    class="bg-white rounded-lg shadow-md p-4 mb-6"
+                >
+                    <form @submit.prevent="submitSearch" class="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                        <div class="flex-grow relative">
                             <input 
                                 type="text" 
                                 id="skuInputCompact" 
+                                name="sku" 
                                 x-model="searchInput"
                                 @keydown="handleSuggestionKeydown"
                                 @click.outside="showSuggestions = false"
-                                placeholder="Enter SKU or Product Name..." 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                placeholder="Search another bathtub..." 
+                                class="w-full border border-gray-300 rounded-md pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
                                 autocomplete="off"
-                                required
                             >
-                            <!-- Suggestions Dropdown for Compact Search -->
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            
+                            <!-- Suggestions Dropdown -->
                             <div 
                                 x-show="showSuggestions" 
                                 class="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left"
@@ -328,165 +330,231 @@
                                 </ul>
                             </div>
                         </div>
+                        
                         <button 
                             type="submit" 
-                            class="bg-primary hover:bg-[#002A9D] text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:shadow transition duration-150 ease-in-out flex items-center justify-center"
+                            class="bg-primary hover:bg-[#002A9D] text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center justify-center"
                             :disabled="isLoading"
                         >
-                            <span x-text="isLoading ? 'Searching...' : 'Find Matches'"></span>
+                            <template x-if="isLoading">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </template>
+                            <span x-text="isLoading ? 'Searching...' : 'Search'"></span>
+                        </button>
+
+                        <button 
+                            type="button"
+                            @click="resetSearch()"
+                            class="bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center justify-center"
+                        >
+                            <i class="fas fa-undo mr-2"></i>
+                            <span>New Search</span>
                         </button>
                     </form>
                 </div>
-                
+            
                 <!-- Source product details -->
-                <div x-show="productDetails && !errorMessage" class="mb-8 border-b pb-6">
-                    <h2 class="text-xl font-semibold mb-4">Product Details</h2>
-                    <div class="flex flex-wrap md:flex-nowrap gap-6">
-                        <div class="w-full md:w-1/3 lg:w-1/4">
-                            <img 
-                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name)" 
-                                :alt="productDetails?.name || 'Product Image'" 
-                                class="rounded-lg shadow-md w-full object-cover aspect-square object-center"
-                            >
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-lg font-semibold mb-2" x-text="productDetails?.name || ''"></h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-500">SKU:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.sku || ''"></span>
+                <div 
+                    x-show="product && compatibleProducts.length > 0" 
+                    class="bg-white rounded-lg shadow-md overflow-hidden mb-8 border-l-4 border-primary"
+                >
+                    <div class="p-4">
+                        <div class="flex flex-col md:flex-row">
+                            <!-- Product image -->
+                            <div class="w-full md:w-1/3 lg:w-1/4 flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+                                <img 
+                                    :src="product.image_url || getPlaceholderImage(product.name)" 
+                                    :alt="product.name" 
+                                    class="w-full h-48 md:h-36 lg:h-44 object-contain bg-gray-50 rounded-lg"
+                                >
+                            </div>
+                            
+                            <!-- Product details -->
+                            <div class="flex-grow">
+                                <h2 class="text-xl font-semibold text-gray-900 mb-1" x-text="product.name || 'Unknown Product'"></h2>
+                                
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <span class="px-2 py-1 bg-primary text-white text-xs rounded-full" x-text="product.category || 'Unknown Category'"></span>
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full" x-text="'SKU: ' + sku"></span>
                                 </div>
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-500">Category:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.category || ''"></span>
-                                </div>
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-500">Dimensions:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.nominal_dimensions || 'N/A'"></span>
-                                </div>
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-500">Installation:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.installation || 'N/A'"></span>
-                                </div>
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-500">Brand:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.brand || 'N/A'"></span>
-                                </div>
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-500">Series:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.series || 'N/A'"></span>
+                                
+                                <!-- Product specifications -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                                    <div v-if="product.brand">
+                                        <span class="font-medium text-gray-700">Brand:</span>
+                                        <span class="text-gray-600" x-text="product.brand || 'Not specified'"></span>
+                                    </div>
+                                    
+                                    <div v-if="product.series">
+                                        <span class="font-medium text-gray-700">Series:</span>
+                                        <span class="text-gray-600" x-text="product.series || 'Not specified'"></span>
+                                    </div>
+                                    
+                                    <div v-if="product.nominal_dimensions">
+                                        <span class="font-medium text-gray-700">Dimensions:</span>
+                                        <span class="text-gray-600" x-text="product.nominal_dimensions || 'Not specified'"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Compatibility summary -->
+                    <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
+                        <span class="font-medium text-gray-700 mr-2">Compatibility:</span>
+                        <span class="text-gray-600" x-text="compatibleSummary"></span>
+                    </div>
                 </div>
-
-                <!-- Results cards -->
-                <div x-show="compatibleProducts.length > 0 && !errorMessage">
-                    <div class="flex flex-wrap items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
-                    </div>
-                    
-                    <!-- Show results count -->
-                    <div class="text-sm text-gray-600 mb-4">
-                        <template x-if="filteredCompatibleProducts.length === 0">
-                            <p>No products match your filters. <a href="#" @click.prevent="resetFilters()" class="text-primary hover:text-blue-700 hover:underline">Reset filters</a></p>
-                        </template>
-                        <template x-if="filteredCompatibleProducts.length > 0">
-                            <p>
-                                Showing <span class="font-medium" x-text="filteredCompatibleProducts.reduce((acc, cat) => acc + cat.products.length, 0)"></span> 
-                                compatible products in <span class="font-medium" x-text="filteredCompatibleProducts.length"></span> categories
-                            </p>
-                        </template>
-                    </div>
-                    
-                    <!-- Product listing -->
-                    <template x-for="(category, catIndex) in filteredCompatibleProducts" :key="catIndex">
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold mb-3 px-1" x-text="category.category"></h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <!-- Single product cards -->
-                                <template x-for="(product, prodIndex) in category.products" :key="prodIndex">
-                                    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 flex flex-col h-full">
-                                        <!-- Regular product -->
-                                        <template x-if="!isComboProduct(product)">
-                                            <div>
-                                                <div class="aspect-square overflow-hidden">
-                                                    <img 
-                                                        :src="product.image_url || getPlaceholderImage(product.name)" 
-                                                        :alt="product.name || 'Product Image'" 
-                                                        class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
-                                                    >
-                                                </div>
-                                                <div class="p-4">
-                                                    <h4 class="font-semibold text-gray-800 mb-1" x-text="formatProductName(product)"></h4>
-                                                    <div class="text-sm text-gray-600 mb-2">
-                                                        <span class="font-medium">SKU:</span> <span x-text="product.sku"></span>
-                                                    </div>
-                                                    <div class="flex justify-between items-center mt-auto">
-                                                        <span class="text-xs text-gray-500">
-                                                            <span class="font-medium">Brand:</span> 
-                                                            <span x-text="product.brand || 'N/A'"></span>
-                                                        </span>
-                                                        <span class="text-xs text-gray-500">
-                                                            <span class="font-medium">Series:</span> 
-                                                            <span x-text="product.series || 'N/A'"></span>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        
-                                        <!-- Combo product (door + return panel) -->
-                                        <template x-if="isComboProduct(product)">
-                                            <div>
-                                                <div class="aspect-square flex">
-                                                    <div class="w-1/2 h-full overflow-hidden">
-                                                        <img 
-                                                            :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
-                                                            :alt="product.main_product.name || 'Door Image'" 
-                                                            class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
-                                                        >
-                                                    </div>
-                                                    <div class="w-1/2 h-full overflow-hidden border-l">
-                                                        <img 
-                                                            :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.name)" 
-                                                            :alt="product.secondary_product.name || 'Return Panel Image'" 
-                                                            class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
-                                                        >
-                                                    </div>
-                                                </div>
-                                                <div class="p-4">
-                                                    <h4 class="font-semibold text-gray-800 mb-1">
-                                                        <span x-text="formatProductName(product.main_product)"></span>
-                                                        <span class="text-sm font-medium text-gray-600"> + </span>
-                                                        <span x-text="formatProductName(product.secondary_product)"></span>
-                                                    </h4>
-                                                    <div class="text-xs text-gray-500 mb-1 flex items-center flex-wrap gap-1">
-                                                        <span class="font-medium">SKUs:</span>
-                                                        <span x-text="product.main_product.sku"></span>
-                                                        <span>+</span>
-                                                        <span x-text="product.secondary_product.sku"></span>
-                                                    </div>
-                                                    <div class="border-t mt-2 pt-2 flex justify-between">
-                                                        <div class="flex flex-col">
-                                                            <span class="text-xs font-medium text-blue-600">Door + Return Panel</span>
-                                                            <span class="text-xs text-gray-500">
-                                                                <span class="font-medium">Brand:</span> 
-                                                                <span x-text="product.main_product.brand || 'N/A'"></span>
-                                                            </span>
+                
+                <!-- Compatibility results by category -->
+                <div x-show="compatibleProducts.length > 0">
+                    <!-- Map through categories -->
+                    <template x-for="category in compatibleProducts" :key="category.category">
+                        <div class="mb-10">
+                            <h3 class="text-lg font-semibold text-primary border-b border-gray-200 pb-2 mb-4 flex items-center" x-text="category.category"></h3>
+                        
+                            <div class="px-1">
+                                <!-- Show number of filtered products -->
+                                <div class="text-sm text-gray-600 mb-3">
+                                    <span x-text="filteredCounts[category.category] + ' of ' + category.products.length + ' products'"></span>
+                                    <span x-show="filteredCounts[category.category] < category.products.length"> match your filters</span>
+                                </div>
+                                
+                                <!-- No products match filters message -->
+                                <div 
+                                    x-show="filteredCounts[category.category] === 0" 
+                                    class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg"
+                                >
+                                    <i class="fas fa-filter text-2xl mb-2"></i>
+                                    <p>No matching products with current filters</p>
+                                    <button 
+                                        @click="resetFilters()" 
+                                        class="mt-2 text-primary hover:underline text-sm inline-flex items-center"
+                                    >
+                                        <i class="fas fa-undo mr-1"></i> Reset filters
+                                    </button>
+                                </div>
+                                
+                                <!-- Product grid -->
+                                <div 
+                                    x-show="filteredCounts[category.category] > 0"
+                                    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
+                                >
+                                    <template x-for="product in category.products" :key="product.sku">
+                                        <div 
+                                            x-show="filterMatchesProduct(product)"
+                                            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                                        >
+                                            <!-- Check if it's a combo product -->
+                                            <template x-if="isComboProduct(product)">
+                                                <!-- Combo product display -->
+                                                <div>
+                                                    <div class="relative">
+                                                        <div class="absolute top-2 right-2 z-10">
+                                                            <span class="px-2 py-1 bg-primary/80 text-white text-xs rounded-lg">Combo</span>
                                                         </div>
-                                                        <span class="text-xs text-gray-500">
-                                                            <span class="font-medium">Series:</span> 
-                                                            <span x-text="product.main_product.series || 'N/A'"></span>
-                                                        </span>
+                                                        <div class="h-48 p-4 flex items-center justify-center bg-gray-50">
+                                                            <img 
+                                                                :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
+                                                                :alt="product.main_product.name" 
+                                                                class="max-h-full max-w-full object-contain"
+                                                            >
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="p-4">
+                                                        <h4 class="font-semibold text-gray-800 mb-1" x-text="formatProductName(product.main_product)"></h4>
+                                                        <p class="text-sm text-gray-500 mb-1" x-text="'Paired with: ' + product.secondary_product.name"></p>
+                                                        
+                                                        <div class="mt-3 flex flex-wrap gap-1">
+                                                            <span 
+                                                                x-show="product.main_product.brand" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.main_product.brand"
+                                                            ></span>
+                                                            
+                                                            <span 
+                                                                x-show="product.main_product.series" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.main_product.series"
+                                                            ></span>
+                                                            
+                                                            <span 
+                                                                x-show="product.main_product.glass_thickness" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.main_product.glass_thickness"
+                                                            ></span>
+                                                            
+                                                            <span 
+                                                                x-show="product.main_product.door_type" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.main_product.door_type"
+                                                            ></span>
+                                                        </div>
+                                                        
+                                                        <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                                                            <div class="text-xs text-gray-500">
+                                                                <span x-text="'SKU: ' + product.sku"></span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </template>
+                                            </template>
+                                            
+                                            <!-- Regular product display -->
+                                            <template x-if="!isComboProduct(product)">
+                                                <div>
+                                                    <div class="h-48 p-4 flex items-center justify-center bg-gray-50">
+                                                        <img 
+                                                            :src="product.image_url || getPlaceholderImage(product.name)" 
+                                                            :alt="product.name" 
+                                                            class="max-h-full max-w-full object-contain"
+                                                        >
+                                                    </div>
+                                                    
+                                                    <div class="p-4">
+                                                        <h4 class="font-semibold text-gray-800 mb-1" x-text="formatProductName(product)"></h4>
+                                                        
+                                                        <div class="mt-3 flex flex-wrap gap-1">
+                                                            <span 
+                                                                x-show="product.brand" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.brand"
+                                                            ></span>
+                                                            
+                                                            <span 
+                                                                x-show="product.series" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.series"
+                                                            ></span>
+                                                            
+                                                            <span 
+                                                                x-show="product.glass_thickness" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.glass_thickness"
+                                                            ></span>
+                                                            
+                                                            <span 
+                                                                x-show="product.door_type" 
+                                                                class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full"
+                                                                x-text="product.door_type"
+                                                            ></span>
+                                                        </div>
+                                                        
+                                                        <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                                                            <div class="text-xs text-gray-500">
+                                                                <span x-text="'SKU: ' + product.sku"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -494,15 +562,16 @@
             </div>
         </div>
     </main>
-
+    
     <!-- Footer -->
-    <footer class="bg-gray-100 border-t border-gray-200 mt-auto">
-        <div class="container mx-auto px-4 py-4 text-center text-gray-600 text-sm">
-            <p>Compatibility Finder - Internal Tool</p>
+    <footer class="bg-gray-100 border-t border-gray-200 py-4 mt-auto">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-600">
+            <p>Bathtub Compatibility Finder - Internal Tool</p>
+            <p class="text-xs mt-1">© 2025 American Bath Group. All rights reserved.</p>
         </div>
     </footer>
-
-    <!-- Custom JavaScript -->
+    
+    <!-- Import main compatibility app JS -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
