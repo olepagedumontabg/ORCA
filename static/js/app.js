@@ -189,26 +189,9 @@ function compatibilityApp() {
                 // Search history has been removed
                 
                 if (data.success) {
-                    // Normalize product details to handle different property naming conventions
-                    this.productDetails = this.normalizeProductProperties(data.product);
-
-                    // Process compatible products
+                    // Display results
+                    this.productDetails = data.product;
                     this.compatibleProducts = data.compatibles || [];
-                    
-                    // Ensure category information is attached to product details
-                    if (this.productDetails && !this.productDetails.category && data.compatibles && data.compatibles.length > 0) {
-                        console.log("Attempting to extract category from compatibles");
-                        // Try to determine category from compatible products
-                        const firstCategory = data.compatibles[0]?.category;
-                        if (firstCategory && firstCategory.includes("Bathtubs")) {
-                            this.productDetails.category = "Bathtubs";
-                        } else if (firstCategory && firstCategory.includes("Shower Bases")) {
-                            this.productDetails.category = "Shower Bases";
-                        }
-                    }
-                    
-                    console.log("Product details after normalization:", this.productDetails);
-                    
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
                     this.currentSku = data.sku;
                     this.errorMessage = '';
@@ -249,82 +232,6 @@ function compatibilityApp() {
          */
         isComboProduct(product) {
             return product && product.is_combo === true;
-        },
-        
-        /**
-         * Normalize product properties to handle inconsistencies in naming from different sources
-         * Ensures consistent keys regardless of the source (API, Excel file, etc.)
-         * @param {object} product - The product to normalize
-         */
-        normalizeProductProperties(product) {
-            if (!product) return;
-            
-            // Standard property mappings (source -> target)
-            const propertyMap = {
-                'Product Name': 'name',
-                'Glass Thickness': 'glass_thickness',
-                'Door Type': 'door_type',
-                'Image URL': 'image_url',
-                'Brand': 'brand',
-                'Series': 'series',
-                'Nominal Dimensions': 'nominal_dimensions',
-                'Width': 'width',
-                'Height': 'height',
-                'Depth': 'depth',
-                'SKU': 'sku',
-                'Product SKU': 'sku',
-                'Product Description': 'description',
-                'Category': 'category',
-                'Product Category': 'category'
-            };
-            
-            // Apply mappings - ensures each property exists in lowercase form for consistency
-            for (const [sourceProp, targetProp] of Object.entries(propertyMap)) {
-                // If the source property exists but the target doesn't, create it
-                if (product[sourceProp] !== undefined && product[targetProp] === undefined) {
-                    product[targetProp] = product[sourceProp];
-                }
-                // If the target property exists but the source doesn't, create it (for compatibility with old code)
-                else if (product[targetProp] !== undefined && product[sourceProp] === undefined) {
-                    product[sourceProp] = product[targetProp];
-                }
-            }
-            
-            // Special case for bathtub products - extract attributes from name if missing
-            if (product.category === 'Tub Doors' || 
-                (product.sku && typeof product.sku === 'string' && product.sku.startsWith('13')) ||
-                (product.sku && typeof product.sku === 'number' && product.sku.toString().startsWith('13'))) {
-                
-                if ((!product.glass_thickness || product.glass_thickness === '') && product.name) {
-                    const name = product.name.toLowerCase();
-                    if (name.includes('8mm') || name.includes('8 mm')) {
-                        product.glass_thickness = '8mm';
-                        product['Glass Thickness'] = '8mm';
-                    } else if (name.includes('6mm') || name.includes('6 mm')) {
-                        product.glass_thickness = '6mm';
-                        product['Glass Thickness'] = '6mm';
-                    } else if (name.includes('10mm') || name.includes('10 mm')) {
-                        product.glass_thickness = '10mm';
-                        product['Glass Thickness'] = '10mm';
-                    }
-                }
-                
-                if ((!product.door_type || product.door_type === '') && product.name) {
-                    const name = product.name.toLowerCase();
-                    if (name.includes('pivot')) {
-                        product.door_type = 'Pivot';
-                        product['Door Type'] = 'Pivot';
-                    } else if (name.includes('sliding')) {
-                        product.door_type = 'Sliding';
-                        product['Door Type'] = 'Sliding';
-                    } else if (name.includes('bypass')) {
-                        product.door_type = 'Bypass';
-                        product['Door Type'] = 'Bypass';
-                    }
-                }
-            }
-            
-            return product;
         },
         
         /**
@@ -449,10 +356,6 @@ function compatibilityApp() {
             
             console.log("filterMatchesProduct checking product:", product);
             
-            // Normalize product keys first - this handles inconsistencies from different data sources
-            // This is especially important for bathtub products
-            this.normalizeProductProperties(product);
-            
             // We shouldn't get combo products here, as they're handled in applyFilters
             // But just in case, we'll handle them properly
             if (this.isComboProduct(product) && product.main_product) {
@@ -461,127 +364,65 @@ function compatibilityApp() {
             }
             
             // Series filter - multi-select
-            if (this.filters.selectedSeries.length > 0) {
-                // Get series value from either lowercase or PascalCase property
-                const seriesValue = product.series || product.Series || '';
-                
-                if (seriesValue) {
-                    let seriesMatch = false;
-                    for (let selectedSeries of this.filters.selectedSeries) {
-                        if (seriesValue.toLowerCase() === selectedSeries.toLowerCase()) {
-                            seriesMatch = true;
-                            break;
-                        }
+            if (this.filters.selectedSeries.length > 0 && product.series) {
+                let seriesMatch = false;
+                for (let selectedSeries of this.filters.selectedSeries) {
+                    if (product.series.toLowerCase() === selectedSeries.toLowerCase()) {
+                        seriesMatch = true;
+                        break;
                     }
-                    if (!seriesMatch) return false;
                 }
+                if (!seriesMatch) return false;
             }
             
             // Brand filter - multi-select
-            if (this.filters.selectedBrands.length > 0) {
-                // Get brand from either lowercase or PascalCase property
-                const brandValue = product.brand || product.Brand || '';
-                
-                if (brandValue) {
-                    let brandMatch = false;
-                    for (let selectedBrand of this.filters.selectedBrands) {
-                        if (brandValue.toLowerCase() === selectedBrand.toLowerCase()) {
-                            brandMatch = true;
-                            break;
-                        }
+            if (this.filters.selectedBrands.length > 0 && product.brand) {
+                let brandMatch = false;
+                for (let selectedBrand of this.filters.selectedBrands) {
+                    if (product.brand.toLowerCase() === selectedBrand.toLowerCase()) {
+                        brandMatch = true;
+                        break;
                     }
-                    if (!brandMatch) return false;
                 }
+                if (!brandMatch) return false;
             }
             
             // Glass thickness filter - multi-select
             if (this.filters.selectedGlassThicknesses.length > 0) {
-                // Try to get glass thickness from property in any case format
-                let glassThickness = product.glass_thickness || product['Glass Thickness'] || '';
-                
-                // For bathtub door products, try to extract from the name if not present
-                if (!glassThickness && product.name && 
-                    (product.category === 'Tub Doors' || 
-                     (typeof product.sku === 'string' && product.sku.startsWith('13')) ||
-                     (typeof product.sku === 'number' && product.sku.toString().startsWith('13')))) {
-                    
-                    const name = product.name.toLowerCase();
-                    if (name.includes('8mm') || name.includes('8 mm')) {
-                        glassThickness = '8mm';
-                        // Store for future filtering
-                        product.glass_thickness = '8mm';
-                    } else if (name.includes('6mm') || name.includes('6 mm')) {
-                        glassThickness = '6mm';
-                        product.glass_thickness = '6mm';
-                    } else if (name.includes('10mm') || name.includes('10 mm')) {
-                        glassThickness = '10mm';
-                        product.glass_thickness = '10mm';
-                    }
+                // Skip glass thickness filtering if the product doesn't have glass_thickness
+                if (!product.glass_thickness) {
+                    console.log(`  Product ${product.sku} has no glass_thickness, skipping filter`);
+                    // If no glass thickness is defined, don't filter this product out
+                    return true;
                 }
                 
-                if (glassThickness) {
-                    let thicknessMatch = false;
-                    for (let selectedThickness of this.filters.selectedGlassThicknesses) {
-                        if (glassThickness.toLowerCase() === selectedThickness.toLowerCase()) {
-                            thicknessMatch = true;
-                            break;
-                        }
-                    }
-                    if (!thicknessMatch) return false;
-                } else {
-                    // If glass thickness filters are selected but product doesn't have data
-                    // Only apply to door-related categories
-                    if (product.category && 
-                        (product.category.toLowerCase().includes('door') || 
-                         (typeof product.sku === 'string' && product.sku.toLowerCase().startsWith('gd')))) {
-                        return false;
+                let thicknessMatch = false;
+                for (let selectedThickness of this.filters.selectedGlassThicknesses) {
+                    if (product.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
+                        thicknessMatch = true;
+                        break;
                     }
                 }
+                if (!thicknessMatch) return false;
             }
             
             // Door type filter - multi-select
             if (this.filters.selectedDoorTypes.length > 0) {
-                // Try to get door type from property in any case format
-                let doorType = product.door_type || product['Door Type'] || '';
-                
-                // For bathtub door products, try to extract from the name if not present
-                if (!doorType && product.name && 
-                    (product.category === 'Tub Doors' || 
-                     (typeof product.sku === 'string' && product.sku.startsWith('13')) ||
-                     (typeof product.sku === 'number' && product.sku.toString().startsWith('13')))) {
-                    
-                    const name = product.name.toLowerCase();
-                    if (name.includes('pivot')) {
-                        doorType = 'Pivot';
-                        // Store for future filtering
-                        product.door_type = 'Pivot';
-                    } else if (name.includes('sliding')) {
-                        doorType = 'Sliding';
-                        product.door_type = 'Sliding';
-                    } else if (name.includes('bypass')) {
-                        doorType = 'Bypass';
-                        product.door_type = 'Bypass';
-                    }
+                // Skip door type filtering if the product doesn't have a door_type
+                if (!product.door_type) {
+                    console.log(`  Product ${product.sku} has no door_type, skipping filter`);
+                    // If no door type is defined, don't filter this product out
+                    return true;
                 }
                 
-                if (doorType) {
-                    let doorTypeMatch = false;
-                    for (let selectedType of this.filters.selectedDoorTypes) {
-                        if (doorType.toLowerCase() === selectedType.toLowerCase()) {
-                            doorTypeMatch = true;
-                            break;
-                        }
-                    }
-                    if (!doorTypeMatch) return false;
-                } else {
-                    // If door type filters are selected but product doesn't have data
-                    // Only apply to door-related categories
-                    if (product.category && 
-                        (product.category.toLowerCase().includes('door') || 
-                         (typeof product.sku === 'string' && product.sku.toLowerCase().startsWith('gd')))) {
-                        return false;
+                let doorTypeMatch = false;
+                for (let selectedType of this.filters.selectedDoorTypes) {
+                    if (product.door_type.toLowerCase() === selectedType.toLowerCase()) {
+                        doorTypeMatch = true;
+                        break;
                     }
                 }
+                if (!doorTypeMatch) return false;
             }
             
             // All filters passed
@@ -596,131 +437,66 @@ function compatibilityApp() {
         filterMatchesMainProduct(mainProduct) {
             if (!mainProduct) return false;
             
-            // First normalize the product properties to handle different naming conventions
-            this.normalizeProductProperties(mainProduct);
-            
             // Series filter - multi-select
-            if (this.filters.selectedSeries.length > 0) {
-                // Get series value from either lowercase or PascalCase property
-                const seriesValue = mainProduct.series || mainProduct.Series || '';
-                
-                if (seriesValue) {
-                    let seriesMatch = false;
-                    for (let selectedSeries of this.filters.selectedSeries) {
-                        if (seriesValue.toLowerCase() === selectedSeries.toLowerCase()) {
-                            seriesMatch = true;
-                            break;
-                        }
+            if (this.filters.selectedSeries.length > 0 && mainProduct.series) {
+                let seriesMatch = false;
+                for (let selectedSeries of this.filters.selectedSeries) {
+                    if (mainProduct.series.toLowerCase() === selectedSeries.toLowerCase()) {
+                        seriesMatch = true;
+                        break;
                     }
-                    if (!seriesMatch) return false;
                 }
+                if (!seriesMatch) return false;
             }
             
             // Brand filter - multi-select
-            if (this.filters.selectedBrands.length > 0) {
-                // Get brand from either lowercase or PascalCase property
-                const brandValue = mainProduct.brand || mainProduct.Brand || '';
-                
-                if (brandValue) {
-                    let brandMatch = false;
-                    for (let selectedBrand of this.filters.selectedBrands) {
-                        if (brandValue.toLowerCase() === selectedBrand.toLowerCase()) {
-                            brandMatch = true;
-                            break;
-                        }
+            if (this.filters.selectedBrands.length > 0 && mainProduct.brand) {
+                let brandMatch = false;
+                for (let selectedBrand of this.filters.selectedBrands) {
+                    if (mainProduct.brand.toLowerCase() === selectedBrand.toLowerCase()) {
+                        brandMatch = true;
+                        break;
                     }
-                    if (!brandMatch) return false;
                 }
+                if (!brandMatch) return false;
             }
             
             // Glass thickness filter - multi-select
             if (this.filters.selectedGlassThicknesses.length > 0) {
-                // Try to get glass thickness from property in any case format
-                let glassThickness = mainProduct.glass_thickness || mainProduct['Glass Thickness'] || '';
-                
-                // For bathtub door products, try to extract from the name if not present
-                if (!glassThickness && mainProduct.name && 
-                    (mainProduct.category === 'Tub Doors' || 
-                     (typeof mainProduct.sku === 'string' && mainProduct.sku.startsWith('13')) ||
-                     (typeof mainProduct.sku === 'number' && mainProduct.sku.toString().startsWith('13')))) {
-                    
-                    const name = mainProduct.name.toLowerCase();
-                    if (name.includes('8mm') || name.includes('8 mm')) {
-                        glassThickness = '8mm';
-                        // Store for future filtering
-                        mainProduct.glass_thickness = '8mm';
-                    } else if (name.includes('6mm') || name.includes('6 mm')) {
-                        glassThickness = '6mm';
-                        mainProduct.glass_thickness = '6mm';
-                    } else if (name.includes('10mm') || name.includes('10 mm')) {
-                        glassThickness = '10mm';
-                        mainProduct.glass_thickness = '10mm';
-                    }
+                // Skip glass thickness filtering if the product doesn't have glass_thickness
+                if (!mainProduct.glass_thickness) {
+                    console.log(`  Main Product ${mainProduct.sku} has no glass_thickness, skipping filter`);
+                    // If no glass thickness is defined, don't filter this product out
+                    return true;
                 }
                 
-                if (glassThickness) {
-                    let thicknessMatch = false;
-                    for (let selectedThickness of this.filters.selectedGlassThicknesses) {
-                        if (glassThickness.toLowerCase() === selectedThickness.toLowerCase()) {
-                            thicknessMatch = true;
-                            break;
-                        }
-                    }
-                    if (!thicknessMatch) return false;
-                } else {
-                    // If glass thickness filters are selected but product doesn't have data
-                    // Only apply to door-related categories
-                    if (mainProduct.category && 
-                        (mainProduct.category.toLowerCase().includes('door') || 
-                         (typeof mainProduct.sku === 'string' && mainProduct.sku.toLowerCase().startsWith('gd')))) {
-                        return false;
+                let thicknessMatch = false;
+                for (let selectedThickness of this.filters.selectedGlassThicknesses) {
+                    if (mainProduct.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
+                        thicknessMatch = true;
+                        break;
                     }
                 }
+                if (!thicknessMatch) return false;
             }
             
             // Door type filter - multi-select
             if (this.filters.selectedDoorTypes.length > 0) {
-                // Try to get door type from property in any case format
-                let doorType = mainProduct.door_type || mainProduct['Door Type'] || '';
-                
-                // For bathtub door products, try to extract from the name if not present
-                if (!doorType && mainProduct.name && 
-                    (mainProduct.category === 'Tub Doors' || 
-                     (typeof mainProduct.sku === 'string' && mainProduct.sku.startsWith('13')) ||
-                     (typeof mainProduct.sku === 'number' && mainProduct.sku.toString().startsWith('13')))) {
-                    
-                    const name = mainProduct.name.toLowerCase();
-                    if (name.includes('pivot')) {
-                        doorType = 'Pivot';
-                        // Store for future filtering
-                        mainProduct.door_type = 'Pivot';
-                    } else if (name.includes('sliding')) {
-                        doorType = 'Sliding';
-                        mainProduct.door_type = 'Sliding';
-                    } else if (name.includes('bypass')) {
-                        doorType = 'Bypass';
-                        mainProduct.door_type = 'Bypass';
-                    }
+                // Skip door type filtering if the product doesn't have a door_type
+                if (!mainProduct.door_type) {
+                    console.log(`  Main Product ${mainProduct.sku} has no door_type, skipping filter`);
+                    // If no door type is defined, don't filter this product out
+                    return true;
                 }
                 
-                if (doorType) {
-                    let doorTypeMatch = false;
-                    for (let selectedType of this.filters.selectedDoorTypes) {
-                        if (doorType.toLowerCase() === selectedType.toLowerCase()) {
-                            doorTypeMatch = true;
-                            break;
-                        }
-                    }
-                    if (!doorTypeMatch) return false;
-                } else {
-                    // If door type filters are selected but product doesn't have data
-                    // Only apply to door-related categories
-                    if (mainProduct.category && 
-                        (mainProduct.category.toLowerCase().includes('door') || 
-                         (typeof mainProduct.sku === 'string' && mainProduct.sku.toLowerCase().startsWith('gd')))) {
-                        return false;
+                let doorTypeMatch = false;
+                for (let selectedType of this.filters.selectedDoorTypes) {
+                    if (mainProduct.door_type.toLowerCase() === selectedType.toLowerCase()) {
+                        doorTypeMatch = true;
+                        break;
                     }
                 }
+                if (!doorTypeMatch) return false;
             }
             
             // All filters passed
@@ -731,8 +507,6 @@ function compatibilityApp() {
          * Extract available filter options from the results
          */
         extractFilterOptions() {
-            console.log("Extracting filter options from compatible products:", this.compatibleProducts);
-            
             // Reset available filters
             this.availableFilters.series = [];
             this.availableFilters.brands = [];
@@ -755,15 +529,9 @@ function compatibilityApp() {
                 if (!category.products) return;
                 
                 category.products.forEach(product => {
-                    // Normalize product properties first
-                    this.normalizeProductProperties(product);
-                    
                     // Handle combo products
                     if (this.isComboProduct(product)) {
                         if (product.main_product) {
-                            // Normalize main product properties
-                            this.normalizeProductProperties(product.main_product);
-                            
                             if (product.main_product.series) seriesSet.add(product.main_product.series);
                             if (product.main_product.brand) brandsSet.add(product.main_product.brand);
                             if (product.main_product.glass_thickness) glassThicknessSet.add(product.main_product.glass_thickness);
@@ -771,35 +539,6 @@ function compatibilityApp() {
                             if (product.main_product.door_type && 
                                 ['Sliding', 'Pivot', 'Bypass'].includes(product.main_product.door_type)) {
                                 doorTypeSet.add(product.main_product.door_type);
-                            }
-                            
-                            // If this is in Tub Doors category, extract info from product name if not present
-                            if (category.category === 'Tub Doors' && product.main_product.name) {
-                                const name = product.main_product.name.toLowerCase();
-                                // Check for glass thickness in name
-                                if (!product.main_product.glass_thickness) {
-                                    if (name.includes('8mm') || name.includes('8 mm')) {
-                                        product.main_product.glass_thickness = '8mm';
-                                        glassThicknessSet.add('8mm');
-                                    } else if (name.includes('6mm') || name.includes('6 mm')) {
-                                        product.main_product.glass_thickness = '6mm';
-                                        glassThicknessSet.add('6mm');
-                                    }
-                                }
-                                
-                                // Check for door type in name
-                                if (!product.main_product.door_type) {
-                                    if (name.includes('pivot')) {
-                                        product.main_product.door_type = 'Pivot';
-                                        doorTypeSet.add('Pivot');
-                                    } else if (name.includes('sliding')) {
-                                        product.main_product.door_type = 'Sliding';
-                                        doorTypeSet.add('Sliding');
-                                    } else if (name.includes('bypass')) {
-                                        product.main_product.door_type = 'Bypass';
-                                        doorTypeSet.add('Bypass');
-                                    }
-                                }
                             }
                         }
                         if (product.secondary_product) {
@@ -822,38 +561,6 @@ function compatibilityApp() {
                         if (product.door_type && 
                             ['Sliding', 'Pivot', 'Bypass'].includes(product.door_type)) {
                             doorTypeSet.add(product.door_type);
-                        }
-                        
-                        // If this is in Tub Doors category, extract info from product name if not present
-                        if (category.category === 'Tub Doors' && product.name) {
-                            const name = product.name.toLowerCase();
-                            // Check for glass thickness in name
-                            if (!product.glass_thickness) {
-                                if (name.includes('8mm') || name.includes('8 mm')) {
-                                    product.glass_thickness = '8mm';
-                                    glassThicknessSet.add('8mm');
-                                } else if (name.includes('6mm') || name.includes('6 mm')) {
-                                    product.glass_thickness = '6mm';
-                                    glassThicknessSet.add('6mm');
-                                } else if (name.includes('10mm') || name.includes('10 mm')) {
-                                    product.glass_thickness = '10mm';
-                                    glassThicknessSet.add('10mm');
-                                }
-                            }
-                            
-                            // Check for door type in name
-                            if (!product.door_type) {
-                                if (name.includes('pivot')) {
-                                    product.door_type = 'Pivot';
-                                    doorTypeSet.add('Pivot');
-                                } else if (name.includes('sliding')) {
-                                    product.door_type = 'Sliding';
-                                    doorTypeSet.add('Sliding');
-                                } else if (name.includes('bypass')) {
-                                    product.door_type = 'Bypass';
-                                    doorTypeSet.add('Bypass');
-                                }
-                            }
                         }
                     }
                 });

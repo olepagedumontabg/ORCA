@@ -41,32 +41,17 @@ def generate_image_url(product_info):
         category = product_info.get('category', '')
         sku = product_info.get('Unique ID', '')
         
-        # For debugging
-        logger.debug(f"Generating image URL for product: {product_name}, Category: {category}, SKU: {sku}")
-        logger.debug(f"Available keys in product_info: {list(product_info.keys())}")
-        
-        # Double-check for Image URL with different case variations
-        for key in product_info.keys():
-            if key.lower() == 'image url' and product_info[key]:
-                logger.debug(f"Found image URL with key '{key}': {product_info[key]}")
-                return normalize_url(product_info[key])
-        
         # Try to determine image name from product characteristics
         image_name = None
         
-        # Bathtub images - we'll use a dedicated bathtub image
-        if category == 'Bathtubs' or (sku and str(sku).startswith('10')):
-            image_name = 'bathtub'
-            logger.debug(f"Selected bathtub image for product: {product_name}")
-            
         # Base images
-        elif 'B3Round' in product_name:
+        if 'B3Round' in product_name:
             image_name = 'b3round'
         elif 'B3Square' in product_name:
             image_name = 'b3square'
         elif 'shower base' in product_name.lower():
             image_name = 'b3square'  # fallback to a square base
-        elif category == 'Shower Bases' or (sku and (str(sku).startswith('410') or str(sku).startswith('420'))):
+        elif category == 'Shower Bases' or (sku and (sku.startswith('410') or sku.startswith('420'))):
             # Any shower base
             if '60' in product_name:  # 60" bases are usually round
                 image_name = 'b3round'
@@ -95,9 +80,7 @@ def generate_image_url(product_info):
         # If we couldn't determine a specific image, fall back to a generic one by category
         if category:
             category_lower = category.lower()
-            if 'bathtub' in category_lower:
-                return "/static/images/products/bathtub.jpg"
-            elif 'base' in category_lower:
+            if 'base' in category_lower:
                 return "/static/images/products/b3square.jpg"
             elif 'door' in category_lower:
                 return "/static/images/products/shower_door.jpg"
