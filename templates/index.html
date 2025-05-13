@@ -60,7 +60,7 @@
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="bg-white rounded-lg shadow-md p-5 sticky top-24"
+                class="sticky top-24"
             >
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-semibold text-secondary">Filter Options</h2>
@@ -199,7 +199,7 @@
             <!-- Search history when no search is performed yet -->
             <div 
                 x-show="!compatibleProducts.length || errorMessage" 
-                class="bg-white rounded-lg shadow-md p-5 sticky top-24"
+                class="sticky top-24"
             >
                 <h2 class="text-lg font-semibold mb-3 text-secondary">Filter Options</h2>
                 <p class="text-sm text-gray-600 mb-4">Use the search bar to find compatible products.</p>
