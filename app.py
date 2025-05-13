@@ -67,8 +67,9 @@ def suggest_skus():
         
         # Collect all SKUs from all sheets
         for sheet_name, df in data.items():
-            if 'SKU' in df.columns:
-                skus = df['SKU'].astype(str).tolist()
+            # Look for 'Unique ID' column which contains the SKUs
+            if 'Unique ID' in df.columns:
+                skus = df['Unique ID'].astype(str).tolist()
                 all_skus.update(skus)
         
         # Filter SKUs that match the query
@@ -77,6 +78,9 @@ def suggest_skus():
         # Sort and limit results
         matching_skus.sort()
         matching_skus = matching_skus[:10]  # Limit to top 10 matches
+        
+        # Log the number of suggestions for debugging
+        logger.debug(f"Found {len(matching_skus)} suggestions for query '{query}'")
         
         return jsonify({'suggestions': matching_skus})
     
