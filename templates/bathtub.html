@@ -383,19 +383,19 @@
                                 
                                 <!-- Product specifications -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-                                    <div v-if="product.brand">
+                                    <div x-show="productDetails.brand">
                                         <span class="font-medium text-gray-700">Brand:</span>
-                                        <span class="text-gray-600" x-text="product.brand || 'Not specified'"></span>
+                                        <span class="text-gray-600" x-text="productDetails.brand || 'Not specified'"></span>
                                     </div>
                                     
-                                    <div v-if="product.series">
+                                    <div x-show="productDetails.series">
                                         <span class="font-medium text-gray-700">Series:</span>
-                                        <span class="text-gray-600" x-text="product.series || 'Not specified'"></span>
+                                        <span class="text-gray-600" x-text="productDetails.series || 'Not specified'"></span>
                                     </div>
                                     
-                                    <div v-if="product.nominal_dimensions">
+                                    <div x-show="productDetails.nominal_dimensions">
                                         <span class="font-medium text-gray-700">Dimensions:</span>
-                                        <span class="text-gray-600" x-text="product.nominal_dimensions || 'Not specified'"></span>
+                                        <span class="text-gray-600" x-text="productDetails.nominal_dimensions || 'Not specified'"></span>
                                     </div>
                                 </div>
                             </div>
