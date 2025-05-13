@@ -3,8 +3,17 @@ import pandas as pd
 import logging
 import glob
 import re
+import time
+from datetime import datetime
 from logic import base_compatibility
 from logic import image_handler
+
+# Import the data update service (with a try/except to handle the case where it's not available yet)
+try:
+    import data_update_service
+    data_service_available = True
+except ImportError:
+    data_service_available = False
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -36,12 +45,27 @@ def get_fixed_door_type(product_info):
 
 def load_data():
     """
-    Load master data files from the /data/ folder
+    Load product data either from the in-memory cache (if data update service is running) 
+    or from the /data/ folder as a fallback
     
     Returns:
         dict: Dictionary containing DataFrames of product data, with sheet names as keys
     """
     data = {}
+    
+    # Try to get data from the data update service first
+    if data_service_available:
+        try:
+            cached_data, update_time = data_update_service.get_product_data()
+            if cached_data:
+                logger.info(f"Using in-memory product data from cache (last updated: {update_time})")
+                return cached_data
+            else:
+                logger.warning("In-memory cache is empty, falling back to file-based loading")
+        except Exception as e:
+            logger.error(f"Error accessing data from update service: {str(e)}. Falling back to file-based loading.")
+    
+    # Fallback: Load from file system if data service is not available or cache is empty
     try:
         data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
         logger.debug(f"Looking for data files in: {data_path}")
@@ -86,14 +110,24 @@ def load_data():
                             logger.error(f"Failed to read sheet {sheet_name}: {str(e2)}")
                             continue
                     
-                    # No need to add columns dynamically as they're now included directly in the Excel file
-                    
                     # Use the sheet name as the key in the data dictionary
                     data[sheet_name] = df
                     logger.debug(f"Loaded worksheet '{sheet_name}' with {len(df)} rows")
                 
             except Exception as e:
                 logger.error(f"Error loading {file_path}: {str(e)}")
+        
+        # If data loaded successfully from file and data service is available, 
+        # update the in-memory cache
+        if data and data_service_available:
+            try:
+                # Update the global cache with a copy of the data
+                with data_update_service.data_lock:
+                    data_update_service.product_data_cache = data.copy()
+                    data_update_service.last_update_time = datetime.now()
+                logger.info("Updated in-memory cache with data loaded from files")
+            except Exception as e:
+                logger.error(f"Error updating in-memory cache: {str(e)}")
         
         return data
     
