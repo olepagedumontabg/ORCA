@@ -33,13 +33,13 @@
 <body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Fixed header -->
     <header class="bg-white text-gray-800 shadow-md fixed top-0 left-0 right-0 z-10">
-        <div class="container mx-auto px-4 py-2 flex justify-center items-center">
-            <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="American Bath Group Logo" class="h-12">
+        <div class="container mx-auto px-4 py-4 flex justify-center items-center">
+            <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="American Bath Group Logo" class="h-20">
         </div>
     </header>
 
     <!-- Hero image section -->
-    <div class="w-full pt-16 pb-0">
+    <div class="w-full pt-24 pb-0">
         <div class="container mx-auto px-4">
             <div class="relative overflow-hidden rounded-lg shadow-lg max-h-[400px]">
                 <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Modern Bathroom" class="w-full object-cover object-center h-[400px]">
@@ -60,7 +60,7 @@
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="sticky top-24"
+                class="sticky top-32"
             >
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-semibold text-secondary">Filter Options</h2>
