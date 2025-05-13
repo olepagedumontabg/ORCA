@@ -482,6 +482,9 @@ def get_product_details(data, sku):
                 # Ensure the SKU is exactly what was searched for
                 product_info['Unique ID'] = sku_str
                 
+                # Add the category to the product info
+                product_info['category'] = category
+                
                 logger.debug(f"Found product in {category}: {product_info.get('Product Name', 'Unknown')}")
                 return product_info
         
