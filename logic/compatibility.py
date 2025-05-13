@@ -216,7 +216,7 @@ def find_compatible_products(sku):
             
             # Find compatible products for the bathtub
             # This returns a list of categories with already enhanced products
-            bathtub_compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
+            compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
             
         elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
@@ -463,9 +463,10 @@ def find_compatible_products(sku):
         # If this is a bathtub, use the bathtub compatibility results
         if is_bathtub:
             logger.debug(f"Using bathtub compatibility results for SKU: {sku}")
+            # Use the compatibility results from the bathtub-specific function
             return {
                 "product": source_product,
-                "compatibles": bathtub_compatible_products
+                "compatibles": compatible_products
             }
         
         # For all other product types (shower bases, etc.), process as usual

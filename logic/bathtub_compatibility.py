@@ -174,7 +174,20 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 wall_data = wall.to_dict()
                 # Remove any NaN values
                 wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
-                compatible_walls.append(wall_data)
+                
+                # Create a properly formatted product entry for the frontend
+                product_dict = {
+                    "sku": wall_id,
+                    "is_combo": False,
+                    "_ranking": wall_data.get("Ranking", 999),
+                    "name": wall_data.get("Product Name", ""),
+                    "image_url": wall_data.get("Image URL", ""),
+                    "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
+                    "brand": wall_data.get("Brand", ""),
+                    "series": wall_data.get("Series", ""),
+                    "family": wall_data.get("Family", "")
+                }
+                compatible_walls.append(product_dict)
         except Exception as e:
             logger.error(f"Error processing wall: {e}")
     
