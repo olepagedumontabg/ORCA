@@ -3,6 +3,7 @@ Data Update Service for Bathroom Compatibility Finder
 
 This service connects to an FTP server, downloads the latest Excel file,
 validates it, and loads it into the application memory without disruption.
+It also sends email notifications when updates succeed or fail.
 """
 
 import os
@@ -15,6 +16,14 @@ import schedule
 import ftplib
 from datetime import datetime
 from pathlib import Path
+
+# Try to import the email notification system
+try:
+    from email_notifications import EmailNotifier
+    email_notifier = EmailNotifier()
+    email_notifications_available = True
+except ImportError:
+    email_notifications_available = False
 
 # Configure logging
 logging.basicConfig(
