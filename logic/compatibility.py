@@ -226,9 +226,13 @@ def find_compatible_products(sku):
                             ranking_value = 999  # Default high ranking if not specified
                             if "Ranking" in door_info and door_info["Ranking"] is not None:
                                 try:
-                                    ranking_value = float(door_info["Ranking"])
-                                except (ValueError, TypeError):
-                                    logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}")
+                                    # Make sure we're converting to float properly
+                                    ranking_str = str(door_info["Ranking"]).strip()
+                                    if ranking_str:
+                                        ranking_value = float(ranking_str)
+                                        logger.debug(f"Using ranking {ranking_value} for combo {door_sku}|{panel_sku}")
+                                except (ValueError, TypeError) as e:
+                                    logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}, error: {str(e)}")
                                     
                             combo_product = {
                                 "sku": sku_item,
@@ -262,9 +266,13 @@ def find_compatible_products(sku):
                             ranking_value = 999  # Default high ranking if not specified
                             if "Ranking" in product_info and product_info["Ranking"] is not None:
                                 try:
-                                    ranking_value = float(product_info["Ranking"])
-                                except (ValueError, TypeError):
-                                    logger.debug(f"Invalid ranking value for {sku_item}: {product_info.get('Ranking')}")
+                                    # Make sure we're converting to float properly
+                                    ranking_str = str(product_info["Ranking"]).strip()
+                                    if ranking_str:
+                                        ranking_value = float(ranking_str)
+                                        logger.debug(f"Using ranking {ranking_value} for product {sku_item}")
+                                except (ValueError, TypeError) as e:
+                                    logger.debug(f"Invalid ranking value for {sku_item}: {product_info.get('Ranking')}, error: {str(e)}")
                             
                             product_dict = {
                                 "sku": sku_item,
@@ -311,9 +319,13 @@ def find_compatible_products(sku):
                         ranking_value = 999  # Default high ranking if not specified
                         if "Ranking" in door_info and door_info["Ranking"] is not None:
                             try:
-                                ranking_value = float(door_info["Ranking"])
-                            except (ValueError, TypeError):
-                                logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}")
+                                # Make sure we're converting to float properly
+                                ranking_str = str(door_info["Ranking"]).strip()
+                                if ranking_str:
+                                    ranking_value = float(ranking_str)
+                                    logger.debug(f"Using ranking {ranking_value} for door {door_sku}")
+                            except (ValueError, TypeError) as e:
+                                logger.debug(f"Invalid ranking value for {door_sku}: {door_info.get('Ranking')}, error: {str(e)}")
                                 
                         enhanced_skus.append({
                             "sku": door_sku,
@@ -352,9 +364,13 @@ def find_compatible_products(sku):
                         ranking_value = 999  # Default high ranking if not specified
                         if "Ranking" in wall_info and wall_info["Ranking"] is not None:
                             try:
-                                ranking_value = float(wall_info["Ranking"])
-                            except (ValueError, TypeError):
-                                logger.debug(f"Invalid ranking value for wall {wall_sku}: {wall_info.get('Ranking')}")
+                                # Make sure we're converting to float properly
+                                ranking_str = str(wall_info["Ranking"]).strip()
+                                if ranking_str:
+                                    ranking_value = float(ranking_str)
+                                    logger.debug(f"Using ranking {ranking_value} for wall {wall_sku}")
+                            except (ValueError, TypeError) as e:
+                                logger.debug(f"Invalid ranking value for wall {wall_sku}: {wall_info.get('Ranking')}, error: {str(e)}")
                                 
                         enhanced_skus.append({
                             "sku": wall_sku,
@@ -425,17 +441,49 @@ def find_compatible_products(sku):
                 # First log the products before sorting (for debugging)
                 logger.debug(f"Products in {category['category']} before sorting:")
                 for idx, product in enumerate(category["products"]):
+                    if product.get("is_combo", False):
+                        sku_display = f"{product['main_product']['sku']}|{product['secondary_product']['sku']}"
+                    else:
+                        sku_display = product.get('sku', 'Unknown')
+                        
                     ranking = product.get("_ranking", 999)
-                    logger.debug(f"  {idx}: {product.get('sku')} - Ranking: {ranking}")
+                    name = product.get('name', '')
+                    if not name and product.get("is_combo", False):
+                        name = product.get('main_product', {}).get('name', '')
+                        
+                    logger.debug(f"  {idx}: {sku_display} ({name}) - Ranking: {ranking}")
                 
                 # Sort products based on the _ranking field (ascending order)
-                category["products"].sort(key=lambda p: float(p.get("_ranking", 999)))
+                # First ensure all ranking values are properly converted to float
+                for product in category["products"]:
+                    if "_ranking" in product:
+                        try:
+                            original_val = product["_ranking"]
+                            product["_ranking"] = float(product["_ranking"])
+                            # Log if conversion changes the value
+                            if original_val != product["_ranking"]:
+                                logger.debug(f"Converted ranking from {original_val} to {product['_ranking']}")
+                        except (ValueError, TypeError) as e:
+                            logger.debug(f"Invalid ranking value: {product['_ranking']}, error: {str(e)}")
+                            product["_ranking"] = 999
+                
+                # Now sort with proper numeric comparison
+                category["products"].sort(key=lambda p: p.get("_ranking", 999))
                 
                 # Log the products after sorting (for debugging)
                 logger.debug(f"Products in {category['category']} after sorting:")
                 for idx, product in enumerate(category["products"]):
+                    if product.get("is_combo", False):
+                        sku_display = f"{product['main_product']['sku']}|{product['secondary_product']['sku']}"
+                    else:
+                        sku_display = product.get('sku', 'Unknown')
+                        
                     ranking = product.get("_ranking", 999)
-                    logger.debug(f"  {idx}: {product.get('sku')} - Ranking: {ranking}")
+                    name = product.get('name', '')
+                    if not name and product.get("is_combo", False):
+                        name = product.get('main_product', {}).get('name', '')
+                        
+                    logger.debug(f"  {idx}: {sku_display} ({name}) - Ranking: {ranking}")
                 
                 # Remove the _ranking field from each product as it's for internal use only
                 for product in category["products"]:
