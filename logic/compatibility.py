@@ -206,26 +206,21 @@ def find_compatible_products(sku):
         
         # Set up the empty results list
         compatible_products = []
+        is_bathtub = False
         
         # Call the appropriate compatibility logic based on product category
         if product_category == 'Bathtubs':
             # Use the dedicated bathtub compatibility logic
             logger.debug(f"Using bathtub compatibility logic for SKU: {sku}")
+            is_bathtub = True
             
             # Find compatible products for the bathtub
             # This returns a list of categories with already enhanced products
-            compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
-            
-            # For bathtubs, the compatibility logic returns products directly
-            # No need for additional processing as bathtub_compatibility already returns enhanced products
-            # But we need to move this after the source_product is created
-            # We'll use this variable to identify we should skip regular processing
-            is_bathtub = True
+            bathtub_compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
             
         elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
             logger.debug(f"Using shower base compatibility logic for SKU: {sku}")
-            is_bathtub = False
             compatible_categories = base_compatibility.find_base_compatibilities(data, product_info)
             
             # Enhance the results with additional product details
@@ -465,6 +460,15 @@ def find_compatible_products(sku):
             
         logger.debug(f"Source product name (final): {source_product['name']}")
         
+        # If this is a bathtub, use the bathtub compatibility results
+        if is_bathtub:
+            logger.debug(f"Using bathtub compatibility results for SKU: {sku}")
+            return {
+                "product": source_product,
+                "compatibles": bathtub_compatible_products
+            }
+        
+        # For all other product types (shower bases, etc.), process as usual
         # Sort each category's products by ranking (lowest to highest)
         # And remove the internal _ranking field before sending to frontend
         for category in compatible_products:
