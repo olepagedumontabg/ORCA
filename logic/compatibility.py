@@ -418,6 +418,30 @@ def find_compatible_products(sku):
             
         logger.debug(f"Source product name (final): {source_product['name']}")
         
+        # Sort each category's products by ranking (lowest to highest)
+        # And remove the internal _ranking field before sending to frontend
+        for category in compatible_products:
+            if "products" in category and category["products"]:
+                # First log the products before sorting (for debugging)
+                logger.debug(f"Products in {category['category']} before sorting:")
+                for idx, product in enumerate(category["products"]):
+                    ranking = product.get("_ranking", 999)
+                    logger.debug(f"  {idx}: {product.get('sku')} - Ranking: {ranking}")
+                
+                # Sort products based on the _ranking field (ascending order)
+                category["products"].sort(key=lambda p: float(p.get("_ranking", 999)))
+                
+                # Log the products after sorting (for debugging)
+                logger.debug(f"Products in {category['category']} after sorting:")
+                for idx, product in enumerate(category["products"]):
+                    ranking = product.get("_ranking", 999)
+                    logger.debug(f"  {idx}: {product.get('sku')} - Ranking: {ranking}")
+                
+                # Remove the _ranking field from each product as it's for internal use only
+                for product in category["products"]:
+                    if "_ranking" in product:
+                        del product["_ranking"]
+        
         logger.debug(f"Found {len(compatible_products)} compatible categories")
         return {
             "product": source_product,
