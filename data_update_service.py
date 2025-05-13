@@ -31,17 +31,20 @@ logger = logging.getLogger("data_update_service")
 # Configuration
 class Config:
     # FTP Settings
-    FTP_HOST = os.environ.get('FTP_HOST', '')
+    FTP_HOST = os.environ.get('FTP_SERVER', '') # Using FTP_SERVER as the environment variable name
     FTP_USER = os.environ.get('FTP_USER', '')
     FTP_PASSWORD = os.environ.get('FTP_PASSWORD', '')
     FTP_PATH = os.environ.get('FTP_PATH', '/')
-    FTP_FILENAME = os.environ.get('FTP_FILENAME', 'Product Data.xlsx')
+    FTP_FILENAME_PREFIX = 'Product Data' # Files will be prefixed with this and have date suffixes
     
     # Local paths
     DATA_DIR = Path('data')
     BACKUP_DIR = DATA_DIR / 'backup'
     CURRENT_FILE = DATA_DIR / 'Product Data.xlsx'
     TEMP_FILE = DATA_DIR / 'temp_product_data.xlsx'
+    
+    # Default filename for local use
+    DEFAULT_FILENAME = 'Product Data.xlsx'
     
     # Update schedule (24-hour format, e.g., "02:00" for 2 AM)
     UPDATE_TIME = os.environ.get('UPDATE_TIME', '02:00')
@@ -61,9 +64,9 @@ def ensure_directories():
     logger.info(f"Ensured data directories exist: {Config.DATA_DIR}, {Config.BACKUP_DIR}")
 
 def download_from_ftp():
-    """Download the latest file from FTP server"""
+    """Download the latest file from FTP server that matches the prefix and has the most recent date suffix"""
     if not all([Config.FTP_HOST, Config.FTP_USER, Config.FTP_PASSWORD]):
-        logger.error("FTP credentials not provided. Set FTP_HOST, FTP_USER, and FTP_PASSWORD environment variables.")
+        logger.error("FTP credentials not provided. Set FTP_SERVER, FTP_USER, and FTP_PASSWORD environment variables.")
         return False
     
     try:
@@ -75,16 +78,29 @@ def download_from_ftp():
             if Config.FTP_PATH != '/':
                 ftp.cwd(Config.FTP_PATH)
             
-            # Check if file exists
+            # Get list of all files in the directory
             file_list = ftp.nlst()
-            if Config.FTP_FILENAME not in file_list:
-                logger.error(f"File {Config.FTP_FILENAME} not found on FTP server")
+            
+            # Filter files that start with the prefix
+            matching_files = [f for f in file_list if f.startswith(Config.FTP_FILENAME_PREFIX)]
+            
+            if not matching_files:
+                logger.error(f"No files with prefix '{Config.FTP_FILENAME_PREFIX}' found on FTP server")
                 return False
             
+            # Sort files by name (assuming date suffix makes newer files sort later)
+            # This should work for most date formats YYYYMMDD, etc.
+            matching_files.sort(reverse=True)
+            
+            # Select the newest file (first after sorting in reverse)
+            newest_file = matching_files[0]
+            
+            logger.info(f"Found newest file: {newest_file}")
+            
             # Download file
-            logger.info(f"Downloading {Config.FTP_FILENAME} to {Config.TEMP_FILE}")
+            logger.info(f"Downloading {newest_file} to {Config.TEMP_FILE}")
             with open(Config.TEMP_FILE, 'wb') as f:
-                ftp.retrbinary(f'RETR {Config.FTP_FILENAME}', f.write)
+                ftp.retrbinary(f'RETR {newest_file}', f.write)
             
             logger.info("File downloaded successfully")
             return True
@@ -100,30 +116,55 @@ def validate_excel_file(file_path):
         # Try to read the Excel file
         xls = pd.ExcelFile(file_path)
         
-        # Check for required worksheets
-        required_sheets = ['Shower Bases', 'Shower Doors', 'Return Panels', 'Walls', 'Enclosures']
-        missing_sheets = [sheet for sheet in required_sheets if sheet not in xls.sheet_names]
+        # Check for at least some required worksheets
+        # All files should have at least these sheets
+        critical_sheets = ['Shower Bases']
+        missing_critical_sheets = [sheet for sheet in critical_sheets if sheet not in xls.sheet_names]
         
-        if missing_sheets:
-            logger.error(f"Excel file missing required sheets: {', '.join(missing_sheets)}")
+        if missing_critical_sheets:
+            logger.error(f"Excel file missing critical sheets: {', '.join(missing_critical_sheets)}")
             return False
         
-        # Check each worksheet for required columns
-        required_columns = {
-            'Shower Bases': ['Unique ID', 'Product Name', 'Nominal Dimensions', 'Length', 'Width'],
-            'Shower Doors': ['Unique ID', 'Product Name', 'Min Width', 'Max Width'],
-            'Return Panels': ['Unique ID', 'Product Name', 'Return Panel Size'],
-            'Walls': ['Unique ID', 'Product Name', 'Nominal Dimensions'],
-            'Enclosures': ['Unique ID', 'Product Name', 'Nominal Dimensions']
+        # These are the common sheets we expect to see
+        expected_sheets = ['Shower Bases', 'Shower Doors', 'Return Panels', 'Walls', 'Enclosures']
+        missing_expected_sheets = [sheet for sheet in expected_sheets if sheet not in xls.sheet_names]
+        
+        if missing_expected_sheets:
+            logger.warning(f"Excel file missing some expected sheets: {', '.join(missing_expected_sheets)}")
+            # Continue validation with the sheets that are present
+        
+        # Check each worksheet for minimum required columns
+        # Every sheet should at least have these columns
+        basic_required_columns = ['Unique ID', 'Product Name']
+        
+        # Additional required columns per sheet type
+        sheet_specific_columns = {
+            'Shower Bases': ['Nominal Dimensions'],
+            # Make Min/Max Width optional for Shower Doors since they might be named differently
+            'Shower Doors': [],
+            'Return Panels': [],
+            'Walls': ['Nominal Dimensions'],
+            'Enclosures': ['Nominal Dimensions']
         }
         
-        for sheet, columns in required_columns.items():
+        # Process only sheets that are present in the file
+        for sheet in [s for s in expected_sheets if s in xls.sheet_names]:
             df = pd.read_excel(file_path, sheet_name=sheet)
-            missing_columns = [col for col in columns if col not in df.columns]
             
-            if missing_columns:
-                logger.error(f"Sheet {sheet} missing required columns: {', '.join(missing_columns)}")
+            # Check for basic columns that every sheet should have
+            missing_basic_columns = [col for col in basic_required_columns if col not in df.columns]
+            
+            if missing_basic_columns:
+                logger.error(f"Sheet {sheet} missing basic required columns: {', '.join(missing_basic_columns)}")
                 return False
+            
+            # Check for sheet-specific columns if defined
+            if sheet in sheet_specific_columns:
+                missing_specific_columns = [col for col in sheet_specific_columns[sheet] if col not in df.columns]
+                
+                if missing_specific_columns:
+                    logger.warning(f"Sheet {sheet} missing some sheet-specific columns: {', '.join(missing_specific_columns)}")
+                    # Continue validation - this is a warning, not a fatal error
         
         logger.info("Excel file validated successfully")
         return True

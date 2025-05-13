@@ -182,14 +182,19 @@ def test_connection():
             # List directory contents
             files = ftp.nlst()
             
-            # Check if the file exists
-            file_name = os.environ.get('FTP_FILENAME', 'Product Data.xlsx')
-            if file_name in files:
-                logger.info(f"Found {file_name} on FTP server")
-                print(f"Found {file_name} on FTP server")
+            # Check for files with the prefix
+            prefix = 'Product Data'
+            matching_files = [f for f in files if f.startswith(prefix)]
+            
+            if matching_files:
+                # Sort files to get the most recent one
+                matching_files.sort(reverse=True)
+                newest_file = matching_files[0]
+                logger.info(f"Found newest file: {newest_file} on FTP server")
+                print(f"Found newest file: {newest_file} on FTP server")
             else:
-                logger.warning(f"File {file_name} not found on FTP server")
-                print(f"WARNING: File {file_name} not found on FTP server")
+                logger.warning(f"No files with prefix '{prefix}' found on FTP server")
+                print(f"WARNING: No files with prefix '{prefix}' found on FTP server")
             
             logger.info("Connection to FTP server successful")
             print("Connection to FTP server successful")
