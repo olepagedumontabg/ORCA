@@ -28,8 +28,8 @@ function compatibilityApp() {
         availableFilters: {
             series: [],
             brands: [],
-            glassThicknesses: ['6mm', '8mm'],
-            doorTypes: ['Sliding', 'Pivot', 'Bypass'], // Only use the 3 door types from Excel
+            glassThicknesses: [],
+            doorTypes: [],
             categories: []
         },
         
@@ -417,8 +417,8 @@ function compatibilityApp() {
             const brandsSet = new Set();
             const glassThicknessSet = new Set(['6mm', '8mm']); // Default values
             const doorTypeSet = new Set([
-                'Sliding', 'Pivot', 'Bypass'
-            ]); // Only use the 3 door types from Excel
+                'Sliding', 'Pivot', 'Bypass', 'Standard'
+            ]); // Include all door types from Excel
             
             // Categories come from the results
             this.compatibleProducts.forEach(category => {
