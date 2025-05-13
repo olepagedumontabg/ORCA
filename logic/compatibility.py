@@ -5,7 +5,7 @@ import glob
 import re
 import time
 from datetime import datetime
-from logic import base_compatibility
+from logic import base_compatibility, bathtub_compatibility
 from logic import image_handler
 
 # Global flag to indicate whether the data update service is available
@@ -210,6 +210,16 @@ def find_compatible_products(sku):
         if product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
             compatible_categories = base_compatibility.find_base_compatibilities(data, product_info)
+            logger.info("Using shower base compatibility logic for SKU: %s", sku)
+            
+            # Enhance the results with additional product details
+            for category_info in compatible_categories:
+                category = category_info["category"]
+                enhanced_skus = []
+        elif product_category == 'Bathtubs':
+            # Use the dedicated bathtub compatibility logic
+            compatible_categories = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
+            logger.info("Using bathtub compatibility logic for SKU: %s", sku)
             
             # Enhance the results with additional product details
             for category_info in compatible_categories:
