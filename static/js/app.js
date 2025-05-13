@@ -14,6 +14,11 @@ function compatibilityApp() {
         compatibleProducts: [],
         filteredCompatibleProducts: [],
         
+        // Autocomplete suggestions
+        suggestions: [],
+        showSuggestions: false,
+        highlightedSuggestion: -1,
+        
         // Filtering options
         filters: {
             selectedSeries: [],
@@ -37,7 +42,83 @@ function compatibilityApp() {
          * Initialize the application
          */
         init() {
-            // Initialize application (no search history)
+            // Initialize application
+            this.$watch('searchInput', (value) => {
+                if (value && value.length >= 3) {
+                    this.getSuggestions(value);
+                } else {
+                    this.suggestions = [];
+                    this.showSuggestions = false;
+                }
+            });
+        },
+        
+        /**
+         * Get SKU suggestions as user types
+         * @param {string} query - The search query
+         */
+        getSuggestions(query) {
+            // Reset highlighted suggestion
+            this.highlightedSuggestion = -1;
+            
+            // Don't fetch if query is too short
+            if (!query || query.length < 3) {
+                this.suggestions = [];
+                this.showSuggestions = false;
+                return;
+            }
+            
+            fetch(`/suggest?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.suggestions = data.suggestions || [];
+                    this.showSuggestions = this.suggestions.length > 0;
+                })
+                .catch(error => {
+                    console.error('Error fetching suggestions:', error);
+                    this.suggestions = [];
+                    this.showSuggestions = false;
+                });
+        },
+        
+        /**
+         * Handle keyboard navigation for suggestions
+         * @param {Event} event - Keyboard event
+         */
+        handleSuggestionKeydown(event) {
+            if (!this.showSuggestions) return;
+            
+            // Arrow down
+            if (event.keyCode === 40) {
+                event.preventDefault();
+                this.highlightedSuggestion = Math.min(
+                    this.highlightedSuggestion + 1, 
+                    this.suggestions.length - 1
+                );
+            }
+            // Arrow up
+            else if (event.keyCode === 38) {
+                event.preventDefault();
+                this.highlightedSuggestion = Math.max(this.highlightedSuggestion - 1, -1);
+            }
+            // Enter key
+            else if (event.keyCode === 13 && this.highlightedSuggestion >= 0) {
+                event.preventDefault();
+                this.selectSuggestion(this.suggestions[this.highlightedSuggestion]);
+            }
+            // Escape key
+            else if (event.keyCode === 27) {
+                this.showSuggestions = false;
+            }
+        },
+        
+        /**
+         * Select a suggestion from the dropdown
+         * @param {string} suggestion - The selected suggestion
+         */
+        selectSuggestion(suggestion) {
+            this.searchInput = suggestion;
+            this.showSuggestions = false;
         },
         
         /**

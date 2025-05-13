@@ -51,6 +51,39 @@ def simple():
     """Render the simplified page for testing"""
     return render_template('simple.html')
 
+@app.route('/suggest', methods=['GET'])
+def suggest_skus():
+    """Provide SKU suggestions based on partial input"""
+    try:
+        query = request.args.get('q', '').strip().upper()
+        
+        if not query or len(query) < 3:
+            # Return empty results if query is too short
+            return jsonify({'suggestions': []})
+        
+        # Get all SKUs from the data
+        data = compatibility.load_data()
+        all_skus = set()
+        
+        # Collect all SKUs from all sheets
+        for sheet_name, df in data.items():
+            if 'SKU' in df.columns:
+                skus = df['SKU'].astype(str).tolist()
+                all_skus.update(skus)
+        
+        # Filter SKUs that match the query
+        matching_skus = [sku for sku in all_skus if query in sku]
+        
+        # Sort and limit results
+        matching_skus.sort()
+        matching_skus = matching_skus[:10]  # Limit to top 10 matches
+        
+        return jsonify({'suggestions': matching_skus})
+    
+    except Exception as e:
+        logger.error(f"Error in suggest_skus: {str(e)}")
+        return jsonify({'suggestions': [], 'error': str(e)})
+
 @app.route('/search', methods=['POST'])
 def search():
     """Handle SKU search request"""
