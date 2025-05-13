@@ -6,6 +6,7 @@ import re
 import time
 from datetime import datetime
 from logic import base_compatibility
+from logic import bathtub_compatibility
 from logic import image_handler
 
 # Global flag to indicate whether the data update service is available
@@ -207,8 +208,24 @@ def find_compatible_products(sku):
         compatible_products = []
         
         # Call the appropriate compatibility logic based on product category
-        if product_category == 'Shower Bases':
+        if product_category == 'Bathtubs':
+            # Use the dedicated bathtub compatibility logic
+            logger.debug(f"Using bathtub compatibility logic for SKU: {sku}")
+            
+            # Find compatible products for the bathtub
+            # This returns a list of categories with already enhanced products
+            compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
+            
+            # For bathtubs, the compatibility logic returns products directly
+            # No need for additional processing as bathtub_compatibility already returns enhanced products
+            # But we need to move this after the source_product is created
+            # We'll use this variable to identify we should skip regular processing
+            is_bathtub = True
+            
+        elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
+            logger.debug(f"Using shower base compatibility logic for SKU: {sku}")
+            is_bathtub = False
             compatible_categories = base_compatibility.find_base_compatibilities(data, product_info)
             
             # Enhance the results with additional product details
