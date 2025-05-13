@@ -154,6 +154,35 @@ def find_compatible_products(sku):
     Returns:
         dict: Dictionary containing source product info and compatible products
     """
+    # Set logger level explicitly to DEBUG for this function
+    logger.setLevel(logging.DEBUG)
+    
+    # SPECIAL DEBUG FUNCTION: Show ranking values for doors
+    import numpy as np
+    
+    # Load data and check door rankings
+    data = load_data()
+    if 'Shower Doors' in data:
+        doors_df = data['Shower Doors']
+        if 'Ranking' in doors_df.columns:
+            logger.debug("==== DOOR RANKING DEBUG ====")
+            door_with_ranking = doors_df[['Unique ID', 'Product Name', 'Ranking']].dropna(subset=['Ranking'])
+            for idx, row in door_with_ranking.iterrows():
+                logger.debug(f"Door {row['Unique ID']} - {row['Product Name']} - Ranking: {row['Ranking']} - Type: {type(row['Ranking'])}")
+                if type(row['Ranking']) != float:
+                    try:
+                        # Try converting manually
+                        float_val = float(row['Ranking'])
+                        logger.debug(f"  Converted to float: {float_val}")
+                    except:
+                        logger.debug(f"  Could not convert to float")
+            
+            # Check special case for Duel and Duel Alto
+            duel_rows = doors_df[doors_df['Product Name'].str.contains('Duel', na=False)]
+            logger.debug(f"==== DUEL DOOR DEBUG ====")
+            for idx, row in duel_rows.iterrows():
+                ranking = row.get('Ranking', np.nan)  # Use np.nan as the default value
+                logger.debug(f"Door {row['Unique ID']} - {row['Product Name']} - Ranking: {ranking} - Type: {type(ranking)}")
     try:
         # Load all data from worksheets
         data = load_data()
