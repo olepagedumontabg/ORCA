@@ -1,0 +1,66 @@
+# ---------- Updated Walls Block for Bathtubs ----------
+
+def find_closest_walls(tub_length, tub_width, candidate_walls):
+    """
+    Find walls with the closest dimensions to the tub based on combined distance.
+    """
+    candidate_walls = candidate_walls.copy()
+    candidate_walls["distance"] = (candidate_walls["Length"] - tub_length).abs() + (candidate_walls["Width"] - tub_width).abs()
+    min_distance = candidate_walls["distance"].min()
+    return candidate_walls[candidate_walls["distance"] == min_distance]
+
+# inside your for _, wall in walls_df.iterrows() loop, replace with this block:
+# (Replace your whole bathtub wall matching loop with this)
+
+# ---------- Walls ----------
+compatible_walls = []
+
+# Step 1: exact nominal matches (Cut to Size != "Yes")
+nominal_walls = walls_df[
+    (walls_df["Type"].str.lower().str.contains("tub", na=False)) &
+    (walls_df["Cut to Size"] != "Yes") &
+    (walls_df["Nominal Dimensions"] == tub_nominal) &
+    (walls_df["Series"].apply(lambda x: series_compatible(tub_series, x))) &
+    (walls_df.apply(lambda x: bathtub_brand_family_match(tub_brand, tub_family, x["Brand"], x["Family"]), axis=1))
+]
+
+for _, wall in nominal_walls.iterrows():
+    wall_data = wall.to_dict()
+    wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
+    compatible_walls.append({
+        "sku": str(wall.get("Unique ID", "")).strip(),
+        "is_combo": False,
+        "_ranking": wall_data.get("Ranking", 999),
+        "name": wall_data.get("Product Name", ""),
+        "image_url": wall_data.get("Image URL", ""),
+        "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
+        "brand": wall_data.get("Brand", ""),
+        "series": wall_data.get("Series", ""),
+        "family": wall_data.get("Family", "")
+    })
+
+# Step 2: Cut to Size walls (only closest size)
+cut_walls_candidates = walls_df[
+    (walls_df["Type"].str.lower().str.contains("tub", na=False)) &
+    (walls_df["Cut to Size"] == "Yes") &
+    (walls_df["Series"].apply(lambda x: series_compatible(tub_series, x))) &
+    (walls_df.apply(lambda x: bathtub_brand_family_match(tub_brand, tub_family, x["Brand"], x["Family"]), axis=1)) &
+    pd.notna(walls_df["Length"]) & pd.notna(walls_df["Width"])
+]
+
+if not cut_walls_candidates.empty and pd.notna(tub_length) and pd.notna(tub_width_actual):
+    closest_cut_walls = find_closest_walls(tub_length, tub_width_actual, cut_walls_candidates)
+    for _, wall in closest_cut_walls.iterrows():
+        wall_data = wall.to_dict()
+        wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
+        compatible_walls.append({
+            "sku": str(wall.get("Unique ID", "")).strip(),
+            "is_combo": False,
+            "_ranking": wall_data.get("Ranking", 999),
+            "name": wall_data.get("Product Name", ""),
+            "image_url": wall_data.get("Image URL", ""),
+            "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
+            "brand": wall_data.get("Brand", ""),
+            "series": wall_data.get("Series", ""),
+            "family": wall_data.get("Family", "")
+        })
