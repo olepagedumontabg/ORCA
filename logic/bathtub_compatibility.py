@@ -79,16 +79,11 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
 
-    # Maax restriction - only for non-Maax walls
-    if base_brand == "maax" and wall_brand != "maax":
-        return False
-        
-    # If both brands are Maax, we have special family matching rules
+    # Maax restriction - only brand check for Maax products
     if base_brand == "maax" and wall_brand == "maax":
-        # Versaline walls are compatible with Brome bathtubs
-        if base_family == "brome" and wall_family == "versaline":
-            return True
-    
+        return True
+
+    # For other brands, we apply specific restrictions
     return (
         (base_brand == "swan" and wall_brand == "swan") or
         (base_brand == "bootz" and wall_brand == "bootz") or
