@@ -74,38 +74,20 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     Returns:
         bool: True if there's a match according to the business rules, False otherwise
     """
-    base_brand = str(base_brand).strip().lower() if base_brand else ""
-    base_family = str(base_family).strip().lower() if base_family else ""
-    wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
-    wall_family = str(wall_family).strip().lower() if wall_family else ""
+    base_brand = str(base_brand).strip().lower()
+    base_family = str(base_family).strip().lower()
+    wall_brand = str(wall_brand).strip().lower()
+    wall_family = str(wall_family).strip().lower()
 
-    # For testing compatibility with real-world data
-    logger.debug(f"Brand family match check: {base_brand}/{base_family} vs {wall_brand}/{wall_family}")
-
-    # Special case for same brand matching
-    if base_brand == wall_brand and base_brand:
-        # If brands match and at least one is specified
-        logger.debug("Same brand matching")
-        return True
-    
-    # Special case for Maax+Utile matching
-    if base_brand == "maax" and wall_family == "utile":
-        logger.debug("Maax + Utile matching")
-        return True
-    
-    # Swan brand must only match with Swan products
-    if base_brand == "swan" and wall_brand != "swan":
+    # Maax restriction
+    if base_brand == "maax" and wall_brand != "maax":
         return False
-        
-    # Vellamo family compatibility
-    if base_family == "vellamo" and (wall_brand == "vellamo" or wall_family == "vellamo"):
-        logger.debug("Vellamo family match")
-        return True
-        
-    # Other specific matches
+
     return (
+        (base_brand == "swan" and wall_brand == "swan") or
         (base_brand == "bootz" and wall_brand == "bootz") or
         (base_family == "olio" and wall_family == "olio") or
+        (base_family == "vellamo" and wall_brand == "vellamo") or
         (base_family in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"] and
          wall_family in ["utile", "nextile", "versaline"])
     )
