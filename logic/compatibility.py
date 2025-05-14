@@ -313,10 +313,122 @@ def find_compatible_products(sku):
                     "products": enhanced_skus
                 })
         
+        # BACKWARDS COMPATIBILITY: Find bases/bathtubs compatible with doors
+        elif product_category in ['Shower Doors', 'Tub Doors']:
+            logger.debug(f"Using backward compatibility logic for door SKU: {sku}")
+            
+            # Get key door properties
+            door_min_width = product_info.get("Minimum Width")
+            door_max_width = product_info.get("Maximum Width") 
+            door_series = product_info.get("Series")
+            door_has_return = product_info.get("Has Return Panel") == "Yes"
+            door_family = product_info.get("Family")
+            door_type = product_info.get("Type", "").lower()
+            
+            logger.debug(f"Door properties: Min Width={door_min_width}, Max Width={door_max_width}, Series={door_series}")
+            logger.debug(f"Door has return: {door_has_return}, Family: {door_family}, Type: {door_type}")
+            
+            # Find compatible bathtubs (for Tub Doors)
+            if product_category == 'Tub Doors' and 'Bathtubs' in data:
+                bathtub_matches = []
+                bathtubs_df = data['Bathtubs']
+                
+                for _, tub in bathtubs_df.iterrows():
+                    tub_width = tub.get("Max Door Width")
+                    tub_install = tub.get("Installation")
+                    tub_series = tub.get("Series")
+                    tub_id = str(tub.get("Unique ID", "")).strip()
+                    
+                    # Match criteria for tub doors
+                    if (tub_install == "Alcove" and 
+                        pd.notna(tub_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        door_min_width <= tub_width <= door_max_width and
+                        bathtub_compatibility.series_compatible(tub_series, door_series)):
+                        
+                        # Format tub data for the frontend
+                        tub_data = tub.to_dict()
+                        # Remove any NaN values
+                        tub_data = {k: v for k, v in tub_data.items() if pd.notna(v)}
+                        
+                        product_dict = {
+                            "sku": tub_id,
+                            "is_combo": False,
+                            "_ranking": tub_data.get("Ranking", 999),
+                            "name": tub_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(tub_data),
+                            "nominal_dimensions": tub_data.get("Nominal Dimensions", ""),
+                            "brand": tub_data.get("Brand", ""),
+                            "series": tub_data.get("Series", ""),
+                            "max_door_width": tub_data.get("Max Door Width", ""),
+                            "installation": tub_data.get("Installation", "")
+                        }
+                        bathtub_matches.append(product_dict)
+                
+                # Sort bathtubs by ranking
+                if bathtub_matches:
+                    bathtub_matches.sort(key=lambda x: x.get('_ranking', 999))
+                    compatible_products.append({
+                        "category": "Bathtubs",
+                        "products": bathtub_matches
+                    })
+            
+            # Find compatible shower bases (for Shower Doors)
+            if product_category == 'Shower Doors' and 'Shower Bases' in data:
+                base_matches = []
+                bases_df = data['Shower Bases']
+                
+                for _, base in bases_df.iterrows():
+                    base_width = base.get("Max Door Width")
+                    base_install = str(base.get("Installation", "")).lower()
+                    base_series = base.get("Series")
+                    base_fit_return = base.get("Fits Return Panel Size")
+                    base_id = str(base.get("Unique ID", "")).strip()
+                    
+                    # Match criteria for alcove installation
+                    alcove_match = (
+                        "alcove" in base_install and 
+                        pd.notna(base_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        door_min_width <= base_width <= door_max_width and
+                        base_compatibility.series_compatible(base_series, door_series)
+                    )
+                    
+                    # Match criteria for corner installation with return panel
+                    corner_match = (
+                        "corner" in base_install and door_has_return and
+                        pd.notna(base_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        door_min_width <= base_width <= door_max_width and
+                        base_compatibility.series_compatible(base_series, door_series)
+                    )
+                    
+                    if alcove_match or corner_match:
+                        # Format base data for the frontend
+                        base_data = base.to_dict()
+                        # Remove any NaN values
+                        base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                        
+                        product_dict = {
+                            "sku": base_id,
+                            "is_combo": False,
+                            "_ranking": base_data.get("Ranking", 999),
+                            "name": base_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(base_data),
+                            "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
+                            "brand": base_data.get("Brand", ""),
+                            "series": base_data.get("Series", ""),
+                            "max_door_width": base_data.get("Max Door Width", ""),
+                            "installation": base_data.get("Installation", "")
+                        }
+                        base_matches.append(product_dict)
+                
+                # Sort shower bases by ranking
+                if base_matches:
+                    base_matches.sort(key=lambda x: x.get('_ranking', 999))
+                    compatible_products.append({
+                        "category": "Shower Bases",
+                        "products": base_matches
+                    })
+            
         # Additional categories can be added here with their own dedicated modules
-        # elif product_category == 'Shower Doors':
-        #     compatible_products = door_compatibility.find_door_compatibilities(data, product_info)
-        # etc.
         
         # If no specific compatibility logic matched or no compatible products found,
         # check if there are explicit compatibility columns in the product info
