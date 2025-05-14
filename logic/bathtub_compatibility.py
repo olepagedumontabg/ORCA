@@ -79,20 +79,57 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
 
-    # Maax restriction - only brand check for Maax products
-    if base_brand == "maax" and wall_brand == "maax":
-        return True
+    # First check for specifically restricted families
+    if base_family == "olio" and wall_family != "olio":
+        return False
+    
+    if wall_family == "olio" and base_family != "olio":
+        return False
+    
+    if base_family == "vellamo" and wall_brand != "vellamo":
+        return False
+    
+    if wall_family == "vellamo" and base_brand != "vellamo":
+        return False
+    
+    if base_family == "interflo" and wall_brand != "interflo":
+        return False
+    
+    if wall_family == "interflo" and base_brand != "interflo":
+        return False
 
-    # For other brands, we apply specific restrictions
-    return (
-        (base_brand == "swan" and wall_brand == "swan") or
-        (base_brand == "bootz" and wall_brand == "bootz") or
-        (base_family == "olio" and wall_family == "olio") or
-        (base_family == "vellamo" and wall_brand == "vellamo") or
-        (base_family == "interflo" and wall_brand == "interflo") or
-        (base_family in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"] and
-         wall_family in ["utile", "nextile", "versaline"])
-    )
+    # Check for special cases
+    if (base_family in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"] and
+        wall_family not in ["utile", "nextile", "versaline"]):
+        return False
+    
+    # Different brand check
+    if base_brand == "maax" and wall_brand != "maax":
+        return False
+    
+    if base_brand == "swan" and wall_brand != "swan":
+        return False
+    
+    if base_brand == "bootz" and wall_brand != "bootz":
+        return False
+    
+    # Special case for Brome family with Versaline walls (as requested)
+    if base_family == "brome" and wall_family == "versaline":
+        return True
+    
+    # If no specific restrictions apply, and brands match, return true for Maax products
+    if base_brand == "maax" and wall_brand == "maax":
+        if base_family == "brome" or wall_family == "versaline":
+            return True
+            
+    # Handle generic brand matches when no family restrictions apply
+    if base_brand == wall_brand:
+        # Swan and Bootz brands must match exactly
+        if base_brand in ["swan", "bootz"]:
+            return True
+            
+    # Default case - no specific rule matched
+    return False
 
 
 def find_bathtub_compatibilities(data, bathtub_info):
