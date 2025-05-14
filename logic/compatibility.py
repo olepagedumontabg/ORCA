@@ -991,6 +991,10 @@ def process_combo_product(data, combo_sku):
         return_panel_info = panel_info if panel_info else {}
         return_panel_size = return_panel_info.get("Return Panel Size", "")
         
+        # Make sure return_panel_size is a string
+        if not isinstance(return_panel_size, str):
+            return_panel_size = str(return_panel_size) if return_panel_size is not None else ""
+        
         # Parse the return panel size (e.g., "for 42 in." -> 42)
         panel_size_inches = 0
         if return_panel_size:
@@ -999,38 +1003,42 @@ def process_combo_product(data, combo_sku):
                 panel_size_inches = int(size_match.group(1))
                 logger.debug(f"Extracted panel size: {panel_size_inches} inches")
         
-        # Define the mapping of known compatible products based on return panel size
-        known_compatible_bases = {}
+        # Create the mapping of known compatible products based on return panel size
+        # The simpler approach is to directly check the current combo instead of building a large dict
+        compatible_base_skus = []
+        
+        logger.info(f"Checking compatibility for combo {combo_sku} with panel size {panel_size_inches} inches")
         
         # For Halo door (138996) with different return panel sizes
         if door_sku == "138996":
-            if panel_size_inches == 42:
-                known_compatible_bases = {
-                    "138996|139394": ["420043-542-001"]  # Panel for 42 in. -> B3Square 4842
-                }
-            elif panel_size_inches == 34:
-                known_compatible_bases = {
-                    "138996|139395": ["420001-542-001"]  # Panel for 34 in. -> B3Square 4834
-                }
-            elif panel_size_inches == 36:
-                known_compatible_bases = {
-                    "138996|139396": ["420003-542-001"]  # Panel for 36 in. -> B3Square 4836
-                }
+            if panel_sku == "139394":  # 42" panel
+                compatible_base_skus = ["420043-542-001"]  # B3Square 4842
+                logger.info(f"Matched Halo door with 42in panel (139394) -> Base: {compatible_base_skus}")
+            elif panel_sku == "139395":  # 34" panel
+                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
+                logger.info(f"Matched Halo door with 34in panel (139395) -> Base: {compatible_base_skus}")
+            elif panel_sku == "139396":  # 36" panel
+                compatible_base_skus = ["420003-542-001"]  # B3Square 4836 
+                logger.info(f"Matched Halo door with 36in panel (139396) -> Base: {compatible_base_skus}")
+            else:
+                logger.info(f"No specific base match for Halo door with panel {panel_sku}")
         
         # For Capella door (139584) with different return panel sizes
         elif door_sku == "139584":
-            if panel_size_inches == 36:
-                known_compatible_bases = {
-                    "139584|139590": ["420003-542-001"]  # Panel for 36 in. -> B3Square 4836
-                }
-            elif panel_size_inches == 42:
-                known_compatible_bases = {
-                    "139584|139591": ["420043-542-001"]  # Panel for 42 in. -> B3Square 4842
-                }
+            if panel_sku == "139590":  # 36" panel
+                compatible_base_skus = ["420003-542-001"]  # B3Square 4836
+                logger.info(f"Matched Capella door with 36in panel (139590) -> Base: {compatible_base_skus}")
+            elif panel_sku == "139591":  # 42" panel
+                compatible_base_skus = ["420043-542-001"]  # B3Square 4842
+                logger.info(f"Matched Capella door with 42in panel (139591) -> Base: {compatible_base_skus}")
+            else:
+                logger.info(f"No specific base match for Capella door with panel {panel_sku}")
+        else:
+            logger.info(f"No specific base match for door {door_sku}")
         
         # Add more door + panel combinations as they're confirmed
         
-        # If we have a compatible base for this exact combo, or we want to show general compatible corner bases
+        # If we have shower bases, process them
         if "Shower Bases" in data:
             base_matches = []
             bases_df = data["Shower Bases"]
@@ -1040,23 +1048,19 @@ def process_combo_product(data, combo_sku):
             door_brand = door_info.get("Brand")
             door_min_width = door_info.get("Minimum Width")
             
-            # Get known compatible bases for this combo
-            compatible_base_skus = known_compatible_bases.get(combo_sku, [])
-            
             # Log useful information
             logger.debug(f"Return panel size: {return_panel_size}, Panel size in inches: {panel_size_inches}")
-            logger.debug(f"Looking for known compatible bases for combo {combo_sku}: {compatible_base_skus}")
+            logger.debug(f"Looking for compatible bases for combo {combo_sku}: {compatible_base_skus}")
             logger.debug(f"Door brand: {door_brand}, Door series: {door_series}")
             
-            # First approach: Use known compatible bases if we have any for this exact combo
-            if combo_sku in known_compatible_bases:
-                logger.info(f"Using known compatible bases for {combo_sku}: {compatible_base_skus}")
+            # First, try to find the specific compatible bases we identified
+            if compatible_base_skus:
+                logger.info(f"Using specific compatible bases for {combo_sku}: {compatible_base_skus}")
                 
-                # Add the known compatible bases
                 for _, base in bases_df.iterrows():
                     base_id = str(base.get("Unique ID", "")).strip()
                     
-                    # Check if this is a known compatible base
+                    # Check if this is a compatible base
                     if base_id in compatible_base_skus:
                         base_data = base.to_dict()
                         # Remove any NaN values
@@ -1074,10 +1078,9 @@ def process_combo_product(data, combo_sku):
                         }
                         base_matches.append(base_dict)
             
-            # Second approach: Use panel size matching for bases (for doors without explicit matches)
-            else:
-                logger.info(f"No known exact matches for {combo_sku}, using panel size matching")
-                logger.info(f"Panel size: {panel_size_inches} inches")
+            # If we didn't find any specific matches, try size-based matches
+            if not base_matches and panel_size_inches > 0:
+                logger.info(f"No specific matches found for {combo_sku}, using panel size matching ({panel_size_inches} inches)")
                 
                 for _, base in bases_df.iterrows():
                     base_id = str(base.get("Unique ID", "")).strip()
@@ -1107,7 +1110,7 @@ def process_combo_product(data, combo_sku):
                     
                     # Make sure the base width is equal to or close to panel size
                     # For corner installations, we typically need a precise match
-                    if panel_size_inches > 0 and base_width > 0:
+                    if base_width > 0:
                         if abs(base_width - panel_size_inches) > 2:  # More than 2 inches difference
                             continue
                         
@@ -1171,7 +1174,13 @@ def process_combo_product(data, combo_sku):
         
     except Exception as e:
         logger.error(f"Error processing combo product: {str(e)}")
-        return {"error": f"Error processing combo product: {str(e)}", "success": False}
+        # Make sure to include empty product and compatibles keys to avoid KeyError in the app
+        return {
+            "error": f"Error processing combo product: {str(e)}", 
+            "success": False, 
+            "product": {}, 
+            "compatibles": []
+        }
 
 # Note: This placeholder implementation should be replaced with the actual
 # compatibility logic from the existing scripts when they are provided.
