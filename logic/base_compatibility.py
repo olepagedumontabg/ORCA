@@ -335,6 +335,7 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
             or (base_family == "w&b" and wall_family == "w&b")
             or (base_family == "olio" and wall_family == "olio")
             or (base_family == "vellamo" and wall_family == "vellamo")
+            or (base_family == "interflo" and wall_family == "interflo")
             or (base_family == "b3"
                 and wall_family in ["utile", "denso", "nextile", "versaline"])
             or (base_family

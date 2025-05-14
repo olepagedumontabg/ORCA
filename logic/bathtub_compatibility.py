@@ -88,6 +88,7 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
         (base_brand == "bootz" and wall_brand == "bootz") or
         (base_family == "olio" and wall_family == "olio") or
         (base_family == "vellamo" and wall_brand == "vellamo") or
+        (base_family == "interflo" and wall_brand == "interflo") or
         (base_family in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"] and
          wall_family in ["utile", "nextile", "versaline"])
     )
