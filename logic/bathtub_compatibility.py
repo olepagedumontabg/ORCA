@@ -186,13 +186,18 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 continue
 
             # Log the values to help with debugging
-            logger.debug(f"Wall type: {wall_type}")
-            logger.debug(f"Tub series: {tub_series}, Wall series: {wall_series}")
-            logger.debug(f"Tub brand: {tub_brand}, Tub family: {tub_family}")
-            logger.debug(f"Wall brand: {wall_brand}, Wall family: {wall_family}")
-            logger.debug(f"Brand family match: {bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family)}")
-            logger.debug(f"Series compatible: {series_compatible(tub_series, wall_series)}")
-            logger.debug(f"Nominal match: {tub_nominal == wall_nominal}")
+            logger.info(f"Processing wall {wall_id} for bathtub {bathtub_info.get('Unique ID')}")
+            logger.info(f"Wall type: {wall_type}")
+            logger.info(f"Tub series: {tub_series}, Wall series: {wall_series}")
+            logger.info(f"Tub brand: {tub_brand}, Tub family: {tub_family}")
+            logger.info(f"Wall brand: {wall_brand}, Wall family: {wall_family}")
+            logger.info(f"Tub nominal: {tub_nominal}, Wall nominal: {wall_nominal}")
+            logger.info(f"Tub length: {tub_length}, Wall length: {wall_length}")
+            logger.info(f"Tub width: {tub_width_actual}, Wall width: {wall_width}")
+            logger.info(f"Wall cut to size: {wall_cut}")
+            logger.info(f"Brand family match: {bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family)}")
+            logger.info(f"Series compatible: {series_compatible(tub_series, wall_series)}")
+            logger.info(f"Nominal match: {tub_nominal == wall_nominal}")
 
             if (
                 "tub" in wall_type and
