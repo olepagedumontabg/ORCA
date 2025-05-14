@@ -329,8 +329,10 @@ def find_compatible_products(sku):
             logger.debug(f"Door has return: {door_has_return}, Family: {door_family}, Type: {door_type}")
             
             # Find compatible Return Panels for this door (will be added to product details)
+            # Only for shower doors that have "Has Return Panel" set to "Yes"
             compatible_return_panels = []
-            if 'Return Panels' in data:
+            if door_has_return and 'Return Panels' in data and product_category == 'Shower Doors':
+                logger.debug(f"Door {sku} has 'Has Return Panel' marked as Yes, finding compatible return panels")
                 panels_df = data['Return Panels']
                 
                 for _, panel in panels_df.iterrows():

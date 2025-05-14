@@ -587,7 +587,7 @@ function compatibilityApp() {
             this.searchInput = comboSku;
             
             // Perform the search with the combo SKU
-            this.performSearch();
+            this.search();
             
             // Scroll to top of search results
             window.scrollTo({
