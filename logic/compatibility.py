@@ -260,7 +260,8 @@ def find_compatible_products(sku):
                                     "brand": door_info.get("Brand", ""),
                                     "series": door_info.get("Series", ""),
                                     "glass_thickness": door_info.get("Glass Thickness", ""),
-                                    "door_type": get_fixed_door_type(door_info)
+                                    "door_type": get_fixed_door_type(door_info),
+                                    "max_door_width": door_info.get("Maximum Width", "")
                                 },
                                 "secondary_product": {
                                     "sku": panel_sku,
@@ -455,7 +456,8 @@ def find_compatible_products(sku):
             "installation": original_product_info.get("Installation", "") if original_product_info.get("Installation") is not None else "",
             "brand": original_product_info.get("Brand", "") if original_product_info.get("Brand") is not None else "",
             "series": original_product_info.get("Series", "") if original_product_info.get("Series") is not None else "",
-            "family": original_product_info.get("Family", "") if original_product_info.get("Family") is not None else ""
+            "family": original_product_info.get("Family", "") if original_product_info.get("Family") is not None else "",
+            "max_door_width": original_product_info.get("Maximum Width", "") if original_product_info.get("Maximum Width") is not None else ""
         }
             
         logger.debug(f"Source product name (final): {source_product['name']}")
