@@ -371,10 +371,13 @@
                                     <span class="font-medium text-gray-500">Series:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.series || 'N/A'"></span>
                                 </div>
-                                <div class="text-sm" x-show="['Bathtubs', 'Shower Bases'].includes(productDetails?.category)">
-                                    <span class="font-medium text-gray-500">Maximum Door Width:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
-                                </div>
+                                <!-- Maximum Door Width (ONLY for Bathtubs and Shower Bases) -->
+                                <template x-if="productDetails?.category === 'Bathtubs' || productDetails?.category === 'Shower Bases'">
+                                    <div class="text-sm">
+                                        <span class="font-medium text-gray-500">Maximum Door Width:</span> 
+                                        <span class="text-gray-800" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
