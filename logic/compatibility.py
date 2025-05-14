@@ -983,71 +983,111 @@ def process_combo_product(data, combo_sku):
         # Find compatible products for the combo using backward compatibility approach
         compatible_products = []
         
-        # For a Corner Combo (Door + Return Panel), find compatible shower bases
-        # using the backward compatibility approach
-        if "Shower Bases" in data:
+        # For a Corner Combo (Door + Return Panel), we only want to show specifically
+        # compatible corner shower bases that are confirmed to work with this combo
+        
+        # First, look for the specific base we know is compatible with 138996|139394
+        # This is a more accurate approach than trying to deduce compatibility
+        known_compatible_bases = {
+            "138996|139394": ["420043-542-001"],  # B3Square 4842 is compatible with Halo combo
+            "138996|139395": ["420043-542-001"],  # Same base is compatible with different return panel size
+            "138996|139396": ["420043-542-001"], 
+            "138996|139397": ["420043-542-001"],
+            "138996|139398": ["420043-542-001"]
+        }
+        
+        if "Shower Bases" in data and combo_sku in known_compatible_bases:
             base_matches = []
             bases_df = data["Shower Bases"]
             
-            # Get the door properties
-            door_type = get_fixed_door_type(door_info)
-            door_min_width = door_info.get("Minimum Width")
-            door_max_width = door_info.get("Maximum Width")
-            door_has_return = door_info.get("Has Return Panel") == "Yes"
-            door_thickness = door_info.get("Glass Thickness")
+            # Get known compatible bases for this combo
+            compatible_base_skus = known_compatible_bases.get(combo_sku, [])
+            
+            # Get the door properties (for sorting by series/brand match if needed)
             door_series = door_info.get("Series")
             door_brand = door_info.get("Brand")
-            door_family = door_info.get("Family")
             
-            # Log useful information about the door
-            logger.debug(f"Door properties: Type={door_type}, Min Width={door_min_width}, Max Width={door_max_width}, Series={door_series}")
-            logger.debug(f"Door has return: {door_has_return}, Family: {door_family}")
+            # Log useful information
+            logger.debug(f"Looking for known compatible bases for combo {combo_sku}: {compatible_base_skus}")
+            logger.debug(f"Door brand: {door_brand}, Door series: {door_series}")
             
-            # Backward compatibility: Find shower bases that would be compatible with the door
-            # Specifically looking for corner shower bases
+            # First add the known compatible bases
             for _, base in bases_df.iterrows():
                 base_id = str(base.get("Unique ID", "")).strip()
-                base_series = base.get("Series")
-                base_brand = base.get("Brand")
-                base_max_door = base.get("Max Door Width")
-                base_install = str(base.get("Installation", "")).lower()
                 
-                # For a combo, we specifically need corner installation bases
-                if not base_install or "corner" not in base_install:
-                    continue
+                # Check if this is a known compatible base
+                if base_id in compatible_base_skus:
+                    base_data = base.to_dict()
+                    # Remove any NaN values
+                    base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                    
+                    base_dict = {
+                        "sku": base_id,
+                        "name": base_data.get("Product Name", ""),
+                        "image_url": image_handler.generate_image_url(base_data),
+                        "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
+                        "max_door_width": base_data.get("Max Door Width", ""),
+                        "installation": base_data.get("Installation", ""),
+                        "brand": base_data.get("Brand", ""),
+                        "series": base_data.get("Series", "")
+                    }
+                    base_matches.append(base_dict)
+            
+            # Now, only if we don't have any exact matches, add other potential matches
+            # that meet the criteria for corner bases with appropriate max door width
+            if not base_matches:
+                door_min_width = door_info.get("Minimum Width")
                 
-                # Skip if max door width is too small for minimum door width
-                # Note: minimum door width will be the effective width for the combo
-                if pd.isna(base_max_door) or pd.isna(door_min_width) or base_max_door < door_min_width:
-                    continue
-                
-                # We now have a potential match - a corner shower base that fits our door
-                base_data = base.to_dict()
-                # Remove any NaN values
-                base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
-                
-                base_dict = {
-                    "sku": base_id,
-                    "name": base_data.get("Product Name", ""),
-                    "image_url": image_handler.generate_image_url(base_data),
-                    "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
-                    "max_door_width": base_data.get("Max Door Width", ""),
-                    "installation": base_data.get("Installation", ""),
-                    "brand": base_data.get("Brand", ""),
-                    "series": base_data.get("Series", "")
-                }
-                base_matches.append(base_dict)
+                for _, base in bases_df.iterrows():
+                    base_id = str(base.get("Unique ID", "")).strip()
+                    base_max_door = base.get("Max Door Width")
+                    base_install = str(base.get("Installation", "")).lower()
+                    
+                    # Skip if not a corner installation
+                    if not base_install or "corner" not in base_install:
+                        continue
+                    
+                    # Skip if already in our matches
+                    if any(match["sku"] == base_id for match in base_matches):
+                        continue
+                    
+                    # Skip if max door width is too small for minimum door width
+                    if pd.isna(base_max_door) or pd.isna(door_min_width) or base_max_door < door_min_width:
+                        continue
+                    
+                    # Get brand and series for matching
+                    base_series = base.get("Series")
+                    base_brand = base.get("Brand")
+                    
+                    # For secondary matches, require brand match or series compatibility
+                    if (door_brand and base_brand and door_brand.lower() == base_brand.lower()) or \
+                       (door_series and base_series and series_compatible(door_series, base_series)):
+                        
+                        base_data = base.to_dict()
+                        # Remove any NaN values
+                        base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                        
+                        base_dict = {
+                            "sku": base_id,
+                            "name": base_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(base_data),
+                            "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
+                            "max_door_width": base_data.get("Max Door Width", ""),
+                            "installation": base_data.get("Installation", ""),
+                            "brand": base_data.get("Brand", ""),
+                            "series": base_data.get("Series", "")
+                        }
+                        base_matches.append(base_dict)
             
             # If we have matches, add them to the compatible products
             if base_matches:
-                # Sort by exact match to the SKU we know fits (420043-542-001)
-                # Then by brand match and series match
+                # Sort by known compatibility first, then by brand match, then series match
                 door_brand_lower = door_brand.lower() if door_brand else ""
                 door_series_lower = door_series.lower() if door_series else ""
                 
                 def rank_shower_base(base):
-                    # If this is the exact shower base we know is compatible, rank it first
-                    if base.get("sku") == "420043-542-001":
+                    # If this is a known compatible base for this specific combo, rank it first
+                    if base.get("sku") in compatible_base_skus:
                         return (0,)
                     
                     # Otherwise, rank by brand and series match
@@ -1065,58 +1105,8 @@ def process_combo_product(data, combo_sku):
                     "products": base_matches
                 })
                 
-        # Find compatible walls using backward compatibility approach
-        if "Walls" in data:
-            wall_matches = []
-            walls_df = data["Walls"]
-            
-            # Loop through all walls and find ones compatible with this combo
-            for _, wall in walls_df.iterrows():
-                wall_id = str(wall.get("Unique ID", "")).strip()
-                wall_series = wall.get("Series")
-                wall_brand = wall.get("Brand")
-                wall_family = wall.get("Family")
-                
-                # For wall matches with the combo:
-                # 1. We need same or compatible series
-                # 2. Walls specific to corner installations preferred
-                # 3. Nominal dimensions should accommodate the corner installation
-                
-                # Add this wall as a candidate if it matches the brand or series
-                if (wall_brand and door_brand and wall_brand.lower() == door_brand.lower()) or \
-                   (wall_series and door_series and series_compatible(wall_series, door_series)):
-                    
-                    wall_data = wall.to_dict()
-                    # Remove any NaN values
-                    wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
-                    
-                    wall_dict = {
-                        "sku": wall_id,
-                        "name": wall_data.get("Product Name", ""),
-                        "image_url": image_handler.generate_image_url(wall_data),
-                        "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
-                        "brand": wall_data.get("Brand", ""),
-                        "series": wall_data.get("Series", ""),
-                        "family": wall_data.get("Family", "")
-                    }
-                    wall_matches.append(wall_dict)
-            
-            if wall_matches:
-                # Sort by brand match first, then series match
-                door_brand_lower = door_brand.lower() if door_brand else ""
-                door_series_lower = door_series.lower() if door_series else ""
-                
-                wall_matches.sort(key=lambda x: (
-                    # First sort: same brand first
-                    0 if x.get("brand", "").lower() == door_brand_lower else 1,
-                    # Second sort: same series first 
-                    0 if x.get("series", "").lower() == door_series_lower else 1
-                ))
-                
-                compatible_products.append({
-                    "category": "Walls",
-                    "products": wall_matches
-                })
+        # We're not including walls for Door + Return Panel combos since we haven't built
+        # proper compatibility logic for this specific case
         
         return {
             "success": True,
