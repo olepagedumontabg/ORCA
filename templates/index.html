@@ -371,7 +371,7 @@
                                     <span class="font-medium text-gray-500">Series:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.series || 'N/A'"></span>
                                 </div>
-                                <div class="text-sm">
+                                <div class="text-sm" x-show="['Bathtubs', 'Shower Bases'].includes(productDetails?.category)">
                                     <span class="font-medium text-gray-500">Maximum Door Width:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
                                 </div>
@@ -423,7 +423,7 @@
                                                     <div class="text-sm text-gray-600 mb-2">
                                                         <span class="font-medium">SKU:</span> <span x-text="product.sku"></span>
                                                     </div>
-                                                    <div x-show="product.max_door_width" class="text-xs text-gray-500 mb-2">
+                                                    <div x-show="product.max_door_width && category.category.includes('Door')" class="text-xs text-gray-500 mb-2">
                                                         <span class="font-medium">Max Door Width:</span> 
                                                         <span x-text="product.max_door_width ? formatInchFraction(product.max_door_width) + ' in.' : 'N/A'"></span>
                                                     </div>
@@ -473,7 +473,7 @@
                                                         <span>+</span>
                                                         <span x-text="product.secondary_product.sku"></span>
                                                     </div>
-                                                    <div x-show="product.main_product.max_door_width" class="text-xs text-gray-500 mb-1">
+                                                    <div x-show="product.main_product.max_door_width && category.category.includes('Door')" class="text-xs text-gray-500 mb-1">
                                                         <span class="font-medium">Max Door Width:</span> 
                                                         <span x-text="product.main_product.max_door_width ? formatInchFraction(product.main_product.max_door_width) + ' in.' : 'N/A'"></span>
                                                     </div>
