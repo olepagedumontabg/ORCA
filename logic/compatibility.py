@@ -986,62 +986,104 @@ def process_combo_product(data, combo_sku):
         # For a Corner Combo (Door + Return Panel), we only want to show specifically
         # compatible corner shower bases that are confirmed to work with this combo
         
-        # First, look for the specific base we know is compatible with 138996|139394
-        # This is a more accurate approach than trying to deduce compatibility
-        known_compatible_bases = {
-            "138996|139394": ["420043-542-001"],  # B3Square 4842 is compatible with Halo combo
-            "138996|139395": ["420043-542-001"],  # Same base is compatible with different return panel size
-            "138996|139396": ["420043-542-001"], 
-            "138996|139397": ["420043-542-001"],
-            "138996|139398": ["420043-542-001"]
-        }
+        # Match panel size to base size to get proper compatible bases
+        # Return panel sizes need to match the appropriate shower base
+        return_panel_info = panel_info if panel_info else {}
+        return_panel_size = return_panel_info.get("Return Panel Size", "")
         
-        if "Shower Bases" in data and combo_sku in known_compatible_bases:
+        # Parse the return panel size (e.g., "for 42 in." -> 42)
+        panel_size_inches = 0
+        if return_panel_size:
+            size_match = re.search(r'for\s+(\d+)\s*in', return_panel_size)
+            if size_match:
+                panel_size_inches = int(size_match.group(1))
+                logger.debug(f"Extracted panel size: {panel_size_inches} inches")
+        
+        # Define the mapping of known compatible products based on return panel size
+        known_compatible_bases = {}
+        
+        # For Halo door (138996) with different return panel sizes
+        if door_sku == "138996":
+            if panel_size_inches == 42:
+                known_compatible_bases = {
+                    "138996|139394": ["420043-542-001"]  # Panel for 42 in. -> B3Square 4842
+                }
+            elif panel_size_inches == 34:
+                known_compatible_bases = {
+                    "138996|139395": ["420001-542-001"]  # Panel for 34 in. -> B3Square 4834
+                }
+            elif panel_size_inches == 36:
+                known_compatible_bases = {
+                    "138996|139396": ["420003-542-001"]  # Panel for 36 in. -> B3Square 4836
+                }
+        
+        # For Capella door (139584) with different return panel sizes
+        elif door_sku == "139584":
+            if panel_size_inches == 36:
+                known_compatible_bases = {
+                    "139584|139590": ["420003-542-001"]  # Panel for 36 in. -> B3Square 4836
+                }
+            elif panel_size_inches == 42:
+                known_compatible_bases = {
+                    "139584|139591": ["420043-542-001"]  # Panel for 42 in. -> B3Square 4842
+                }
+        
+        # Add more door + panel combinations as they're confirmed
+        
+        # If we have a compatible base for this exact combo, or we want to show general compatible corner bases
+        if "Shower Bases" in data:
             base_matches = []
             bases_df = data["Shower Bases"]
-            
-            # Get known compatible bases for this combo
-            compatible_base_skus = known_compatible_bases.get(combo_sku, [])
             
             # Get the door properties (for sorting by series/brand match if needed)
             door_series = door_info.get("Series")
             door_brand = door_info.get("Brand")
+            door_min_width = door_info.get("Minimum Width")
+            
+            # Get known compatible bases for this combo
+            compatible_base_skus = known_compatible_bases.get(combo_sku, [])
             
             # Log useful information
+            logger.debug(f"Return panel size: {return_panel_size}, Panel size in inches: {panel_size_inches}")
             logger.debug(f"Looking for known compatible bases for combo {combo_sku}: {compatible_base_skus}")
             logger.debug(f"Door brand: {door_brand}, Door series: {door_series}")
             
-            # First add the known compatible bases
-            for _, base in bases_df.iterrows():
-                base_id = str(base.get("Unique ID", "")).strip()
+            # First approach: Use known compatible bases if we have any for this exact combo
+            if combo_sku in known_compatible_bases:
+                logger.info(f"Using known compatible bases for {combo_sku}: {compatible_base_skus}")
                 
-                # Check if this is a known compatible base
-                if base_id in compatible_base_skus:
-                    base_data = base.to_dict()
-                    # Remove any NaN values
-                    base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                # Add the known compatible bases
+                for _, base in bases_df.iterrows():
+                    base_id = str(base.get("Unique ID", "")).strip()
                     
-                    base_dict = {
-                        "sku": base_id,
-                        "name": base_data.get("Product Name", ""),
-                        "image_url": image_handler.generate_image_url(base_data),
-                        "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
-                        "max_door_width": base_data.get("Max Door Width", ""),
-                        "installation": base_data.get("Installation", ""),
-                        "brand": base_data.get("Brand", ""),
-                        "series": base_data.get("Series", "")
-                    }
-                    base_matches.append(base_dict)
+                    # Check if this is a known compatible base
+                    if base_id in compatible_base_skus:
+                        base_data = base.to_dict()
+                        # Remove any NaN values
+                        base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                        
+                        base_dict = {
+                            "sku": base_id,
+                            "name": base_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(base_data),
+                            "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
+                            "max_door_width": base_data.get("Max Door Width", ""),
+                            "installation": base_data.get("Installation", ""),
+                            "brand": base_data.get("Brand", ""),
+                            "series": base_data.get("Series", "")
+                        }
+                        base_matches.append(base_dict)
             
-            # Now, only if we don't have any exact matches, add other potential matches
-            # that meet the criteria for corner bases with appropriate max door width
-            if not base_matches:
-                door_min_width = door_info.get("Minimum Width")
+            # Second approach: Use panel size matching for bases (for doors without explicit matches)
+            else:
+                logger.info(f"No known exact matches for {combo_sku}, using panel size matching")
+                logger.info(f"Panel size: {panel_size_inches} inches")
                 
                 for _, base in bases_df.iterrows():
                     base_id = str(base.get("Unique ID", "")).strip()
                     base_max_door = base.get("Max Door Width")
                     base_install = str(base.get("Installation", "")).lower()
+                    base_dim = base.get("Nominal Dimensions", "")
                     
                     # Skip if not a corner installation
                     if not base_install or "corner" not in base_install:
@@ -1055,14 +1097,27 @@ def process_combo_product(data, combo_sku):
                     if pd.isna(base_max_door) or pd.isna(door_min_width) or base_max_door < door_min_width:
                         continue
                     
-                    # Get brand and series for matching
+                    # Match bases whose width dimension is close to the panel size
+                    base_width = 0
+                    if base_dim:
+                        # Parse dimensions like "48 x 34" to get the second number (width)
+                        dim_match = re.search(r'(\d+)\s*x\s*(\d+)', base_dim)
+                        if dim_match:
+                            base_width = int(dim_match.group(2))
+                    
+                    # Make sure the base width is equal to or close to panel size
+                    # For corner installations, we typically need a precise match
+                    if panel_size_inches > 0 and base_width > 0:
+                        if abs(base_width - panel_size_inches) > 2:  # More than 2 inches difference
+                            continue
+                        
+                    # Get brand and series for further matching
                     base_series = base.get("Series")
                     base_brand = base.get("Brand")
                     
-                    # For secondary matches, require brand match or series compatibility
-                    if (door_brand and base_brand and door_brand.lower() == base_brand.lower()) or \
-                       (door_series and base_series and series_compatible(door_series, base_series)):
-                        
+                    # For panel size matching, we additionally require brand match
+                    # to avoid incorrect matches
+                    if door_brand and base_brand and door_brand.lower() == base_brand.lower():
                         base_data = base.to_dict()
                         # Remove any NaN values
                         base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
