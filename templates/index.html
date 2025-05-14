@@ -373,7 +373,7 @@
                                 </div>
                                 <div class="text-sm">
                                     <span class="font-medium text-gray-500">Maximum Door Width:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.max_door_width || 'N/A'"></span>
+                                    <span class="text-gray-800" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
                                 </div>
                             </div>
                         </div>

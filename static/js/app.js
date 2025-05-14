@@ -40,6 +40,49 @@ function compatibilityApp() {
         },
         
         /**
+         * Convert decimal inches to a fraction format (e.g., 58.375 to "58 3/8")
+         * @param {number|string} value - The decimal value to convert
+         * @return {string} - The formatted value with fraction
+         */
+        formatInchFraction(value) {
+            // If value is not a valid number, return it as is
+            const num = parseFloat(value);
+            if (isNaN(num)) return value;
+            
+            // Extract the whole number part
+            const wholeNumber = Math.floor(num);
+            
+            // Get the decimal part
+            const decimal = num - wholeNumber;
+            
+            // Return just the whole number if there's no decimal
+            if (decimal === 0) return wholeNumber.toString();
+            
+            // Common fractions map with precision of 1/16
+            const fractions = {
+                0.0625: "1/16", 0.125: "1/8", 0.1875: "3/16", 0.25: "1/4",
+                0.3125: "5/16", 0.375: "3/8", 0.4375: "7/16", 0.5: "1/2",
+                0.5625: "9/16", 0.625: "5/8", 0.6875: "11/16", 0.75: "3/4",
+                0.8125: "13/16", 0.875: "7/8", 0.9375: "15/16"
+            };
+            
+            // Find the closest fraction
+            let closestDiff = 1;
+            let closestFraction = "";
+            
+            for (const [frac, notation] of Object.entries(fractions)) {
+                const diff = Math.abs(decimal - parseFloat(frac));
+                if (diff < closestDiff) {
+                    closestDiff = diff;
+                    closestFraction = notation;
+                }
+            }
+            
+            // Format the result
+            return `${wholeNumber} ${closestFraction}`;
+        },
+        
+        /**
          * Initialize the application
          */
         init() {
