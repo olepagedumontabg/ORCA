@@ -167,6 +167,9 @@ def find_bathtub_compatibilities(data, bathtub_info):
     
     # Find compatible walls
     compatible_walls = []
+    walls_nominal = []
+    walls_cut_candidates = []
+
     for _, wall in walls_df.iterrows():
         try:
             wall_type = str(wall.get("Type", "")).lower()
@@ -178,10 +181,10 @@ def find_bathtub_compatibilities(data, bathtub_info):
             wall_width = wall.get("Width")
             wall_cut = wall.get("Cut to Size")
             wall_id = str(wall.get("Unique ID", "")).strip()
-            
+
             if not wall_id:
                 continue
-                
+
             # Log the values to help with debugging
             logger.debug(f"Wall type: {wall_type}")
             logger.debug(f"Tub series: {tub_series}, Wall series: {wall_series}")
@@ -190,42 +193,56 @@ def find_bathtub_compatibilities(data, bathtub_info):
             logger.debug(f"Brand family match: {bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family)}")
             logger.debug(f"Series compatible: {series_compatible(tub_series, wall_series)}")
             logger.debug(f"Nominal match: {tub_nominal == wall_nominal}")
-            
+
             if (
                 "tub" in wall_type and
                 series_compatible(tub_series, wall_series) and
-                bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family) and
-                (
-                    tub_nominal == wall_nominal or
-                    (wall_cut == "Yes" and
-                     pd.notna(tub_length) and pd.notna(wall_length) and
-                     pd.notna(tub_width_actual) and pd.notna(wall_width) and
-                     tub_length >= wall_length - TOLERANCE_INCHES and
-                     tub_length <= wall_length + TOLERANCE_INCHES and
-                     tub_width_actual >= wall_width - TOLERANCE_INCHES and
-                     tub_width_actual <= wall_width + TOLERANCE_INCHES)
-                )
+                bathtub_brand_family_match(tub_brand, tub_family, wall_brand, wall_family)
             ):
-                # Format wall product data for the frontend
-                wall_data = wall.to_dict()
-                # Remove any NaN values
-                wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
-                
-                # Create a properly formatted product entry for the frontend
-                product_dict = {
-                    "sku": wall_id,
-                    "is_combo": False,
-                    "_ranking": wall_data.get("Ranking", 999),
-                    "name": wall_data.get("Product Name", ""),
-                    "image_url": wall_data.get("Image URL", ""),
-                    "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
-                    "brand": wall_data.get("Brand", ""),
-                    "series": wall_data.get("Series", ""),
-                    "family": wall_data.get("Family", "")
-                }
-                compatible_walls.append(product_dict)
+                # ✅ Nominal match (only if wall Cut to Size is NOT Yes)
+                if tub_nominal == wall_nominal and wall_cut != "Yes":
+                    walls_nominal.append((wall_id, wall))
+
+                # ✅ Cut to size candidates
+                elif wall_cut == "Yes" and pd.notna(tub_length) and pd.notna(tub_width_actual) \
+                    and pd.notna(wall_length) and pd.notna(wall_width) \
+                    and wall_length >= tub_length and wall_width >= tub_width_actual:
+                    walls_cut_candidates.append({
+                        "id": wall_id,
+                        "length": wall_length,
+                        "width": wall_width,
+                        "wall": wall
+                    })
         except Exception as e:
             logger.error(f"Error processing wall: {e}")
+
+    # ✅ Closest cut size logic
+    walls_cut = []
+    if walls_cut_candidates:
+        min_length = min(c["length"] for c in walls_cut_candidates)
+        min_width = min(c["width"] for c in walls_cut_candidates if c["length"] == min_length)
+        closest_walls = [c for c in walls_cut_candidates if c["length"] == min_length and c["width"] == min_width]
+        walls_cut = [(c["id"], c["wall"]) for c in closest_walls]
+
+    # ✅ Combine Nominal + Closest Cut matches
+    all_walls = walls_nominal + walls_cut
+
+    for wall_id, wall in all_walls:
+        wall_data = wall.to_dict()
+        wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
+
+        product_dict = {
+            "sku": wall_id,
+            "is_combo": False,
+            "_ranking": wall_data.get("Ranking", 999),
+            "name": wall_data.get("Product Name", ""),
+            "image_url": wall_data.get("Image URL", ""),
+            "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
+            "brand": wall_data.get("Brand", ""),
+            "series": wall_data.get("Series", ""),
+            "family": wall_data.get("Family", "")
+        }
+        compatible_walls.append(product_dict)
     
     # Sort products by ranking (lowest to highest) before adding to results
     if compatible_doors:
