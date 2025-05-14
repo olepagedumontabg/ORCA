@@ -258,31 +258,50 @@ def find_base_compatibilities(data, base_info):
                     and (base_install in ["alcove", "alcove or corner"])
                     and series_compatible(base_series, wall_series)
                     and brand_family_match(base_brand, base_family, wall_brand,
-                                           wall_family) and
-                    (base_nominal == wall_nominal or
-                     (wall_cut == "Yes" and pd.notna(base_length)
-                      and pd.notna(wall_length) and pd.notna(base_width_actual)
-                      and pd.notna(wall_width) and base_length <= wall_length
-                      and abs(base_length - wall_length) <= wall_tolerance
-                      and base_width_actual <= wall_width and
-                      abs(base_width_actual - wall_width) <= wall_tolerance)))
+                                           wall_family))
 
                 corner_match = (
                     "corner shower" in wall_type
                     and (base_install in ["corner", "alcove or corner"])
                     and series_compatible(base_series, wall_series)
                     and brand_family_match(base_brand, base_family, wall_brand,
-                                           wall_family) and
-                    (base_nominal == wall_nominal or
-                     (wall_cut == "Yes" and pd.notna(base_length)
-                      and pd.notna(wall_length) and pd.notna(base_width_actual)
-                      and pd.notna(wall_width) and base_length <= wall_length
-                      and abs(base_length - wall_length) <= wall_tolerance
-                      and base_width_actual <= wall_width and
-                      abs(base_width_actual - wall_width) <= wall_tolerance)))
+                                           wall_family))
 
-                if wall_id and (alcove_match or corner_match):
+                if not (alcove_match or corner_match):
+                    continue
+
+                # 1️⃣ Nominal match → keep as is
+                if base_nominal == wall_nominal and wall_id:
                     matching_walls.append(wall_id)
+                    continue
+
+                # 2️⃣ NEW CUT SIZE MATCH → closest larger wall logic
+                if wall_cut == "Yes" and pd.notna(base_length) and pd.notna(base_width_actual) and \
+                   pd.notna(wall_length) and pd.notna(wall_width):
+                    if wall_length >= base_length and wall_width >= base_width_actual:
+                        # Calculate extra size
+                        extra_length = wall_length - base_length
+                        extra_width = wall_width - base_width_actual
+                        total_extra = extra_length + extra_width
+
+                        # Store candidate wall
+                        matching_walls.append((wall_id, total_extra))
+
+            # After all walls processed → keep only best cut-to-size candidate
+            if matching_walls:
+                # Separate tuples (cut size candidates) from normal nominal matches
+                normal_ids = [w for w in matching_walls if isinstance(w, str)]
+                cut_candidates = [
+                    w for w in matching_walls if isinstance(w, tuple)
+                ]
+
+                # Add nominal matches directly
+                matching_walls[:] = normal_ids
+
+                # Add best cut-to-size candidate if any
+                if cut_candidates:
+                    best_wall = min(cut_candidates, key=lambda x: x[1])[0]
+                    matching_walls.append(best_wall)
 
         # Add results to the compatible_products list
         if matching_doors:
