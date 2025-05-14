@@ -328,6 +328,38 @@ def find_compatible_products(sku):
             logger.debug(f"Door properties: Min Width={door_min_width}, Max Width={door_max_width}, Series={door_series}")
             logger.debug(f"Door has return: {door_has_return}, Family: {door_family}, Type: {door_type}")
             
+            # Find compatible Return Panels for this door (will be added to product details)
+            compatible_return_panels = []
+            if 'Return Panels' in data:
+                panels_df = data['Return Panels']
+                
+                for _, panel in panels_df.iterrows():
+                    panel_family = panel.get("Family")
+                    panel_id = str(panel.get("Unique ID", "")).strip()
+                    
+                    # Check if this panel is compatible with the door (based on door family)
+                    if pd.notna(door_family) and pd.notna(panel_family) and door_family == panel_family:
+                        panel_data = panel.to_dict()
+                        # Remove any NaN values
+                        panel_data = {k: v for k, v in panel_data.items() if pd.notna(v)}
+                        
+                        panel_dict = {
+                            "sku": panel_id,
+                            "name": panel_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(panel_data),
+                            "nominal_dimensions": panel_data.get("Nominal Dimensions", ""),
+                            "return_panel_size": panel_data.get("Return Panel Size", ""),
+                            "brand": panel_data.get("Brand", ""),
+                            "family": panel_data.get("Family", ""),
+                            "series": panel_data.get("Series", "")
+                        }
+                        compatible_return_panels.append(panel_dict)
+                
+                # If we found compatible return panels, add them to the source product info
+                if compatible_return_panels:
+                    logger.debug(f"Found {len(compatible_return_panels)} compatible return panels for door {sku}")
+                    source_product["compatible_return_panels"] = compatible_return_panels
+            
             # Find compatible bathtubs (for Tub Doors)
             if product_category == 'Tub Doors' and 'Bathtubs' in data:
                 bathtub_matches = []
