@@ -417,6 +417,7 @@ function compatibilityApp() {
                 if (data.success) {
                     // Display results
                     this.productDetails = data.product;
+                    console.log("Product details received:", this.productDetails);
                     this.compatibleProducts = data.compatibles || [];
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
                     this.currentSku = data.sku;

@@ -1,40 +1,21 @@
+#!/usr/bin/env python
 import pandas as pd
 
-# Load the Excel file
-try:
-    # Tub Doors
-    print("COLUMNS IN TUB DOORS SHEET:")
-    tub_doors = pd.read_excel('data/Product Data.xlsx', sheet_name='Tub Doors')
-    print(list(tub_doors.columns))
-    print("\nSample data (first row):")
-    if not tub_doors.empty:
-        print(tub_doors.iloc[0].to_dict())
-    else:
-        print("No data in Tub Doors sheet")
+# List of sheets to check
+sheets = ['Tub Doors', 'Shower Doors']
+
+# Load each sheet and print columns
+for sheet in sheets:
+    print(f"\n{sheet} columns:")
+    data = pd.read_excel('data/Product Data.xlsx', sheet_name=sheet)
+    print(data.columns.tolist())
     
-    print("\n" + "-"*80 + "\n")
+    # Check for Maximum Width column
+    if 'Maximum Width' in data.columns:
+        print(f"Sample Maximum Width value: {data.iloc[0].get('Maximum Width')}")
     
-    # Bathtubs
-    print("COLUMNS IN BATHTUBS SHEET:")
-    bathtubs = pd.read_excel('data/Product Data.xlsx', sheet_name='Bathtubs')
-    print(list(bathtubs.columns))
-    print("\nSample data (first row):")
-    if not bathtubs.empty:
-        print(bathtubs.iloc[0].to_dict())
-    else:
-        print("No data in Bathtubs sheet")
-    
-    print("\n" + "-"*80 + "\n")
-    
-    # Walls
-    print("COLUMNS IN WALLS SHEET:")
-    walls = pd.read_excel('data/Product Data.xlsx', sheet_name='Walls')
-    print(list(walls.columns))
-    print("\nSample data (first row):")
-    if not walls.empty:
-        print(walls.iloc[0].to_dict())
-    else:
-        print("No data in Walls sheet")
-    
-except Exception as e:
-    print(f"Error: {e}")
+    # Print first row data for debugging
+    print(f"\nFirst row sample data:")
+    first_row = data.iloc[0].to_dict()
+    for key, value in first_row.items():
+        print(f"  {key}: {value}")
