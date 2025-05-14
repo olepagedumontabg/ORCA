@@ -355,10 +355,12 @@ def find_compatible_products(sku):
                         }
                         compatible_return_panels.append(panel_dict)
                 
-                # If we found compatible return panels, add them to the source product info
+                # If we found compatible return panels, add them to the product details
                 if compatible_return_panels:
                     logger.debug(f"Found {len(compatible_return_panels)} compatible return panels for door {sku}")
-                    source_product["compatible_return_panels"] = compatible_return_panels
+                    # We need to add this to the source product info that we'll return later
+                    if not 'compatible_return_panels' in product_info:
+                        product_info['compatible_return_panels'] = compatible_return_panels
             
             # Find compatible bathtubs (for Tub Doors)
             if product_category == 'Tub Doors' and 'Bathtubs' in data:
@@ -760,6 +762,10 @@ def find_compatible_products(sku):
             "series": original_product_info.get("Series", "") if original_product_info.get("Series") is not None else "",
             "family": original_product_info.get("Family", "") if original_product_info.get("Family") is not None else "",
         }
+        
+        # If there are compatible return panels, add them to the source product
+        if 'compatible_return_panels' in product_info:
+            source_product['compatible_return_panels'] = product_info['compatible_return_panels']
         
         # Handle max_door_width - this field has different column names in different sheets
         # For Shower Bases and Bathtubs, use "Max Door Width", for doors use "Maximum Width"
