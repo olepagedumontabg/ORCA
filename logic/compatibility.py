@@ -1281,12 +1281,18 @@ def process_combo_product(data, combo_sku):
         
         # For Halo door (138996) with different return panel sizes
         if door_sku == "138996":
-            if panel_sku == "139394":  # 42" panel
+            if panel_sku == "139393":  # 30" panel
+                compatible_base_skus = ["420001-502-001"]  # B3Square 3030
+            elif panel_sku == "139394":  # 42" panel
                 compatible_base_skus = ["420043-542-001"]  # B3Square 4842
             elif panel_sku == "139395":  # 34" panel
-                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
+                compatible_base_skus = ["420002-502-001", "420001-542-001"]  # B3Square 3834, B3Square 4832
             elif panel_sku == "139396":  # 36" panel
                 compatible_base_skus = ["420003-542-001"]  # B3Square 4836
+            elif panel_sku == "139397":  # 38" panel
+                compatible_base_skus = ["420004-542-001"]  # B3Square 4838
+            elif panel_sku == "139398":  # 32" panel
+                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
                 
         # For Capella door (139584) with different return panel sizes
         elif door_sku == "139584":
