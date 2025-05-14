@@ -242,6 +242,9 @@ def find_base_compatibilities(data, base_info):
         if 'Walls' in data:
             walls_df = data['Walls']
 
+            nominal_matches = []
+            cut_candidates = []
+
             for _, wall in walls_df.iterrows():
                 wall_type = str(wall.get("Type", "")).lower()
                 wall_brand = wall.get("Brand")
@@ -252,6 +255,9 @@ def find_base_compatibilities(data, base_info):
                 wall_width = wall.get("Width")
                 wall_cut = wall.get("Cut to Size")
                 wall_id = str(wall.get("Unique ID", "")).strip()
+
+                if not wall_id:
+                    continue
 
                 alcove_match = (
                     "alcove shower" in wall_type
@@ -270,38 +276,33 @@ def find_base_compatibilities(data, base_info):
                 if not (alcove_match or corner_match):
                     continue
 
-                # 1️⃣ Nominal match → keep as is
-                if base_nominal == wall_nominal and wall_id:
-                    matching_walls.append(wall_id)
-                    continue
+                # ✅ Nominal match ONLY if Cut to Size is not Yes
+                if base_nominal == wall_nominal and wall_cut != "Yes":
+                    nominal_matches.append(wall_id)
 
-                # 2️⃣ NEW CUT SIZE MATCH → closest larger wall logic
-                if wall_cut == "Yes" and pd.notna(base_length) and pd.notna(base_width_actual) and \
-                   pd.notna(wall_length) and pd.notna(wall_width):
-                    if wall_length >= base_length and wall_width >= base_width_actual:
-                        # Calculate extra size
-                        extra_length = wall_length - base_length
-                        extra_width = wall_width - base_width_actual
-                        total_extra = extra_length + extra_width
+                # ✅ Cut to size candidate
+                elif wall_cut == "Yes" and pd.notna(base_length) and pd.notna(base_width_actual) \
+                    and pd.notna(wall_length) and pd.notna(wall_width) \
+                    and wall_length >= base_length and wall_width >= base_width_actual:
+                    cut_candidates.append({
+                        "id": wall_id,
+                        "length": wall_length,
+                        "width": wall_width
+                    })
 
-                        # Store candidate wall
-                        matching_walls.append((wall_id, total_extra))
-
-            # After all walls processed → keep only best cut-to-size candidate
-            if matching_walls:
-                # Separate tuples (cut size candidates) from normal nominal matches
-                normal_ids = [w for w in matching_walls if isinstance(w, str)]
-                cut_candidates = [
-                    w for w in matching_walls if isinstance(w, tuple)
+            # ✅ Select closest cut size walls
+            closest_cut_ids = []
+            if cut_candidates:
+                min_length = min(c["length"] for c in cut_candidates)
+                min_width = min(c["width"] for c in cut_candidates
+                                if c["length"] == min_length)
+                closest_cut_ids = [
+                    c["id"] for c in cut_candidates
+                    if c["length"] == min_length and c["width"] == min_width
                 ]
 
-                # Add nominal matches directly
-                matching_walls[:] = normal_ids
-
-                # Add best cut-to-size candidate if any
-                if cut_candidates:
-                    best_wall = min(cut_candidates, key=lambda x: x[1])[0]
-                    matching_walls.append(best_wall)
+            # ✅ Add all matches
+            matching_walls.extend(nominal_matches + closest_cut_ids)
 
         # Add results to the compatible_products list
         if matching_doors:
