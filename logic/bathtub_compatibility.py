@@ -186,7 +186,8 @@ def find_bathtub_compatibilities(data, bathtub_info):
                     "brand": door_data.get("Brand", ""),
                     "series": door_data.get("Series", ""),
                     "glass_thickness": door_data.get("Glass Thickness", ""),
-                    "door_type": door_data.get("Door Type", "")
+                    "door_type": door_data.get("Door Type", ""),
+                    "max_door_width": door_data.get("Maximum Width", "")
                 }
                 compatible_doors.append(product_dict)
         except Exception as e:

@@ -299,7 +299,8 @@ def find_compatible_products(sku):
                                 "brand": product_info.get("Brand", "") if product_info.get("Brand") is not None else "",
                                 "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
                                 "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
-                                "door_type": get_fixed_door_type(product_info)
+                                "door_type": get_fixed_door_type(product_info),
+                                "max_door_width": product_info.get("Maximum Width", "") if product_info.get("Maximum Width") is not None else ""
                             }
                             enhanced_skus.append(product_dict)
                 
@@ -356,7 +357,8 @@ def find_compatible_products(sku):
                             "brand": door_info.get("Brand", "") if door_info.get("Brand") is not None else "",
                             "series": door_info.get("Series", "") if door_info.get("Series") is not None else "",
                             "glass_thickness": door_info.get("Glass Thickness", "") if door_info.get("Glass Thickness") is not None else "",
-                            "door_type": get_fixed_door_type(door_info)
+                            "door_type": get_fixed_door_type(door_info),
+                            "max_door_width": door_info.get("Maximum Width", "") if door_info.get("Maximum Width") is not None else ""
                         })
                 
                 if enhanced_skus:
