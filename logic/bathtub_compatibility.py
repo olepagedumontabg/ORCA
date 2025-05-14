@@ -100,7 +100,7 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
 
     # Check for special cases for specific families
     # Utile, Nextile and Versaline walls should only match with specific bathtub families
-    if wall_family in ["utile", "nextile", "versaline"] and base_family not in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"]:
+    if wall_family in ["utile", "nextile"] and base_family not in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"]:
         return False
     
     # Different brand checks
