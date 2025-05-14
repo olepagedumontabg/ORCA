@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compatibility Finder Documentation</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#001A70',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Table styles */
+        .doc-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .doc-table th, .doc-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 12px;
+        }
+        .doc-table th {
+            background-color: #f3f4f6;
+            text-align: left;
+        }
+        .doc-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        /* Code block styles */
+        .code-block {
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: monospace;
+            overflow-x: auto;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="Logo" class="h-12">
+                <h1 class="ml-4 text-2xl font-bold text-gray-900">Compatibility Finder Documentation</h1>
+            </div>
+            <nav>
+                <a href="/" class="text-primary hover:text-indigo-900 text-sm font-medium">Return to App</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="text-lg leading-6 font-medium text-gray-900 mb-6">Table of Contents</div>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-600">
+                    <li><a href="#overview" class="text-primary hover:underline">Application Overview</a></li>
+                    <li><a href="#search" class="text-primary hover:underline">Search Functionality</a></li>
+                    <li><a href="#compatibility" class="text-primary hover:underline">Compatibility Logic</a></li>
+                    <li><a href="#filters" class="text-primary hover:underline">Filtering System</a></li>
+                    <li><a href="#data-updates" class="text-primary hover:underline">Data Update Process</a></li>
+                    <li><a href="#architecture" class="text-primary hover:underline">Application Architecture</a></li>
+                    <li><a href="#faq" class="text-primary hover:underline">FAQ & Troubleshooting</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <section id="overview" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Application Overview</h2>
+                <p class="text-gray-600 mb-4">
+                    The Compatibility Finder is a web-based application designed to help users identify compatible bathroom products. 
+                    By searching for a specific SKU, users can find all compatible products across various categories such as:
+                </p>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li>Shower Bases</li>
+                    <li>Shower Doors</li>
+                    <li>Tub Doors</li>
+                    <li>Shower Walls</li>
+                    <li>Return Panels</li>
+                    <li>Bathtubs</li>
+                </ul>
+                <p class="text-gray-600 mb-4">
+                    The application uses real-time data from an Excel spreadsheet that is automatically updated daily through FTP.
+                    It implements sophisticated compatibility algorithms to match products based on dimensions, series compatibility,
+                    and brand/family relationships.
+                </p>
+            </div>
+        </section>
+        
+        <section id="search" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Search Functionality</h2>
+                <p class="text-gray-600 mb-4">
+                    The search functionality allows users to find products by either SKU or product name.
+                </p>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Search Features:</h3>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Suggestive Search:</strong> As you type (3+ characters), the system suggests matching SKUs and product names</li>
+                    <li><strong>Dual Search:</strong> Search by either SKU or product name</li>
+                    <li><strong>Keyboard Navigation:</strong> Use arrow keys to navigate suggestions and Enter to select</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">How Search Works:</h3>
+                <ol class="list-decimal pl-5 mb-4 text-gray-600">
+                    <li>As you type, the application sends a request to the server with your query</li>
+                    <li>The server searches across all Excel worksheets for matches in both SKU and Product Name fields</li>
+                    <li>Matching results are returned to the dropdown in format "SKU - Product Name"</li>
+                    <li>When you select an item, only the SKU portion is extracted for searching</li>
+                    <li>The search then finds the detailed information for that SKU and identifies all compatible products</li>
+                </ol>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Implementation Details:</h3>
+                <p class="text-gray-600 mb-4">
+                    The search functionality is implemented using AlpineJS for the UI interactions and vanilla JavaScript DOM manipulation
+                    for the suggestion dropdown. Search requests are processed by a Flask endpoint that queries the in-memory data.
+                </p>
+                <div class="code-block text-sm text-gray-800">
+// When a suggestion is selected:
+function selectSuggestionDirect(suggestion, index) {
+    // Extract just the SKU part (everything before the " - ")
+    const skuMatch = suggestion.match(/^(.*?)(?:\s+-\s+|$)/);
+    const extractedSku = skuMatch ? skuMatch[1].trim() : suggestion;
+    
+    // Update the search input with just the SKU
+    this.searchInput = extractedSku;
+    
+    // Close suggestions dropdown
+    this.closeSuggestions();
+}</div>
+            </div>
+        </section>
+        
+        <section id="compatibility" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Compatibility Logic</h2>
+                <p class="text-gray-600 mb-4">
+                    The compatibility logic is the core of the application. It determines which products are compatible with each other
+                    based on multiple factors.
+                </p>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Compatibility Factors:</h3>
+                <table class="doc-table mb-4">
+                    <thead>
+                        <tr>
+                            <th>Factor</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Dimensions</td>
+                            <td>Products must have matching dimensions (width, height, depth) where applicable</td>
+                        </tr>
+                        <tr>
+                            <td>Series Compatibility</td>
+                            <td>Some series are specifically designed to work together</td>
+                        </tr>
+                        <tr>
+                            <td>Brand/Family Matching</td>
+                            <td>Different rules apply for same-brand vs cross-brand compatibility</td>
+                        </tr>
+                        <tr>
+                            <td>Installation Type</td>
+                            <td>For bathtubs, specific installation types may require specific compatible doors</td>
+                        </tr>
+                        <tr>
+                            <td>Product Type</td>
+                            <td>Certain product categories have specific compatibility rules</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Compatibility Code Examples:</h3>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-1">Series Compatibility:</h4>
+                <div class="code-block text-sm text-gray-800 mb-4">
+def series_compatible(base_series, compare_series):
+    """Check if two series are compatible"""
+    if not base_series or not compare_series:
+        return True  # Handle null values
+        
+    # Same series are always compatible
+    if base_series.lower() == compare_series.lower():
+        return True
+        
+    # Known compatible series pairs
+    compatible_pairs = [
+        # Each pair represents compatible series
+        ['Collection', 'MAAX'],
+        ['Professional', 'Collection'],
+        # More pairs...
+    ]
+    
+    # Check if the pair exists in either direction
+    for pair in compatible_pairs:
+        if (base_series.lower() == pair[0].lower() and compare_series.lower() == pair[1].lower()) or \
+           (base_series.lower() == pair[1].lower() and compare_series.lower() == pair[0].lower()):
+            return True
+    
+    return False</div>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-1">Bathtub Compatibility Logic:</h4>
+                <div class="code-block text-sm text-gray-800 mb-4">
+def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family):
+    """Special brand/family matching rules for bathtubs"""
+    # Same brand products follow different rules than cross-brand
+    if base_brand and wall_brand and base_brand.lower() == wall_brand.lower():
+        # For same brand, family must also match if both have families
+        if base_family and wall_family:
+            return base_family.lower() == wall_family.lower()
+        return True  # If either doesn't have family, they're compatible
+    
+    # Cross-brand compatibility follows different rules
+    # ... additional cross-brand logic
+    
+    return False</div>
+            </div>
+        </section>
+        
+        <section id="filters" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Filtering System</h2>
+                <p class="text-gray-600 mb-4">
+                    The filtering system allows users to refine compatibility results based on various criteria:
+                </p>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Filter Types:</h3>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Categories:</strong> Filter by product type (Shower Doors, Walls, etc.)</li>
+                    <li><strong>Brands:</strong> Filter by manufacturer brand</li>
+                    <li><strong>Series:</strong> Filter by product series</li>
+                    <li><strong>Glass Thickness:</strong> Filter by glass thickness (6mm, 8mm, etc.)</li>
+                    <li><strong>Door Types:</strong> Filter by door type (Sliding, Pivot, Bypass)</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">How Filtering Works:</h3>
+                <p class="text-gray-600 mb-4">
+                    When search results are displayed, the system analyzes all compatible products and extracts available filter options.
+                    These options are dynamically populated based on the current search results. When filters are applied:
+                </p>
+                <ol class="list-decimal pl-5 mb-4 text-gray-600">
+                    <li>The original compatibility results are preserved</li>
+                    <li>Each selected filter narrows down the visible results</li>
+                    <li>Multiple filters can be combined (e.g., Brand + Series)</li>
+                    <li>Combo products are filtered based on their main component's attributes</li>
+                    <li>Empty categories are automatically hidden</li>
+                </ol>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Implementation Detail:</h3>
+                <div class="code-block text-sm text-gray-800">
+function applyFilters() {
+    // Start with a copy of the original compatible products
+    this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
+    
+    // Apply category filters if any are selected
+    if (this.filters.selectedCategories.length > 0) {
+        this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(category => 
+            this.filters.selectedCategories.includes(category.category)
+        );
+    }
+    
+    // Apply product-level filters to each category's products
+    this.filteredCompatibleProducts.forEach(category => {
+        if (!category.products) return;
+        
+        category.products = category.products.filter(product => {
+            // For combo products, use main_product for filtering
+            if (this.isComboProduct(product)) {
+                if (product.main_product) {
+                    return this.filterMatchesMainProduct(product.main_product);
+                }
+                return false;
+            }
+            
+            // Regular product filtering
+            return this.filterMatchesProduct(product);
+        });
+    });
+    
+    // Remove empty categories
+    this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(
+        category => category.products && category.products.length > 0
+    );
+}</div>
+            </div>
+        </section>
+        
+        <section id="data-updates" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Data Update Process</h2>
+                <p class="text-gray-600 mb-4">
+                    The application automatically updates its product data from an external FTP server without interrupting service.
+                </p>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Update Process:</h3>
+                <ol class="list-decimal pl-5 mb-4 text-gray-600">
+                    <li><strong>Scheduled Updates:</strong> The system checks for updates at 2:00 AM daily</li>
+                    <li><strong>FTP Connection:</strong> Connects to the configured FTP server using stored credentials</li>
+                    <li><strong>File Selection:</strong> Finds the most recent file with prefix "Product Data" and date suffix</li>
+                    <li><strong>Validation:</strong> Downloads and validates the file structure before applying updates</li>
+                    <li><strong>Backup:</strong> Creates a backup of the current data file</li>
+                    <li><strong>In-Memory Update:</strong> Updates the data in memory without restarting the server</li>
+                    <li><strong>Notifications:</strong> Sends email notifications on success or failure</li>
+                </ol>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Data Structure:</h3>
+                <p class="text-gray-600 mb-4">
+                    The Excel file contains multiple worksheets, each representing a different product category:
+                </p>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li>Shower Bases</li>
+                    <li>Bathtubs</li>
+                    <li>Showers</li>
+                    <li>Tub Showers</li>
+                    <li>Walls</li>
+                    <li>Screens</li>
+                    <li>Shower Doors</li>
+                    <li>Tub Doors</li>
+                    <li>Enclosures</li>
+                    <li>Return Panels</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Key Components:</h3>
+                <table class="doc-table mb-4">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>data_update_service.py</td>
+                            <td>Orchestrates the entire update process</td>
+                        </tr>
+                        <tr>
+                            <td>manage_ftp.py</td>
+                            <td>Manages FTP credentials and manual update commands</td>
+                        </tr>
+                        <tr>
+                            <td>email_notifications.py</td>
+                            <td>Handles sending update status notifications via SendGrid</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <section id="architecture" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Application Architecture</h2>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Technology Stack:</h3>
+                <table class="doc-table mb-4">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Technology</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Backend</td>
+                            <td>Python + Flask</td>
+                            <td>Server-side processing and API endpoints</td>
+                        </tr>
+                        <tr>
+                            <td>Frontend</td>
+                            <td>HTML + Tailwind CSS + AlpineJS</td>
+                            <td>User interface and client-side interactivity</td>
+                        </tr>
+                        <tr>
+                            <td>Data Processing</td>
+                            <td>Pandas</td>
+                            <td>Excel data manipulation and querying</td>
+                        </tr>
+                        <tr>
+                            <td>Server</td>
+                            <td>Gunicorn</td>
+                            <td>WSGI HTTP Server</td>
+                        </tr>
+                        <tr>
+                            <td>Notifications</td>
+                            <td>SendGrid</td>
+                            <td>Email notifications for data updates</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Core Files and Their Functions:</h3>
+                <table class="doc-table mb-6">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>app.py</td>
+                            <td>Main application routes and server configuration</td>
+                        </tr>
+                        <tr>
+                            <td>main.py</td>
+                            <td>Entry point for the application</td>
+                        </tr>
+                        <tr>
+                            <td>logic/compatibility.py</td>
+                            <td>Core compatibility checking logic</td>
+                        </tr>
+                        <tr>
+                            <td>logic/base_compatibility.py</td>
+                            <td>Compatibility logic for shower bases</td>
+                        </tr>
+                        <tr>
+                            <td>logic/bathtub_compatibility.py</td>
+                            <td>Specialized compatibility logic for bathtubs</td>
+                        </tr>
+                        <tr>
+                            <td>logic/image_handler.py</td>
+                            <td>Handles product image URL generation</td>
+                        </tr>
+                        <tr>
+                            <td>data_update_service.py</td>
+                            <td>Manages automatic data updates</td>
+                        </tr>
+                        <tr>
+                            <td>email_notifications.py</td>
+                            <td>Email notification system</td>
+                        </tr>
+                        <tr>
+                            <td>templates/index.html</td>
+                            <td>Main user interface template</td>
+                        </tr>
+                        <tr>
+                            <td>static/js/app.js</td>
+                            <td>Client-side JavaScript functionality</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Data Flow Diagram:</h3>
+                <div class="bg-gray-100 p-4 rounded-lg text-center mb-4">
+                    <div class="inline-block mx-auto text-left text-gray-800">
+                        <pre>
++---------------+       +---------------+       +---------------+
+|   Excel File  |------>|  Data Update  |------>|  In-Memory    |
+|  (FTP Server) |       |   Service     |       |  Data Cache   |
++---------------+       +---------------+       +-------+-------+
+                                                       |
+             +-------------------+                     |
+             |                   |                     v
++------------v------+    +-------+-------+    +-------+-------+
+|   User Interface  |<---|  Flask Routes  |<---|  Compatibility |
+| (HTML + AlpineJS) |    |   (app.py)    |    |     Logic      |
++-------------------+    +---------------+    +---------------+
+        </pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="faq" class="mt-8 bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">FAQ & Troubleshooting</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Q: Why isn't a product showing up in compatibility results?</h3>
+                        <p class="text-gray-600">
+                            A: Products might not appear in compatibility results for several reasons:
+                        </p>
+                        <ul class="list-disc pl-5 mt-2 text-gray-600">
+                            <li>The products might not be dimensionally compatible</li>
+                            <li>The series might not be designed to work together</li>
+                            <li>There might be brand/family matching restrictions</li>
+                            <li>The product could be incorrectly categorized in the data</li>
+                            <li>The data might be outdated (check the last update timestamp)</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Q: How can I see when the data was last updated?</h3>
+                        <p class="text-gray-600">
+                            A: The application logs data update times in the data_update.log file. The system is configured 
+                            to automatically update at 2:00 AM daily, but you can also trigger a manual update using the manage_ftp.py script.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Q: What happens if a data update fails?</h3>
+                        <p class="text-gray-600">
+                            A: If a data update fails, the system will:
+                        </p>
+                        <ol class="list-decimal pl-5 mt-2 text-gray-600">
+                            <li>Continue using the most recent valid data</li>
+                            <li>Log the error in data_update.log</li>
+                            <li>Send an email notification to the configured recipients</li>
+                            <li>Attempt the update again on the next scheduled run</li>
+                        </ol>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Q: How are "combo" products handled?</h3>
+                        <p class="text-gray-600">
+                            A: Combo products (those with a main product and secondary components) are handled specially:
+                        </p>
+                        <ul class="list-disc pl-5 mt-2 text-gray-600">
+                            <li>They are marked with is_combo=true in the data</li>
+                            <li>They have both main_product and secondary_product objects</li>
+                            <li>When filtering, the main_product's attributes are used</li>
+                            <li>For ranking, the value is inherited from the main component</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Q: What browser requirements does the application have?</h3>
+                        <p class="text-gray-600">
+                            A: The application is designed to work with modern browsers including:
+                        </p>
+                        <ul class="list-disc pl-5 mt-2 text-gray-600">
+                            <li>Chrome 80+</li>
+                            <li>Firefox 75+</li>
+                            <li>Safari 13.1+</li>
+                            <li>Edge 80+</li>
+                        </ul>
+                        <p class="text-gray-600 mt-2">
+                            It uses modern JavaScript features and may not function correctly in older browsers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <div class="mt-8 text-center text-gray-500 text-sm">
+            <p>Documentation Last Updated: May 14, 2025</p>
+        </div>
+    </main>
+</body>
+</html>
