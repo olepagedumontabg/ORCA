@@ -22,10 +22,19 @@ div[x-show="compatibleProducts.length > 0 && !errorMessage"] {
 /* Product details section */
 .product-details-section {
     padding-left: 20px !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    margin-right: 20px !important;
-    border-left: none !important;
-    border-right: none !important;
+    position: relative !important;
+    border-bottom: none !important;
+}
+
+/* Custom border for product details section */
+.product-details-section::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    right: 0;
+    height: 1px;
+    background-color: #e5e7eb;
 }
 
 /* Compatible products section */
