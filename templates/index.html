@@ -30,6 +30,14 @@
             min-width: 290px !important;
             max-width: 290px !important;
         }
+        /* Fixed width for filter labels */
+        .filter-label {
+            width: 210px !important;
+            min-width: 210px !important;
+            max-width: 210px !important;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
         /* Hide elements with x-cloak attribute until Alpine.js is loaded */
         [x-cloak] { display: none !important; }
     </style>
@@ -110,7 +118,7 @@
                                     >
                                     <label 
                                         :for="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words w-[210px]"
+                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
                                         x-text="category"
                                     ></label>
                                 </div>
@@ -156,7 +164,7 @@
                                     >
                                     <label 
                                         :for="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words w-[210px]"
+                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
                                         x-text="series"
                                     ></label>
                                 </div>
