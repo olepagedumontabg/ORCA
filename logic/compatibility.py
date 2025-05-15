@@ -279,7 +279,8 @@ def find_compatible_products(sku):
                                     "series": door_info.get("Series", ""),
                                     "glass_thickness": door_info.get("Glass Thickness", ""),
                                     "door_type": get_fixed_door_type(door_info),
-                                    "max_door_width": door_info.get("Maximum Width", "")
+                                    "max_door_width": door_info.get("Maximum Width", ""),
+                                    "material": door_info.get("Material", "")
                                 },
                                 "secondary_product": {
                                     "sku": panel_sku,
@@ -288,7 +289,8 @@ def find_compatible_products(sku):
                                     "nominal_dimensions": panel_info.get("Nominal Dimensions", ""),
                                     "brand": panel_info.get("Brand", ""),
                                     "series": panel_info.get("Series", ""),
-                                    "glass_thickness": panel_info.get("Glass Thickness", "")
+                                    "glass_thickness": panel_info.get("Glass Thickness", ""),
+                                    "material": panel_info.get("Material", "")
                                 }
                             }
                             enhanced_skus.append(combo_product)
@@ -318,7 +320,8 @@ def find_compatible_products(sku):
                                 "series": product_info.get("Series", "") if product_info.get("Series") is not None else "",
                                 "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
                                 "door_type": get_fixed_door_type(product_info),
-                                "max_door_width": product_info.get("Maximum Width", "") if product_info.get("Maximum Width") is not None else ""
+                                "max_door_width": product_info.get("Maximum Width", "") if product_info.get("Maximum Width") is not None else "",
+                                "material": product_info.get("Material", "") if product_info.get("Material") is not None else ""
                             }
                             enhanced_skus.append(product_dict)
                 

@@ -134,7 +134,8 @@ function compatibilityApp() {
             selectedBrands: [],
             selectedGlassThicknesses: [],
             selectedDoorTypes: [],
-            selectedCategories: []
+            selectedCategories: [],
+            selectedMaterials: []
         },
         
         // UI state for filters
@@ -144,7 +145,8 @@ function compatibilityApp() {
             brands: [],
             glassThicknesses: ['6mm', '8mm'],
             doorTypes: ['Sliding', 'Pivot', 'Bypass'], // Only use the 3 door types from Excel
-            categories: []
+            categories: [],
+            materials: []
         },
         
         /**
