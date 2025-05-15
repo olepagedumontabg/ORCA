@@ -1010,15 +1010,24 @@ def process_combo_product(data, combo_sku):
         
         # For Halo door (138996) with different return panel sizes
         if door_sku == "138996":
-            if panel_sku == "139394":  # 42" panel
+            if panel_sku == "139393":  # 30" panel
+                compatible_base_skus = ["420001-502-001"]  # B3Square 3030
+                logger.info(f"Matched Halo door with 30in panel (139393) -> Base: {compatible_base_skus}")
+            elif panel_sku == "139394":  # 42" panel
                 compatible_base_skus = ["420043-542-001"]  # B3Square 4842
                 logger.info(f"Matched Halo door with 42in panel (139394) -> Base: {compatible_base_skus}")
             elif panel_sku == "139395":  # 34" panel
-                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
+                compatible_base_skus = ["420002-502-001", "420001-542-001"]  # B3Square 3834, B3Square 4832
                 logger.info(f"Matched Halo door with 34in panel (139395) -> Base: {compatible_base_skus}")
             elif panel_sku == "139396":  # 36" panel
                 compatible_base_skus = ["420003-542-001"]  # B3Square 4836 
                 logger.info(f"Matched Halo door with 36in panel (139396) -> Base: {compatible_base_skus}")
+            elif panel_sku == "139397":  # 38" panel
+                compatible_base_skus = ["420004-542-001"]  # B3Square 4838
+                logger.info(f"Matched Halo door with 38in panel (139397) -> Base: {compatible_base_skus}")
+            elif panel_sku == "139398":  # 32" panel
+                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
+                logger.info(f"Matched Halo door with 32in panel (139398) -> Base: {compatible_base_skus}")
             else:
                 logger.info(f"No specific base match for Halo door with panel {panel_sku}")
         
@@ -1181,157 +1190,3 @@ def process_combo_product(data, combo_sku):
             "compatibles": []
         }
 
-# Note: This placeholder implementation should be replaced with the actual
-# compatibility logic from the existing scripts when they are provided.
-# The user will need to paste their existing compatibility scripts into this file
-def process_combo_product(data, combo_sku):
-    """
-    Process a combo product consisting of a door and return panel
-    
-    Args:
-        data (dict): Dictionary of DataFrames containing product data
-        combo_sku (str): The combo SKU in format "door_sku|panel_sku"
-        
-    Returns:
-        dict: Dictionary containing combo product info and compatible products
-    """
-    logger.info(f"Processing combo product: {combo_sku}")
-    
-    try:
-        # Split the combo SKU into door and panel SKUs
-        parts = combo_sku.split('|')
-        if len(parts) != 2:
-            return {
-                "error": f"Invalid combo SKU format: {combo_sku}. Expected format: door_sku|panel_sku", 
-                "success": False,
-                "product": {},
-                "compatibles": []
-            }
-            
-        door_sku, panel_sku = parts
-        
-        # Get details for both component products
-        door_info = get_product_details(data, door_sku)
-        panel_info = get_product_details(data, panel_sku)
-        
-        if not door_info or not panel_info:
-            missing = "door" if not door_info else "return panel"
-            return {
-                "error": f"Could not find {missing} product for combo SKU: {combo_sku}", 
-                "success": False,
-                "product": {},
-                "compatibles": []
-            }
-            
-        # Verify that the door is actually a door and the panel is a return panel
-        if door_info.get("_source_category") != "Shower Doors":
-            return {
-                "error": f"First component of combo must be a Shower Door, found: {door_info.get('_source_category')}", 
-                "success": False,
-                "product": {},
-                "compatibles": []
-            }
-            
-        if panel_info.get("_source_category") != "Return Panels":
-            return {
-                "error": f"Second component of combo must be a Return Panel, found: {panel_info.get('_source_category')}", 
-                "success": False,
-                "product": {},
-                "compatibles": []
-            }
-        
-        # Create a combo product with combined information
-        combo_product = {
-            "sku": combo_sku,
-            "name": f"{door_info.get('Product Name', '')} with {panel_info.get('Product Name', '')}",
-            "category": "Combo Door + Return Panel",
-            "is_combo": True,
-            "image_url": image_handler.generate_image_url(door_info),
-            "nominal_dimensions": door_info.get("Nominal Dimensions", ""),
-            "installation": "Corner",  # Combo products are for corner installations
-            "brand": door_info.get("Brand", ""),
-            "series": door_info.get("Series", ""),
-            "family": door_info.get("Family", ""),
-            "main_product": {
-                "sku": door_sku,
-                "name": door_info.get("Product Name", ""),
-                "category": "Shower Doors",
-                "image_url": image_handler.generate_image_url(door_info),
-                "brand": door_info.get("Brand", ""),
-                "series": door_info.get("Series", ""),
-                "family": door_info.get("Family", ""),
-            },
-            "return_panel": {
-                "sku": panel_sku,
-                "name": panel_info.get("Product Name", ""),
-                "category": "Return Panels",
-                "image_url": image_handler.generate_image_url(panel_info),
-                "return_panel_size": panel_info.get("Return Panel Size", ""),
-                "brand": panel_info.get("Brand", ""),
-                "series": panel_info.get("Series", ""),
-                "family": panel_info.get("Family", ""),
-            }
-        }
-        
-        # Find compatible products for the combo
-        compatible_products = []
-        
-        # Use the existing compatibility logic but filter for corner shower bases only
-        # A combo is compatible with the same shower bases as its main door, but only corner bases
-        
-        # Get compatible products for the door component only
-        logger.info(f"Finding compatible products for door component: {door_sku}")
-        door_results = find_compatible_products(door_sku)
-        
-        # If we found compatible products for the door, extract corner shower bases
-        if door_results.get("success") and door_results.get("compatibles"):
-            logger.info(f"Found compatible products for door: {door_sku}")
-            for category_data in door_results.get("compatibles", []):
-                category = category_data.get("category")
-                
-                # Only include shower bases for combos
-                if category == "Shower Bases":
-                    logger.info(f"Processing {len(category_data.get('products', []))} compatible bases")
-                    # Filter for corner shower bases only
-                    corner_bases = []
-                    
-                    for base in category_data.get("products", []):
-                        base_sku = base.get("sku", "")
-                        base_installation = base.get("installation", "").lower()
-                        
-                        logger.info(f"Base {base_sku}: installation type = '{base_installation}'")
-                        # Only include corner bases for combos
-                        if "corner" in base_installation:
-                            logger.info(f"✅ Adding corner base: {base_sku} - {base.get('name', '')}")
-                            corner_bases.append(base)
-                        else:
-                            logger.info(f"❌ Skipping non-corner base: {base_sku} - {base.get('name', '')}")
-                    
-                    # Add corner bases to compatible products
-                    if corner_bases:
-                        logger.info(f"Found {len(corner_bases)} corner bases for combo {combo_sku}")
-                        compatible_products.append({
-                            "category": "Shower Bases",
-                            "products": corner_bases
-                        })
-                    else:
-                        logger.info(f"No corner bases found for combo {combo_sku}")
-            
-        else:
-            logger.warning(f"No compatible products found for door component: {door_sku}")
-        
-        # Return the result with the combo product and compatible products
-        return {
-            "success": True,
-            "product": combo_product,
-            "compatibles": compatible_products
-        }
-        
-    except Exception as e:
-        logger.error(f"Error processing combo product: {str(e)}")
-        return {
-            "error": f"Error processing combo product: {str(e)}", 
-            "success": False,
-            "product": {},
-            "compatibles": []
-        }
