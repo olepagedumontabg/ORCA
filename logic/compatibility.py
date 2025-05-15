@@ -1276,63 +1276,49 @@ def process_combo_product(data, combo_sku):
         # Find compatible products for the combo
         compatible_products = []
         
-        # Define specific compatible shower bases based on the panel size and door
-        compatible_base_skus = []
+        # Use the existing compatibility logic but filter for corner shower bases only
+        # A combo is compatible with the same shower bases as its main door, but only corner bases
         
-        # For Halo door (138996) with different return panel sizes
-        if door_sku == "138996":
-            if panel_sku == "139393":  # 30" panel
-                compatible_base_skus = ["420001-502-001"]  # B3Square 3030
-            elif panel_sku == "139394":  # 42" panel
-                compatible_base_skus = ["420043-542-001"]  # B3Square 4842
-            elif panel_sku == "139395":  # 34" panel
-                compatible_base_skus = ["420002-502-001", "420001-542-001"]  # B3Square 3834, B3Square 4832
-            elif panel_sku == "139396":  # 36" panel
-                compatible_base_skus = ["420003-542-001"]  # B3Square 4836
-            elif panel_sku == "139397":  # 38" panel
-                compatible_base_skus = ["420004-542-001"]  # B3Square 4838
-            elif panel_sku == "139398":  # 32" panel
-                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
-                
-        # For Capella door (139584) with different return panel sizes
-        elif door_sku == "139584":
-            if panel_sku == "139590":  # 36" panel
-                compatible_base_skus = ["420003-542-001"]  # B3Square 4836
-            elif panel_sku == "139591":  # 42" panel
-                compatible_base_skus = ["420043-542-001"]  # B3Square 4842
+        # Get compatible products for the door component only
+        logger.info(f"Finding compatible products for door component: {door_sku}")
+        door_results = find_compatible_products(door_sku)
         
-        # Process compatible shower bases
-        if "Shower Bases" in data and compatible_base_skus:
-            base_matches = []
-            bases_df = data["Shower Bases"]
-            
-            for _, base in bases_df.iterrows():
-                base_id = str(base.get("Unique ID", "")).strip()
+        # If we found compatible products for the door, extract corner shower bases
+        if door_results.get("success") and door_results.get("compatibles"):
+            logger.info(f"Found compatible products for door: {door_sku}")
+            for category_data in door_results.get("compatibles", []):
+                category = category_data.get("category")
                 
-                # Only include bases that are specifically known to be compatible
-                if base_id in compatible_base_skus:
-                    base_data = base.to_dict()
-                    # Remove any NaN values
-                    base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                # Only include shower bases for combos
+                if category == "Shower Bases":
+                    logger.info(f"Processing {len(category_data.get('products', []))} compatible bases")
+                    # Filter for corner shower bases only
+                    corner_bases = []
                     
-                    base_dict = {
-                        "sku": base_id,
-                        "name": base_data.get("Product Name", ""),
-                        "image_url": image_handler.generate_image_url(base_data),
-                        "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
-                        "max_door_width": base_data.get("Max Door Width", ""),
-                        "installation": base_data.get("Installation", ""),
-                        "brand": base_data.get("Brand", ""),
-                        "series": base_data.get("Series", "")
-                    }
-                    base_matches.append(base_dict)
+                    for base in category_data.get("products", []):
+                        base_sku = base.get("sku", "")
+                        base_installation = base.get("installation", "").lower()
+                        
+                        logger.info(f"Base {base_sku}: installation type = '{base_installation}'")
+                        # Only include corner bases for combos
+                        if "corner" in base_installation:
+                            logger.info(f"✅ Adding corner base: {base_sku} - {base.get('name', '')}")
+                            corner_bases.append(base)
+                        else:
+                            logger.info(f"❌ Skipping non-corner base: {base_sku} - {base.get('name', '')}")
+                    
+                    # Add corner bases to compatible products
+                    if corner_bases:
+                        logger.info(f"Found {len(corner_bases)} corner bases for combo {combo_sku}")
+                        compatible_products.append({
+                            "category": "Shower Bases",
+                            "products": corner_bases
+                        })
+                    else:
+                        logger.info(f"No corner bases found for combo {combo_sku}")
             
-            # Add matched bases to the compatible products list
-            if base_matches:
-                compatible_products.append({
-                    "category": "Shower Bases",
-                    "products": base_matches
-                })
+        else:
+            logger.warning(f"No compatible products found for door component: {door_sku}")
         
         # Return the result with the combo product and compatible products
         return {
