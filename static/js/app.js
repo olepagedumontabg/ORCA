@@ -972,6 +972,27 @@ function compatibilityApp() {
         },
         
         /**
+         * Toggle a filter section's visibility
+         * @param {Event} event - Click event
+         */
+        toggleFilterSection(event) {
+            const header = event.currentTarget;
+            const section = header.closest('.filter-section');
+            const content = section.querySelector('.filter-checkbox-container');
+            const indicator = header.querySelector('span');
+            
+            if (content.style.display === 'none') {
+                // Show the content
+                content.style.display = 'block';
+                indicator.textContent = '−'; // Minus sign
+            } else {
+                // Hide the content
+                content.style.display = 'none';
+                indicator.textContent = '+'; // Plus sign
+            }
+        },
+        
+        /**
          * Toggle a category selection in filters
          * @param {string} category - The category to toggle
          */
