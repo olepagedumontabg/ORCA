@@ -13,7 +13,6 @@ function compatibilityApp() {
         productDetails: null,
         compatibleProducts: [],
         filteredCompatibleProducts: [],
-        incompatibilityReasons: [], // Store incompatibility reasons separately
         
         // On initialization, fix the filter panel width
         init() {
@@ -691,10 +690,12 @@ function compatibilityApp() {
         applyFilters() {
             console.log("Applying filters:", this.filters);
             
-            // Extract incompatibility reasons (we don't need to store this again here since we already do it in searchSku)
-            // But we'll add a console log to help with debugging
-            if (this.incompatibilityReasons.length > 0) {
-                console.log("Incompatibility reasons:", this.incompatibilityReasons);
+            // Log incompatibility reasons from categories, if any
+            const categoriesWithIncompatibility = this.compatibleProducts.filter(cat => cat.incompatible_reason);
+            if (categoriesWithIncompatibility.length > 0) {
+                console.log("Categories with incompatibility reasons:", categoriesWithIncompatibility.map(cat => 
+                    `${cat.category}: ${cat.incompatible_reason}`
+                ));
             }
                 
             // Start with a copy of the original compatible products
