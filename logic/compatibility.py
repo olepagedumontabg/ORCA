@@ -337,13 +337,14 @@ def find_compatible_products(sku):
             
             # Get key door properties
             door_min_width = product_info.get("Minimum Width")
-            door_max_width = product_info.get("Maximum Width") 
+            door_max_width = product_info.get("Maximum Width")
+            door_max_height = product_info.get("Maximum Height")
             door_series = product_info.get("Series")
             door_has_return = product_info.get("Has Return Panel") == "Yes"
             door_family = product_info.get("Family")
             door_type = product_info.get("Type", "").lower()
             
-            logger.debug(f"Door properties: Min Width={door_min_width}, Max Width={door_max_width}, Series={door_series}")
+            logger.debug(f"Door properties: Min Width={door_min_width}, Max Width={door_max_width}, Max Height={door_max_height}, Series={door_series}")
             logger.debug(f"Door has return: {door_has_return}, Family: {door_family}, Type: {door_type}")
             
             # Find compatible bathtubs (for Tub Doors)
