@@ -16,44 +16,95 @@ function compatibilityApp() {
         
         // On initialization, fix the filter panel width
         init() {
-            // Set fixed widths via JavaScript after DOM loaded
+            // Initial fix for filter panel width
+            this.fixFilterPanelWidth();
+            
+            // Fix width after DOM loaded
             document.addEventListener('DOMContentLoaded', () => {
                 this.fixFilterPanelWidth();
             });
             
             // Also fix filter panel width after each search
             this.$watch('compatibleProducts', () => {
+                // Fix immediately and then again after a short delay
+                this.fixFilterPanelWidth();
                 setTimeout(() => this.fixFilterPanelWidth(), 100);
+                setTimeout(() => this.fixFilterPanelWidth(), 500);
             });
+            
+            // Fix width when filters change
+            this.$watch('filters', () => {
+                // Fix immediately and then again after a short delay
+                this.fixFilterPanelWidth();
+                setTimeout(() => this.fixFilterPanelWidth(), 100);
+            }, { deep: true });
+            
+            // Fix width on window resize
+            window.addEventListener('resize', () => {
+                this.fixFilterPanelWidth();
+            });
+            
+            // Set an interval to check and fix the width periodically
+            setInterval(() => {
+                if (this.compatibleProducts.length > 0) {
+                    this.fixFilterPanelWidth();
+                }
+            }, 1000);
         },
         
         // Function to enforce fixed width on the filter panel
         fixFilterPanelWidth() {
+            // Fix the sidebar width
             const sidebar = document.querySelector('.filter-sidebar');
-            const container = document.querySelector('.filter-container');
-            
             if (sidebar) {
-                sidebar.style.width = '320px';
-                sidebar.style.minWidth = '320px';
-                sidebar.style.maxWidth = '320px';
-                sidebar.style.flex = '0 0 320px';
+                Object.assign(sidebar.style, {
+                    width: '320px',
+                    minWidth: '320px',
+                    maxWidth: '320px',
+                    flex: '0 0 320px'
+                });
             }
             
+            // Fix the sticky container inside sidebar
+            const stickyContainer = document.querySelector('.filter-sidebar > div');
+            if (stickyContainer) {
+                Object.assign(stickyContainer.style, {
+                    width: '320px',
+                    minWidth: '320px',
+                    maxWidth: '320px'
+                });
+            }
+            
+            // Fix the filter container
+            const container = document.querySelector('.filter-container');
             if (container) {
-                container.style.width = '290px';
-                container.style.minWidth = '290px';
-                container.style.maxWidth = '290px';
+                Object.assign(container.style, {
+                    width: '290px',
+                    minWidth: '290px',
+                    maxWidth: '290px'
+                });
             }
             
             // Make all filter labels fixed width
             document.querySelectorAll('.filter-label').forEach(label => {
-                label.style.width = '210px';
-                label.style.minWidth = '210px';
-                label.style.maxWidth = '210px';
-                label.style.textOverflow = 'ellipsis';
-                label.style.overflow = 'hidden';
-                label.style.whiteSpace = 'nowrap';
-                label.style.display = 'inline-block';
+                Object.assign(label.style, {
+                    width: '210px',
+                    minWidth: '210px',
+                    maxWidth: '210px',
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block'
+                });
+            });
+            
+            // Also fix the filter groups themselves
+            document.querySelectorAll('.filter-container > div').forEach(group => {
+                Object.assign(group.style, {
+                    width: '290px',
+                    maxWidth: '290px',
+                    overflow: 'hidden'
+                });
             });
         },
         
