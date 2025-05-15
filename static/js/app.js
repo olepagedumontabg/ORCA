@@ -115,6 +115,14 @@ function compatibilityApp() {
                 
                 // Add class for styling
                 group.classList.add('filter-section');
+                
+                // Add click handlers to filter section headers if not already done
+                const header = group.querySelector('h3');
+                if (header && !header.hasAttribute('data-toggle-initialized')) {
+                    header.style.cursor = 'pointer';
+                    header.setAttribute('data-toggle-initialized', 'true');
+                    header.addEventListener('click', this.toggleFilterSection);
+                }
             });
         },
         
