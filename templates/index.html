@@ -20,7 +20,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/padding-fix.css') }}">
     
     <style>
-        /* Add left padding to results container - guaranteed high precedence */
+        /* Add left padding to content container - guaranteed high precedence */
+        .content-container,
         #resultsContainer, 
         #resultsContainer > div, 
         .product-details-section, 
@@ -308,7 +309,7 @@
         </aside>
 
         <!-- Search and results area -->
-        <div class="flex-grow">
+        <div class="flex-grow content-container" style="padding-left: 20px;">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">

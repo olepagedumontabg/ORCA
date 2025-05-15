@@ -1,16 +1,16 @@
 /* Direct padding fixes with !important to override existing styles */
 
+/* Main content container padding */
+.content-container {
+    padding-left: 20px !important;
+}
+
 /* Target the main results container directly */
 #resultsContainer {
     padding-left: 20px !important;
 }
 
-/* Target all direct children of the results container */
-#resultsContainer > div {
-    padding-left: 20px !important;
-}
-
-/* Ensure sections with specific attributes receive padding */
+/* Target sections with specific attributes receive padding */
 div[x-show="productDetails && !errorMessage"] {
     padding-left: 20px !important;
 }
@@ -19,17 +19,17 @@ div[x-show="compatibleProducts.length > 0 && !errorMessage"] {
     padding-left: 20px !important;
 }
 
-/* Target the category headings */
-h2.text-xl.font-semibold {
-    padding-left: 20px !important;
-}
-
-/* Target the product details section */
+/* Product details section */
 .product-details-section {
     padding-left: 20px !important;
 }
 
-/* Add padding to the compatible products section */
+/* Compatible products section */
 .compatible-products-section {
+    padding-left: 20px !important;
+}
+
+/* For specific content areas after a search is performed */
+.search-results-content {
     padding-left: 20px !important;
 }
