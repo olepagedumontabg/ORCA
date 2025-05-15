@@ -142,8 +142,8 @@
     <main class="flex-grow container mx-auto px-4 pt-8 pb-8 md:flex md:flex-row" x-data="compatibilityApp()">
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
-            class="hidden p-0 m-0" 
-            style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
+            class="hidden p-0" 
+            style="width: 300px !important; min-width: 300px !important; max-width: 300px !important; padding-right: 40px !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
             :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
         >
             <!-- Filters panel - shown when search results are available -->
@@ -299,7 +299,7 @@
         </aside>
 
         <!-- Search and results area -->
-        <div class="flex-grow">
+        <div class="flex-grow" style="padding-left: 16px;">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
