@@ -8,6 +8,7 @@ from datetime import datetime
 from logic import base_compatibility
 from logic import bathtub_compatibility
 from logic import shower_compatibility
+from logic import tubshower_compatibility
 from logic import image_handler
 
 # Global flag to indicate whether the data update service is available
@@ -226,6 +227,14 @@ def find_compatible_products(sku):
             # Find compatible products for the shower
             # This returns a list of categories with already enhanced products
             compatible_products = shower_compatibility.find_shower_compatibilities(data, product_info)
+            
+        elif product_category == 'Tub Showers':
+            # Use the dedicated tub shower compatibility logic
+            logger.debug(f"Using tub shower compatibility logic for SKU: {sku}")
+            
+            # Find compatible products for the tub shower
+            # This returns a list of categories with already enhanced products
+            compatible_products = tubshower_compatibility.find_tubshower_compatibilities(data, product_info)
             
         elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
@@ -483,6 +492,51 @@ def find_compatible_products(sku):
                     compatible_products.append({
                         "category": "Showers",
                         "products": shower_matches
+                    })
+                    
+            # Find compatible tub shower units (for Tub Doors)
+            if product_category == 'Tub Doors' and 'Tub Showers' in data:
+                tubshower_matches = []
+                tubshowers_df = data['Tub Showers']
+                
+                for _, tubshower in tubshowers_df.iterrows():
+                    tubshower_width = tubshower.get("Max Door Width")
+                    tubshower_height = tubshower.get("Max Door Height")
+                    tubshower_series = tubshower.get("Series")
+                    tubshower_id = str(tubshower.get("Unique ID", "")).strip()
+                    
+                    # Match criteria for tub shower installations
+                    if (
+                        pd.notna(tubshower_width) and pd.notna(tubshower_height) and
+                        pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        door_min_width <= tubshower_width <= door_max_width and
+                        tubshower_compatibility.series_compatible(tubshower_series, door_series)
+                    ):
+                        # Format tub shower data for the frontend
+                        tubshower_data = tubshower.to_dict()
+                        # Remove any NaN values
+                        tubshower_data = {k: v for k, v in tubshower_data.items() if pd.notna(v)}
+                        
+                        product_dict = {
+                            "sku": tubshower_id,
+                            "is_combo": False,
+                            "_ranking": tubshower_data.get("Ranking", 999),
+                            "name": tubshower_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(tubshower_data),
+                            "nominal_dimensions": tubshower_data.get("Nominal Dimensions", ""),
+                            "brand": tubshower_data.get("Brand", ""),
+                            "series": tubshower_data.get("Series", ""),
+                            "max_door_width": tubshower_data.get("Max Door Width", ""),
+                            "max_door_height": tubshower_data.get("Max Door Height", "")
+                        }
+                        tubshower_matches.append(product_dict)
+                
+                # Sort tub showers by ranking
+                if tubshower_matches:
+                    tubshower_matches.sort(key=lambda x: x.get('_ranking', 999))
+                    compatible_products.append({
+                        "category": "Tub Showers",
+                        "products": tubshower_matches
                     })
                     
         # BACKWARDS COMPATIBILITY: Find bases/bathtubs compatible with walls
