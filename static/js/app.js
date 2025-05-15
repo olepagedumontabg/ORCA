@@ -75,6 +75,16 @@ function compatibilityApp() {
                 });
             }
             
+            // Fix the filter header
+            const header = document.querySelector('.filter-header');
+            if (header) {
+                Object.assign(header.style, {
+                    width: '260px',
+                    minWidth: '260px',
+                    maxWidth: '260px'
+                });
+            }
+            
             // Fix the filter container
             const container = document.querySelector('.filter-container');
             if (container) {
