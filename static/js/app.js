@@ -602,6 +602,8 @@ function compatibilityApp() {
                 this.isLoading = false;
                 this.productDetails = null;
                 this.compatibleProducts = [];
+                this.filteredCompatibleProducts = [];
+                this.incompatibilityReasons = [];
                 
                 // Provide a more specific error message
                 if (error.message.includes('content-type') || error.message.includes('JSON')) {
@@ -689,13 +691,11 @@ function compatibilityApp() {
         applyFilters() {
             console.log("Applying filters:", this.filters);
             
-            // Extract incompatibility reasons before filtering
-            this.incompatibilityReasons = this.compatibleProducts
-                .filter(category => category.incompatible_reason)
-                .map(category => ({
-                    category: category.category,
-                    reason: category.incompatible_reason
-                }));
+            // Extract incompatibility reasons (we don't need to store this again here since we already do it in searchSku)
+            // But we'll add a console log to help with debugging
+            if (this.incompatibilityReasons.length > 0) {
+                console.log("Incompatibility reasons:", this.incompatibilityReasons);
+            }
                 
             // Start with a copy of the original compatible products
             this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
