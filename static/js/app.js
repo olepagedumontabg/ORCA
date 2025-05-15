@@ -805,6 +805,25 @@ function compatibilityApp() {
                 if (!doorTypeMatch) return false;
             }
             
+            // Material filter - multi-select
+            if (this.filters.selectedMaterials.length > 0) {
+                // Skip material filtering if the product doesn't have a material
+                if (!product.material) {
+                    console.log(`  Product ${product.sku} has no material, skipping filter`);
+                    // If no material is defined, don't filter this product out
+                    return true;
+                }
+                
+                let materialMatch = false;
+                for (let selectedMaterial of this.filters.selectedMaterials) {
+                    if (product.material.toLowerCase() === selectedMaterial.toLowerCase()) {
+                        materialMatch = true;
+                        break;
+                    }
+                }
+                if (!materialMatch) return false;
+            }
+            
             // All filters passed
             return true;
         },
@@ -877,6 +896,25 @@ function compatibilityApp() {
                     }
                 }
                 if (!doorTypeMatch) return false;
+            }
+            
+            // Material filter - multi-select
+            if (this.filters.selectedMaterials.length > 0) {
+                // Skip material filtering if the product doesn't have a material
+                if (!mainProduct.material) {
+                    console.log(`  Main Product ${mainProduct.sku} has no material, skipping filter`);
+                    // If no material is defined, don't filter this product out
+                    return true;
+                }
+                
+                let materialMatch = false;
+                for (let selectedMaterial of this.filters.selectedMaterials) {
+                    if (mainProduct.material.toLowerCase() === selectedMaterial.toLowerCase()) {
+                        materialMatch = true;
+                        break;
+                    }
+                }
+                if (!materialMatch) return false;
             }
             
             // All filters passed
