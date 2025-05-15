@@ -891,6 +891,7 @@ function compatibilityApp() {
             this.availableFilters.series = [];
             this.availableFilters.brands = [];
             this.availableFilters.categories = [];
+            this.availableFilters.materials = [];
             
             // Sets to collect unique values
             const seriesSet = new Set();
@@ -899,6 +900,7 @@ function compatibilityApp() {
             const doorTypeSet = new Set([
                 'Sliding', 'Pivot', 'Bypass'
             ]); // Only use the 3 door types from Excel
+            const materialSet = new Set();
             
             // Categories come from the results
             this.compatibleProducts.forEach(category => {
@@ -915,6 +917,7 @@ function compatibilityApp() {
                             if (product.main_product.series) seriesSet.add(product.main_product.series);
                             if (product.main_product.brand) brandsSet.add(product.main_product.brand);
                             if (product.main_product.glass_thickness) glassThicknessSet.add(product.main_product.glass_thickness);
+                            if (product.main_product.material) materialSet.add(product.main_product.material);
                             // Only add door_type if it's one of our valid types
                             if (product.main_product.door_type && 
                                 ['Sliding', 'Pivot', 'Bypass'].includes(product.main_product.door_type)) {
@@ -925,6 +928,7 @@ function compatibilityApp() {
                             if (product.secondary_product.series) seriesSet.add(product.secondary_product.series);
                             if (product.secondary_product.brand) brandsSet.add(product.secondary_product.brand);
                             if (product.secondary_product.glass_thickness) glassThicknessSet.add(product.secondary_product.glass_thickness);
+                            if (product.secondary_product.material) materialSet.add(product.secondary_product.material);
                             // Only add door_type if it's one of our valid types
                             if (product.secondary_product.door_type && 
                                 ['Sliding', 'Pivot', 'Bypass'].includes(product.secondary_product.door_type)) {
@@ -937,6 +941,7 @@ function compatibilityApp() {
                         if (product.series) seriesSet.add(product.series);
                         if (product.brand) brandsSet.add(product.brand);
                         if (product.glass_thickness) glassThicknessSet.add(product.glass_thickness);
+                        if (product.material) materialSet.add(product.material);
                         // Only add door_type if it's one of our valid types
                         if (product.door_type && 
                             ['Sliding', 'Pivot', 'Bypass'].includes(product.door_type)) {
@@ -951,6 +956,7 @@ function compatibilityApp() {
             this.availableFilters.brands = [...brandsSet].sort();
             this.availableFilters.glassThicknesses = [...glassThicknessSet].filter(t => t).sort();
             this.availableFilters.doorTypes = [...doorTypeSet].filter(t => t).sort();
+            this.availableFilters.materials = [...materialSet].filter(m => m).sort();
         },
         
         /**
@@ -962,7 +968,8 @@ function compatibilityApp() {
                 selectedBrands: [],
                 selectedGlassThicknesses: [],
                 selectedDoorTypes: [],
-                selectedCategories: []
+                selectedCategories: [],
+                selectedMaterials: []
             };
             
             // Apply the reset filters
