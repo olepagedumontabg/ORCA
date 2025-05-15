@@ -142,14 +142,15 @@
     <main class="flex-grow container mx-auto px-4 pt-8 pb-8 md:flex md:flex-row" x-data="compatibilityApp()">
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
-            class="hidden filter-sidebar p-0 m-0" 
+            class="hidden p-0 m-0" 
+            style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
             :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
         >
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="sticky top-8 h-full p-0 m-0 filter-panel-container"
-                style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
+                class="p-0 m-0 filter-panel-container"
+                style="position: sticky; top: 32px; height: full; width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
             >
                 <!-- Filter title - completely rebuilt -->
                 <div class="filter-header" style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 0 16px 0 !important; box-sizing: border-box !important; border-bottom: 1px solid #e5e7eb;">
