@@ -143,7 +143,7 @@
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
             class="hidden p-0" 
-            style="width: 300px !important; min-width: 300px !important; max-width: 300px !important; padding-right: 40px !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
+            style="width: 300px !important; min-width: 300px !important; max-width: 300px !important; padding-right: 20px !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important; border-right: 1px solid #e5e7eb !important;"
             :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
         >
             <!-- Filters panel - shown when search results are available -->
@@ -299,7 +299,7 @@
         </aside>
 
         <!-- Search and results area -->
-        <div class="flex-grow" style="padding-left: 16px;">
+        <div class="flex-grow" style="padding-left: 32px; margin-left: 20px;">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
