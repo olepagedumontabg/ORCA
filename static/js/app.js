@@ -565,38 +565,6 @@ function compatibilityApp() {
         },
         
         /**
-         * Create a combo product from a door and a return panel
-         * @param {object} door - The door product
-         * @param {object} panel - The return panel product
-         */
-        createCombo(door, panel) {
-            if (!door || !panel) return;
-            
-            console.log("Creating combo with door:", door.sku, "and panel:", panel.sku);
-            
-            // Build the combo SKU
-            const comboSku = `${door.sku}|${panel.sku}`;
-            
-            // Check if this SKU is already in search box
-            if (this.searchInput === comboSku) {
-                alert("This combo is already loaded.");
-                return;
-            }
-            
-            // Set the search input to the combo SKU
-            this.searchInput = comboSku;
-            
-            // Perform the search with the combo SKU
-            this.submitSearch();
-            
-            // Scroll to top of search results
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        },
-        
-        /**
          * Apply filters to compatible products
          */
         applyFilters() {

@@ -376,30 +376,6 @@
                                     <span class="font-medium text-gray-500">Maximum Door Width:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
                                 </div>
-                                
-                                <!-- Compatible Return Panels (ONLY for Doors that have them) -->
-                                <div x-show="productDetails?.compatible_return_panels && productDetails.compatible_return_panels.length > 0" class="mt-4 border-t pt-3">
-                                    <span class="font-medium text-gray-700">Compatible Return Panels:</span>
-                                    <div class="mt-2 grid grid-cols-1 gap-3">
-                                        <template x-for="panel in productDetails.compatible_return_panels" :key="panel.sku">
-                                            <div class="border border-gray-200 rounded-md p-3 hover:bg-gray-50">
-                                                <div class="flex items-center justify-between">
-                                                    <div>
-                                                        <p class="text-sm font-medium text-gray-800" x-text="panel.name"></p>
-                                                        <p class="text-xs text-gray-500" x-text="'SKU: ' + panel.sku"></p>
-                                                        <p class="text-xs text-gray-500" x-show="panel.return_panel_size" x-text="'Size: ' + panel.return_panel_size"></p>
-                                                    </div>
-                                                    <button 
-                                                        class="px-3 py-1 bg-[#001A70] text-white text-xs rounded-md hover:bg-blue-900"
-                                                        @click="createCombo(productDetails, panel)"
-                                                    >
-                                                        Create Combo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
