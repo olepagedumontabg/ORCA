@@ -22,6 +22,10 @@ div[x-show="compatibleProducts.length > 0 && !errorMessage"] {
 /* Product details section */
 .product-details-section {
     padding-left: 20px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    margin-right: 20px !important;
+    border-left: none !important;
+    border-right: none !important;
 }
 
 /* Compatible products section */
