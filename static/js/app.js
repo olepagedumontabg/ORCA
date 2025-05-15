@@ -907,8 +907,11 @@ function compatibilityApp() {
             
             // Categories come from the results
             this.compatibleProducts.forEach(category => {
-                // Add category to available categories
-                this.availableFilters.categories.push(category.category);
+                // Only add categories that have products (no incompatibility reasons)
+                if (!category.incompatible_reason && category.products && category.products.length > 0) {
+                    // Add category to available categories
+                    this.availableFilters.categories.push(category.category);
+                }
                 
                 // Skip categories with incompatibility reasons
                 if (category.incompatible_reason) return;
