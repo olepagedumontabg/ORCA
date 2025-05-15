@@ -13,6 +13,7 @@ function compatibilityApp() {
         productDetails: null,
         compatibleProducts: [],
         filteredCompatibleProducts: [],
+        incompatibilityReasons: [], // Store incompatibility reasons separately
         
         // On initialization, fix the filter panel width
         init() {
