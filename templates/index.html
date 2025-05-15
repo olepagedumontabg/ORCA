@@ -91,6 +91,7 @@
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
                 class="sticky top-8 h-full pr-8"
+                style="width: 320px !important; min-width: 320px !important; max-width: 320px !important;"
             >
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-semibold text-secondary">Filters</h2>
@@ -191,7 +192,8 @@
                                     >
                                     <label 
                                         :for="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
+                                        class="ml-2 block text-sm text-gray-700 filter-label"
+                                        :title="thickness"
                                         x-text="thickness"
                                     ></label>
                                 </div>
@@ -214,7 +216,8 @@
                                     >
                                     <label 
                                         :for="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
+                                        class="ml-2 block text-sm text-gray-700 filter-label"
+                                        :title="doorType"
                                         x-text="doorType"
                                     ></label>
                                 </div>

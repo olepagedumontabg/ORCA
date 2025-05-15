@@ -14,6 +14,49 @@ function compatibilityApp() {
         compatibleProducts: [],
         filteredCompatibleProducts: [],
         
+        // On initialization, fix the filter panel width
+        init() {
+            // Set fixed widths via JavaScript after DOM loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                this.fixFilterPanelWidth();
+            });
+            
+            // Also fix filter panel width after each search
+            this.$watch('compatibleProducts', () => {
+                setTimeout(() => this.fixFilterPanelWidth(), 100);
+            });
+        },
+        
+        // Function to enforce fixed width on the filter panel
+        fixFilterPanelWidth() {
+            const sidebar = document.querySelector('.filter-sidebar');
+            const container = document.querySelector('.filter-container');
+            
+            if (sidebar) {
+                sidebar.style.width = '320px';
+                sidebar.style.minWidth = '320px';
+                sidebar.style.maxWidth = '320px';
+                sidebar.style.flex = '0 0 320px';
+            }
+            
+            if (container) {
+                container.style.width = '290px';
+                container.style.minWidth = '290px';
+                container.style.maxWidth = '290px';
+            }
+            
+            // Make all filter labels fixed width
+            document.querySelectorAll('.filter-label').forEach(label => {
+                label.style.width = '210px';
+                label.style.minWidth = '210px';
+                label.style.maxWidth = '210px';
+                label.style.textOverflow = 'ellipsis';
+                label.style.overflow = 'hidden';
+                label.style.whiteSpace = 'nowrap';
+                label.style.display = 'inline-block';
+            });
+        },
+        
         // Autocomplete suggestions
         suggestions: [],
         rawSkus: [],         // Array to store the raw SKU values
