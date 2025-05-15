@@ -255,7 +255,7 @@
                     </div>
 
                     <!-- Glass thickness filter -->
-                    <div class="filter-section">
+                    <div class="filter-section" x-show="hasGlassFilter">
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Glass Thickness<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
@@ -279,7 +279,7 @@
                     </div>
 
                     <!-- Door type filter -->
-                    <div class="filter-section">
+                    <div class="filter-section" x-show="hasDoorsFilter">
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Door Type<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
@@ -296,6 +296,30 @@
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="doorType"
                                         x-text="doorType"
+                                    ></label>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Material filter -->
+                    <div class="filter-section" x-show="hasMaterialFilter">
+                        <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Material<span>−</span></h3>
+                        <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                            <template x-for="material in availableFilters.materials" :key="material">
+                                <div class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        :id="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
+                                        :checked="filters.selectedMaterials.includes(material)"
+                                        @click="toggleMaterialFilter(material)"
+                                        class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                                    >
+                                    <label 
+                                        :for="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
+                                        class="ml-2 block text-sm text-gray-700 filter-label"
+                                        :title="material"
+                                        x-text="material"
                                     ></label>
                                 </div>
                             </template>

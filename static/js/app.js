@@ -140,6 +140,12 @@ function compatibilityApp() {
         
         // UI state for filters
         showFilters: true, // Default show filters in sidebar
+        
+        // Dynamic filter visibility flags
+        hasGlassFilter: false,  // Show glass thickness filter (for doors and panels)
+        hasDoorsFilter: false,  // Show door type filter (for doors)
+        hasMaterialFilter: false, // Show material filter (for bathtubs, bases, showers)
+        
         availableFilters: {
             series: [],
             brands: [],
@@ -578,6 +584,9 @@ function compatibilityApp() {
                     
                     // Extract filter options from results
                     this.extractFilterOptions();
+                    
+                    // Set dynamic filter visibility based on product categories
+                    this.setDynamicFilterVisibility();
                     
                     // Reset filters to default
                     this.resetFilters();
