@@ -985,30 +985,18 @@ def process_combo_product(data, combo_sku):
         # For a Corner Combo (Door + Return Panel), we only want to show specifically
         # compatible corner shower bases that are confirmed to work with this combo
         
-        # Match panel size to base size to get proper compatible bases
-        # Return panel sizes need to match the appropriate shower base
-        return_panel_info = panel_info if panel_info else {}
-        return_panel_size = return_panel_info.get("Return Panel Size", "")
-        
-        # Make sure return_panel_size is a string
-        if not isinstance(return_panel_size, str):
-            return_panel_size = str(return_panel_size) if return_panel_size is not None else ""
-        
-        # Parse the return panel size (e.g., "for 42 in." -> 42)
-        panel_size_inches = 0
-        if return_panel_size:
-            size_match = re.search(r'for\s+(\d+)\s*in', return_panel_size)
-            if size_match:
-                panel_size_inches = int(size_match.group(1))
-                logger.debug(f"Extracted panel size: {panel_size_inches} inches")
-        
         # We don't use hard-coded SKU mappings anymore
         # Instead we'll extract panel dimensions and find compatible corner bases dynamically
         
+        # Extract panel size from Return Panel Size property or name
         panel_size_inches = 0
         
-        # Extract panel size from Return Panel Size property or name
+        # First, check the Return Panel Size field
         panel_size = panel_info.get("Return Panel Size", "")
+        # Make sure it's a string
+        if panel_size is not None and not isinstance(panel_size, str):
+            panel_size = str(panel_size)
+            
         if panel_size:
             # Try to match pattern like "for 34 in."
             size_match = re.search(r'for\s+(\d+)\s*in', panel_size)
@@ -1019,7 +1007,7 @@ def process_combo_product(data, combo_sku):
         # If not found in Return Panel Size, try to find it in the product name
         if panel_size_inches == 0:
             panel_name = panel_info.get("Product Name", "")
-            if panel_name and "in" in panel_name:
+            if panel_name and isinstance(panel_name, str) and "in" in panel_name:
                 size_match = re.search(r'for\s+(\d+)\s*in', panel_name)
                 if size_match:
                     panel_size_inches = int(size_match.group(1))
@@ -1142,12 +1130,12 @@ def process_combo_product(data, combo_sku):
                 panel_size = panel_info.get("Return Panel Size", "")
                 
                 # Try to extract the panel width from the return panel size or name
-                if panel_size:
+                if panel_size and isinstance(panel_size, str):
                     size_match = re.search(r'for\s+(\d+)\s*in', panel_size)
                     if size_match:
                         panel_width_inches = int(size_match.group(1))
                         logger.info(f"Extracted panel width from size: {panel_width_inches} inches")
-                elif panel_name and "in" in panel_name:
+                elif panel_name and isinstance(panel_name, str) and "in" in panel_name:
                     # Look for patterns like "for 34 in" or "34 in" in the name
                     name_match = re.search(r'for\s+(\d+)\s*in', panel_name)
                     if name_match:
