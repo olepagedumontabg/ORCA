@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from logic import base_compatibility
 from logic import bathtub_compatibility
+from logic import shower_compatibility
 from logic import image_handler
 
 # Global flag to indicate whether the data update service is available
@@ -218,6 +219,14 @@ def find_compatible_products(sku):
             # This returns a list of categories with already enhanced products
             compatible_products = bathtub_compatibility.find_bathtub_compatibilities(data, product_info)
             
+        elif product_category == 'Showers':
+            # Use the dedicated shower compatibility logic
+            logger.debug(f"Using shower compatibility logic for SKU: {sku}")
+            
+            # Find compatible products for the shower
+            # This returns a list of categories with already enhanced products
+            compatible_products = shower_compatibility.find_shower_compatibilities(data, product_info)
+            
         elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
             logger.debug(f"Using shower base compatibility logic for SKU: {sku}")
@@ -426,6 +435,54 @@ def find_compatible_products(sku):
                     compatible_products.append({
                         "category": "Shower Bases",
                         "products": base_matches
+                    })
+                    
+            # Find compatible shower units (for Shower Doors)
+            if product_category == 'Shower Doors' and 'Showers' in data:
+                shower_matches = []
+                showers_df = data['Showers']
+                
+                for _, shower in showers_df.iterrows():
+                    shower_width = shower.get("Max Door Width")
+                    shower_height = shower.get("Max Door Height")
+                    shower_install = shower.get("Installation")
+                    shower_series = shower.get("Series")
+                    shower_id = str(shower.get("Unique ID", "")).strip()
+                    
+                    # Match criteria for alcove shower installations
+                    if (
+                        shower_install == "Alcove" and
+                        pd.notna(shower_width) and pd.notna(shower_height) and
+                        pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        door_min_width <= shower_width <= door_max_width and
+                        shower_compatibility.series_compatible(shower_series, door_series)
+                    ):
+                        # Format shower data for the frontend
+                        shower_data = shower.to_dict()
+                        # Remove any NaN values
+                        shower_data = {k: v for k, v in shower_data.items() if pd.notna(v)}
+                        
+                        product_dict = {
+                            "sku": shower_id,
+                            "is_combo": False,
+                            "_ranking": shower_data.get("Ranking", 999),
+                            "name": shower_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(shower_data),
+                            "nominal_dimensions": shower_data.get("Nominal Dimensions", ""),
+                            "brand": shower_data.get("Brand", ""),
+                            "series": shower_data.get("Series", ""),
+                            "max_door_width": shower_data.get("Max Door Width", ""),
+                            "max_door_height": shower_data.get("Max Door Height", ""),
+                            "installation": shower_data.get("Installation", "")
+                        }
+                        shower_matches.append(product_dict)
+                
+                # Sort showers by ranking
+                if shower_matches:
+                    shower_matches.sort(key=lambda x: x.get('_ranking', 999))
+                    compatible_products.append({
+                        "category": "Showers",
+                        "products": shower_matches
                     })
                     
         # BACKWARDS COMPATIBILITY: Find bases/bathtubs compatible with walls
