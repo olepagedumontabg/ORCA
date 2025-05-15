@@ -54,47 +54,45 @@ function compatibilityApp() {
         
         // Function to enforce fixed width on the filter panel
         fixFilterPanelWidth() {
-            // Fix the sidebar width
+            // Fix the sidebar width - more aggressive approach
             const sidebar = document.querySelector('.filter-sidebar');
             if (sidebar) {
-                Object.assign(sidebar.style, {
-                    width: '280px',
-                    minWidth: '280px',
-                    maxWidth: '280px',
-                    flex: '0 0 280px'
-                });
+                sidebar.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; flex: 0 0 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
             }
             
             // Fix the sticky container inside sidebar
             const stickyContainer = document.querySelector('.filter-sidebar > div');
             if (stickyContainer) {
-                Object.assign(stickyContainer.style, {
-                    width: '280px',
-                    minWidth: '280px',
-                    maxWidth: '280px'
-                });
+                stickyContainer.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
             }
             
-            // Fix the filter header
-            const header = document.querySelector('.filter-header');
-            if (header) {
-                header.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;";
-            }
+            // Fix every filter-related element
+            document.querySelectorAll('.filter-header, .filter-container, .filter-section').forEach(el => {
+                el.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
+            });
             
-            // Fix the filter container
-            const container = document.querySelector('.filter-container');
-            if (container) {
-                Object.assign(container.style, {
-                    width: '260px',
-                    minWidth: '260px',
-                    maxWidth: '260px',
-                    border: 'none',
-                    boxShadow: 'none',
-                    padding: '0'
-                });
+            // Fix the header table and its contents
+            const headerTable = document.querySelector('.filter-header table');
+            if (headerTable) {
+                headerTable.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; border-collapse: collapse !important; border-spacing: 0 !important; padding: 0 !important; margin: 0 !important;";
+                
+                // Set specific width for the first row in the table
+                const headerRow = headerTable.querySelector('tr');
+                if (headerRow) {
+                    headerRow.style.cssText = "width: 260px !important; padding: 0 !important; margin: 0 !important;";
+                }
+                
+                // Set specific widths for the cells
+                const headerCells = headerTable.querySelectorAll('td');
+                if (headerCells.length >= 2) {
+                    headerCells[0].style.cssText = "width: 130px !important; text-align: left !important; padding: 0 0 8px 0 !important; margin: 0 !important;";
+                    headerCells[1].style.cssText = "width: 130px !important; text-align: right !important; padding: 0 0 8px 0 !important; margin: 0 !important;";
+                }
             }
-            
-            // Make all filter labels fixed width
+        },
+        
+        // Make all filter labels fixed width
+        makeLabelWidthConsistent() {
             document.querySelectorAll('.filter-label').forEach(label => {
                 Object.assign(label.style, {
                     width: '190px',
