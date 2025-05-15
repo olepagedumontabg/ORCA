@@ -300,12 +300,7 @@
             <!-- No filter options shown before search -->
         </aside>
         
-        <!-- Explicit spacing div - will be visible when filter panel is visible -->
-        <div class="spacer-div" x-show="compatibleProducts.length > 0 && !errorMessage" 
-            style="min-width: 100px !important; width: 100px !important; flex: 0 0 100px !important; 
-                   border-right: 1px solid #e5e7eb; margin-right: 40px;">
-            <!-- Visual separator with extra margin -->
-        </div>
+        <!-- No spacer needed with table layout -->
             
         <!-- Search and results area -->
         <div class="results-container" style="flex-grow: 1; margin-left: 40px;">
@@ -617,5 +612,7 @@
 
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/layout-fix.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/formatters.js') }}"></script>
 </body>
 </html>
