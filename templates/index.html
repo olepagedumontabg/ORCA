@@ -37,6 +37,8 @@
             max-width: 210px !important;
             text-overflow: ellipsis;
             overflow: hidden;
+            white-space: nowrap;
+            display: inline-block;
         }
         /* Hide elements with x-cloak attribute until Alpine.js is loaded */
         [x-cloak] { display: none !important; }
@@ -118,7 +120,8 @@
                                     >
                                     <label 
                                         :for="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
+                                        class="ml-2 block text-sm text-gray-700 filter-label"
+                                        :title="category"
                                         x-text="category"
                                     ></label>
                                 </div>
@@ -141,7 +144,8 @@
                                     >
                                     <label 
                                         :for="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words w-[210px]"
+                                        class="ml-2 block text-sm text-gray-700 filter-label"
+                                        :title="brand"
                                         x-text="brand"
                                     ></label>
                                 </div>
@@ -187,7 +191,7 @@
                                     >
                                     <label 
                                         :for="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words w-[210px]"
+                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
                                         x-text="thickness"
                                     ></label>
                                 </div>
@@ -210,7 +214,7 @@
                                     >
                                     <label 
                                         :for="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words w-[210px]"
+                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
                                         x-text="doorType"
                                     ></label>
                                 </div>
