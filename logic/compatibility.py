@@ -462,8 +462,9 @@ def find_compatible_products(sku):
                     if (
                         shower_install == "Alcove" and
                         pd.notna(shower_width) and pd.notna(shower_height) and
-                        pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        pd.notna(door_min_width) and pd.notna(door_max_width) and pd.notna(door_max_height) and
                         door_min_width <= shower_width <= door_max_width and
+                        door_max_height <= shower_height and
                         shower_compatibility.series_compatible(shower_series, door_series)
                     ):
                         # Format shower data for the frontend
@@ -508,8 +509,9 @@ def find_compatible_products(sku):
                     # Match criteria for tub shower installations
                     if (
                         pd.notna(tubshower_width) and pd.notna(tubshower_height) and
-                        pd.notna(door_min_width) and pd.notna(door_max_width) and
+                        pd.notna(door_min_width) and pd.notna(door_max_width) and pd.notna(door_max_height) and
                         door_min_width <= tubshower_width <= door_max_width and
+                        door_max_height <= tubshower_height and
                         tubshower_compatibility.series_compatible(tubshower_series, door_series)
                     ):
                         # Format tub shower data for the frontend

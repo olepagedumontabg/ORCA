@@ -86,7 +86,7 @@ def find_shower_compatibilities(data, shower_info):
                 pd.notna(shower_width) and pd.notna(shower_height) and
                 pd.notna(door_min_width) and pd.notna(door_max_width) and pd.notna(door_height) and
                 door_min_width <= shower_width <= door_max_width and
-                shower_height <= door_height and
+                door_height <= shower_height and
                 series_compatible(shower_series, door_series)
             ):
                 logger.debug(f"✅ Found compatible door: {door_id} - {door.get('Product Name')}")

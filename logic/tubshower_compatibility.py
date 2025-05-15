@@ -83,7 +83,7 @@ def find_tubshower_compatibilities(data, tubshower_info):
                 pd.notna(tub_width) and pd.notna(tub_height) and
                 pd.notna(door_min_width) and pd.notna(door_max_width) and pd.notna(door_height) and
                 door_min_width <= tub_width <= door_max_width and
-                tub_height <= door_height and
+                door_height <= tub_height and
                 series_compatible(tub_series, door_series)
             ):
                 logger.debug(f"✅ Found compatible tub door: {door_id} - {door.get('Product Name')}")
