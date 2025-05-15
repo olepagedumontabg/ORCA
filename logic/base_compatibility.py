@@ -14,10 +14,12 @@ def find_base_compatibilities(data, base_info):
         base_info (dict): Dictionary containing base product information
         
     Returns:
-        list: List of dictionaries containing category and compatible SKUs
+        list: List of dictionaries containing category and compatible SKUs,
+              or dictionaries with incompatibility reasons
     """
     try:
         compatible_products = []
+        incompatibility_reasons = {}
 
         # Get the base product details
         base_width = base_info.get("Max Door Width")
@@ -29,6 +31,19 @@ def find_base_compatibilities(data, base_info):
         base_nominal = base_info.get("Nominal Dimensions")
         base_brand = base_info.get("Brand")
         base_family = base_info.get("Family")
+        
+        # Check for incompatibility reasons
+        doors_cant_fit_reason = base_info.get("Reason Doors Can't Fit")
+        walls_cant_fit_reason = base_info.get("Reason Walls Can't Fit")
+        
+        # If there are specific reasons why doors or walls can't fit, add them to the incompatibility reasons
+        if pd.notna(doors_cant_fit_reason) and doors_cant_fit_reason:
+            incompatibility_reasons["Shower Doors"] = doors_cant_fit_reason
+            logger.info(f"Doors incompatibility reason found: {doors_cant_fit_reason}")
+            
+        if pd.notna(walls_cant_fit_reason) and walls_cant_fit_reason:
+            incompatibility_reasons["Walls"] = walls_cant_fit_reason
+            logger.info(f"Walls incompatibility reason found: {walls_cant_fit_reason}")
 
         # Debug output for base product details
         logger.debug(f"Base compatibility details:")
@@ -304,14 +319,21 @@ def find_base_compatibilities(data, base_info):
             # ✅ Add all matches
             matching_walls.extend(nominal_matches + closest_cut_ids)
 
-        # Add results to the compatible_products list
-        if matching_doors:
+        # Add incompatibility reasons to the result if they exist
+        for category, reason in incompatibility_reasons.items():
+            compatible_products.append({
+                "category": category,
+                "incompatible_reason": reason
+            })
+            
+        # If there are incompatibility reasons for a category, don't add compatible products for that category
+        if matching_doors and "Shower Doors" not in incompatibility_reasons:
             compatible_products.append({
                 "category": "Shower Doors",
                 "skus": matching_doors
             })
 
-        if matching_walls:
+        if matching_walls and "Walls" not in incompatibility_reasons:
             compatible_products.append({
                 "category": "Walls",
                 "skus": matching_walls
