@@ -142,7 +142,7 @@
     <!-- Main content -->
     <main class="flex-grow container mx-auto px-4 pt-8 pb-8" x-data="compatibilityApp()">
         <!-- Main content container with flex layout -->
-        <div class="main-content-container">
+        <div class="main-content-container" style="display: flex; gap: 80px !important; column-gap: 80px !important;">
             <!-- Filters sidebar (visible only after search on larger screens) -->
             <aside 
                 class="hidden filter-sidebar-container" 
@@ -299,10 +299,16 @@
             </div>
             <!-- No filter options shown before search -->
         </aside>
-            <!-- No need for spacer with the new layout -->
-
-            <!-- Search and results area -->
-            <div class="results-container">
+        
+        <!-- Explicit spacing div - will be visible when filter panel is visible -->
+        <div class="spacer-div" x-show="compatibleProducts.length > 0 && !errorMessage" 
+            style="min-width: 100px !important; width: 100px !important; flex: 0 0 100px !important; 
+                   border-right: 1px solid #e5e7eb; margin-right: 40px;">
+            <!-- Visual separator with extra margin -->
+        </div>
+            
+        <!-- Search and results area -->
+        <div class="results-container" style="flex-grow: 1; margin-left: 40px;">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">

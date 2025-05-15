@@ -4,6 +4,11 @@
 .main-content-container {
   display: flex;
   gap: 50px;
+  column-gap: 50px !important;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* Filter panel parent - fixed width */
@@ -30,7 +35,7 @@
 /* Results area container */
 .results-container {
   flex-grow: 1;
-  padding-left: 30px;
+  padding-left: 30px !important;
+  margin-left: 40px !important;
   border-left: 1px solid #e5e7eb;
-  margin-left: -1px;
 }
