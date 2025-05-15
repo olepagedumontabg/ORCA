@@ -126,8 +126,15 @@ def find_tubshower_compatibilities(data, tubshower_info):
         except Exception as e:
             logger.error(f"Error processing tub door: {e}")
 
-    # Sort products by ranking (lowest to highest) before adding to results
-    if compatible_doors:
+    # Add incompatibility reasons to the results if they exist
+    for category, reason in incompatibility_reasons.items():
+        results.append({
+            "category": category,
+            "incompatible_reason": reason
+        })
+    
+    # Only add compatible products for categories without incompatibility reasons
+    if compatible_doors and "Tub Doors" not in incompatibility_reasons:
         # Sort the doors by ranking
         sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Tub Doors", "products": sorted_doors})
