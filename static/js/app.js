@@ -574,13 +574,13 @@ function compatibilityApp() {
                     this.currentSku = data.sku;
                     this.errorMessage = '';
                     
-                    // Extract incompatibility reasons
-                    this.incompatibilityReasons = this.compatibleProducts
-                        .filter(category => category.incompatible_reason)
-                        .map(category => ({
-                            category: category.category,
-                            reason: category.incompatible_reason
-                        }));
+                    // Log any incompatibility reasons for debugging
+                    const categoriesWithIncompatibility = this.compatibleProducts.filter(cat => cat.incompatible_reason);
+                    if (categoriesWithIncompatibility.length > 0) {
+                        console.log("Categories with incompatibility reasons:", 
+                            categoriesWithIncompatibility.map(cat => `${cat.category}: ${cat.incompatible_reason}`)
+                        );
+                    }
                     
                     // Extract filter options from results
                     this.extractFilterOptions();
@@ -592,7 +592,6 @@ function compatibilityApp() {
                     this.productDetails = null;
                     this.compatibleProducts = [];
                     this.filteredCompatibleProducts = [];
-                    this.incompatibilityReasons = [];
                     this.errorMessage = data.message || 'An error occurred during the search';
                 }
             })
