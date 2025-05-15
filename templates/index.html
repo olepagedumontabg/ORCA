@@ -16,22 +16,46 @@
     
     <!-- Custom styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
     <style>
         /* Fixed width styles for filter panel - slimmer with modern style */
         .filter-sidebar {
-            width: 280px !important;
-            min-width: 280px !important;
-            max-width: 280px !important;
-            flex: 0 0 280px !important;
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            flex: 0 0 260px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
         }
-        .filter-container, .filter-header {
+        
+        /* Strict rules for filter header */
+        .filter-header {
             width: 260px !important;
             min-width: 260px !important;
             max-width: 260px !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+        }
+        
+        /* Strict rules for filter container */
+        .filter-container {
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
         }
         /* Filter section styles */
         .filter-section {
@@ -124,8 +148,8 @@
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="sticky top-8 h-full p-0 m-0"
-                style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;"
+                class="sticky top-8 h-full p-0 m-0 filter-panel-container"
+                style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
             >
                 <!-- Filter title - exactly 260px wide -->
                 <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2 filter-header" style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;">

@@ -1,0 +1,42 @@
+/* Custom styles to override default behavior */
+
+/* Fix filter panel width issues */
+/* Target the exact flex container that's causing problems */
+.filter-header {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.filter-header.flex.justify-between.items-center * {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.filter-sidebar {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure the filter container has space between items but maintains width */
+.filter-container {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
