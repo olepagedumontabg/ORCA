@@ -51,7 +51,7 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
                     <div class="text-white p-8">
                         <h2 class="text-3xl font-bold mb-2">Product Compatibility Checker</h2>
-                        <p class="text-lg max-w-md">Find compatible products for specific SKUs, currently limited to MAAX and Neptune Shower Bases and Bathtubs</p>
+                        <p class="text-lg max-w-md">Find compatible products for specific SKUs, currently limited to MAAX Shower Bases, Showers, Bathtubs and Tub Showers</p>
                     </div>
                 </div>
             </div>
@@ -65,7 +65,7 @@
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="sticky top-32"
+                class="sticky top-8"
             >
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-semibold text-secondary">Filters</h2>
@@ -78,8 +78,8 @@
                     </button>
                 </div>
                 
-                <!-- Filter groups -->
-                <div class="space-y-5">
+                <!-- Filter groups with fixed height container -->
+                <div class="space-y-5 h-[600px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm">
                     <!-- Categories filter -->
                     <div class="space-y-2">
                         <h3 class="font-medium text-sm text-gray-700">Categories</h3>
@@ -194,8 +194,6 @@
                             </template>
                         </div>
                     </div>
-                    
-
                     
                     <!-- Active filters removed as requested by client -->
                 </div>
