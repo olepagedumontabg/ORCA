@@ -63,12 +63,12 @@
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
             class="hidden" 
-            :class="{'md:block md:w-80 md:h-[700px] pr-8': compatibleProducts.length > 0 && !errorMessage}"
+            :class="{'md:block md:w-80': compatibleProducts.length > 0 && !errorMessage}"
         >
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="sticky top-8 h-full"
+                class="sticky top-8 h-full pr-8"
             >
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-semibold text-secondary">Filters</h2>
@@ -81,8 +81,8 @@
                     </button>
                 </div>
 
-                <!-- Filter groups with fixed height container -->
-                <div class="space-y-5 h-full overflow-y-auto p-2 border border-gray-100 rounded shadow-sm">
+                <!-- Filter groups with fixed height and width container -->
+                <div class="space-y-5 h-[600px] w-[280px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm">
                     <!-- Categories filter -->
                     <div class="space-y-2">
                         <h3 class="font-medium text-sm text-gray-700">Categories</h3>
