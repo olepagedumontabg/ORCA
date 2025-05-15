@@ -690,6 +690,13 @@ function compatibilityApp() {
             
             // Apply product-level filters to each category's products
             this.filteredCompatibleProducts.forEach(category => {
+                // Skip categories with incompatibility reasons, as they have no products to filter
+                if (category.incompatible_reason) {
+                    console.log(`Category ${category.category} has incompatibility reason: ${category.incompatible_reason}`);
+                    return;
+                }
+                
+                // Skip categories without products array
                 if (!category.products) return;
                 
                 console.log(`Filtering products in category: ${category.category}`);
@@ -902,6 +909,9 @@ function compatibilityApp() {
             this.compatibleProducts.forEach(category => {
                 // Add category to available categories
                 this.availableFilters.categories.push(category.category);
+                
+                // Skip categories with incompatibility reasons
+                if (category.incompatible_reason) return;
                 
                 // Process products within this category
                 if (!category.products) return;
