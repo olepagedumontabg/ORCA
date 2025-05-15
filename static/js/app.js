@@ -574,14 +574,6 @@ function compatibilityApp() {
                     this.currentSku = data.sku;
                     this.errorMessage = '';
                     
-                    // Log any incompatibility reasons for debugging
-                    const categoriesWithIncompatibility = this.compatibleProducts.filter(cat => cat.incompatible_reason);
-                    if (categoriesWithIncompatibility.length > 0) {
-                        console.log("Categories with incompatibility reasons:", 
-                            categoriesWithIncompatibility.map(cat => `${cat.category}: ${cat.incompatible_reason}`)
-                        );
-                    }
-                    
                     // Extract filter options from results
                     this.extractFilterOptions();
                     
@@ -591,7 +583,6 @@ function compatibilityApp() {
                     // Display error message
                     this.productDetails = null;
                     this.compatibleProducts = [];
-                    this.filteredCompatibleProducts = [];
                     this.errorMessage = data.message || 'An error occurred during the search';
                 }
             })
@@ -600,8 +591,6 @@ function compatibilityApp() {
                 this.isLoading = false;
                 this.productDetails = null;
                 this.compatibleProducts = [];
-                this.filteredCompatibleProducts = [];
-                this.incompatibilityReasons = [];
                 
                 // Provide a more specific error message
                 if (error.message.includes('content-type') || error.message.includes('JSON')) {
@@ -688,15 +677,6 @@ function compatibilityApp() {
          */
         applyFilters() {
             console.log("Applying filters:", this.filters);
-            
-            // Log incompatibility reasons from categories, if any
-            const categoriesWithIncompatibility = this.compatibleProducts.filter(cat => cat.incompatible_reason);
-            if (categoriesWithIncompatibility.length > 0) {
-                console.log("Categories with incompatibility reasons:", categoriesWithIncompatibility.map(cat => 
-                    `${cat.category}: ${cat.incompatible_reason}`
-                ));
-            }
-                
             // Start with a copy of the original compatible products
             this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
             
@@ -710,13 +690,6 @@ function compatibilityApp() {
             
             // Apply product-level filters to each category's products
             this.filteredCompatibleProducts.forEach(category => {
-                // Skip categories with incompatibility reasons, as they have no products to filter
-                if (category.incompatible_reason) {
-                    console.log(`Category ${category.category} has incompatibility reason: ${category.incompatible_reason}`);
-                    return;
-                }
-                
-                // Skip categories without products array
                 if (!category.products) return;
                 
                 console.log(`Filtering products in category: ${category.category}`);
@@ -927,14 +900,8 @@ function compatibilityApp() {
             
             // Categories come from the results
             this.compatibleProducts.forEach(category => {
-                // Only add categories that have products (no incompatibility reasons)
-                if (!category.incompatible_reason && category.products && category.products.length > 0) {
-                    // Add category to available categories
-                    this.availableFilters.categories.push(category.category);
-                }
-                
-                // Skip categories with incompatibility reasons
-                if (category.incompatible_reason) return;
+                // Add category to available categories
+                this.availableFilters.categories.push(category.category);
                 
                 // Process products within this category
                 if (!category.products) return;
