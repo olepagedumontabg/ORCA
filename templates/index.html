@@ -45,10 +45,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #333;
+        }
+        .filter-section h3 span {
+            color: #666;
+            font-size: 1rem;
+            margin-left: auto;
         }
         /* Checkbox container styles */
         .filter-checkbox-container {
             padding: 0.25rem 0;
+        }
+        /* Custom checkbox styling */
+        .filter-checkbox-container input[type="checkbox"] {
+            border: 1px solid #ccc;
+            border-radius: 2px;
         }
         /* Fixed width for filter labels */
         .filter-label {
@@ -60,6 +71,8 @@
             white-space: nowrap;
             display: inline-block;
             font-weight: normal;
+            color: #444;
+            padding-left: 0.25rem;
         }
         /* Hide elements with x-cloak attribute until Alpine.js is loaded */
         [x-cloak] { display: none !important; }
@@ -114,20 +127,16 @@
                 class="sticky top-8 h-full pr-8"
                 style="width: 320px !important; min-width: 320px !important; max-width: 320px !important;"
             >
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-semibold text-secondary">Filters</h2>
+                <!-- Filter title -->
+                <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-2">
+                    <h2 class="text-xl font-semibold">Filter</h2>
                     <button 
                         @click="resetFilters()"
-                        class="text-xs text-primary hover:text-[#002A9D] flex items-center"
+                        class="text-xs text-gray-500 hover:text-gray-700 flex items-center"
                         title="Reset all filters"
                     >
                         <i class="fas fa-undo mr-1"></i> Reset
                     </button>
-                </div>
-
-                <!-- Filter title -->
-                <div class="mb-4">
-                    <h2 class="text-lg font-semibold">Filter</h2>
                 </div>
                 
                 <!-- Filter groups with fixed height and width container -->
@@ -135,7 +144,7 @@
                     <!-- Categories filter -->
                     <div class="filter-section">
                         <h3 class="font-medium text-sm text-gray-700">Categories<span>−</span></h3>
-                        <div class="max-h-32 overflow-y-auto space-y-1">
+                        <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="category in availableFilters.categories" :key="category">
                                 <div class="flex items-center">
                                     <input 
@@ -159,7 +168,7 @@
                     <!-- Brand filter -->
                     <div class="filter-section">
                         <h3 class="font-medium text-sm text-gray-700">Brands<span>−</span></h3>
-                        <div class="max-h-32 overflow-y-auto space-y-1">
+                        <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="brand in availableFilters.brands" :key="brand">
                                 <div class="flex items-center">
                                     <input 
@@ -183,7 +192,7 @@
                     <!-- Series filter -->
                     <div class="filter-section">
                         <h3 class="font-medium text-sm text-gray-700">Series<span>−</span></h3>
-                        <div class="max-h-32 overflow-y-auto space-y-1">
+                        <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="series in availableFilters.series" :key="series">
                                 <div class="flex items-center">
                                     <input 
@@ -205,9 +214,9 @@
                     </div>
 
                     <!-- Glass thickness filter -->
-                    <div class="space-y-2">
-                        <h3 class="font-medium text-sm text-gray-700">Glass Thickness</h3>
-                        <div class="space-y-1">
+                    <div class="filter-section">
+                        <h3 class="font-medium text-sm text-gray-700">Glass Thickness<span>−</span></h3>
+                        <div class="space-y-1 filter-checkbox-container">
                             <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
                                 <div class="flex items-center">
                                     <input 
@@ -229,9 +238,9 @@
                     </div>
 
                     <!-- Door type filter -->
-                    <div class="space-y-2">
-                        <h3 class="font-medium text-sm text-gray-700">Door Type</h3>
-                        <div class="max-h-32 overflow-y-auto pr-2 space-y-1">
+                    <div class="filter-section">
+                        <h3 class="font-medium text-sm text-gray-700">Door Type<span>−</span></h3>
+                        <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
                                 <div class="flex items-center">
                                     <input 
