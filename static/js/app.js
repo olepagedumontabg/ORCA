@@ -1088,6 +1088,24 @@ function compatibilityApp() {
             
             // Apply the updated filters
             this.applyFilters();
+        },
+        
+        /**
+         * Toggle a material selection in filters
+         * @param {string} material - The material to toggle
+         */
+        toggleMaterialFilter(material) {
+            const index = this.filters.selectedMaterials.indexOf(material);
+            if (index === -1) {
+                // Material not selected, add it
+                this.filters.selectedMaterials.push(material);
+            } else {
+                // Material already selected, remove it
+                this.filters.selectedMaterials.splice(index, 1);
+            }
+            
+            // Apply the updated filters
+            this.applyFilters();
         }
     };
 }
