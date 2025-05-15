@@ -1002,47 +1002,30 @@ def process_combo_product(data, combo_sku):
                 panel_size_inches = int(size_match.group(1))
                 logger.debug(f"Extracted panel size: {panel_size_inches} inches")
         
-        # Create the mapping of known compatible products based on return panel size
-        # The simpler approach is to directly check the current combo instead of building a large dict
-        compatible_base_skus = []
+        # We don't use hard-coded SKU mappings anymore
+        # Instead we'll extract panel dimensions and find compatible corner bases dynamically
         
-        logger.info(f"Checking compatibility for combo {combo_sku} with panel size {panel_size_inches} inches")
+        panel_size_inches = 0
         
-        # For Halo door (138996) with different return panel sizes
-        if door_sku == "138996":
-            if panel_sku == "139393":  # 30" panel
-                compatible_base_skus = ["420001-502-001"]  # B3Square 3030
-                logger.info(f"Matched Halo door with 30in panel (139393) -> Base: {compatible_base_skus}")
-            elif panel_sku == "139394":  # 42" panel
-                compatible_base_skus = ["420043-542-001"]  # B3Square 4842
-                logger.info(f"Matched Halo door with 42in panel (139394) -> Base: {compatible_base_skus}")
-            elif panel_sku == "139395":  # 34" panel
-                compatible_base_skus = ["420002-502-001", "420001-542-001"]  # B3Square 3834, B3Square 4832
-                logger.info(f"Matched Halo door with 34in panel (139395) -> Base: {compatible_base_skus}")
-            elif panel_sku == "139396":  # 36" panel
-                compatible_base_skus = ["420003-542-001"]  # B3Square 4836 
-                logger.info(f"Matched Halo door with 36in panel (139396) -> Base: {compatible_base_skus}")
-            elif panel_sku == "139397":  # 38" panel
-                compatible_base_skus = ["420004-542-001"]  # B3Square 4838
-                logger.info(f"Matched Halo door with 38in panel (139397) -> Base: {compatible_base_skus}")
-            elif panel_sku == "139398":  # 32" panel
-                compatible_base_skus = ["420001-542-001"]  # B3Square 4832
-                logger.info(f"Matched Halo door with 32in panel (139398) -> Base: {compatible_base_skus}")
-            else:
-                logger.info(f"No specific base match for Halo door with panel {panel_sku}")
+        # Extract panel size from Return Panel Size property or name
+        panel_size = panel_info.get("Return Panel Size", "")
+        if panel_size:
+            # Try to match pattern like "for 34 in."
+            size_match = re.search(r'for\s+(\d+)\s*in', panel_size)
+            if size_match:
+                panel_size_inches = int(size_match.group(1))
+                logger.info(f"Extracted panel width from size property: {panel_size_inches} inches")
         
-        # For Capella door (139584) with different return panel sizes
-        elif door_sku == "139584":
-            if panel_sku == "139590":  # 36" panel
-                compatible_base_skus = ["420003-542-001"]  # B3Square 4836
-                logger.info(f"Matched Capella door with 36in panel (139590) -> Base: {compatible_base_skus}")
-            elif panel_sku == "139591":  # 42" panel
-                compatible_base_skus = ["420043-542-001"]  # B3Square 4842
-                logger.info(f"Matched Capella door with 42in panel (139591) -> Base: {compatible_base_skus}")
-            else:
-                logger.info(f"No specific base match for Capella door with panel {panel_sku}")
-        else:
-            logger.info(f"No specific base match for door {door_sku}")
+        # If not found in Return Panel Size, try to find it in the product name
+        if panel_size_inches == 0:
+            panel_name = panel_info.get("Product Name", "")
+            if panel_name and "in" in panel_name:
+                size_match = re.search(r'for\s+(\d+)\s*in', panel_name)
+                if size_match:
+                    panel_size_inches = int(size_match.group(1))
+                    logger.info(f"Extracted panel width from name: {panel_size_inches} inches")
+        
+        logger.info(f"Processing combo {combo_sku} with panel size: {panel_size_inches} inches")
         
         # Instead of hard-coding specific compatible bases, let's use the existing compatibility logic
         # for the door component, but filter for corner installations only
@@ -1073,29 +1056,7 @@ def process_combo_product(data, combo_sku):
             # Track which bases we've already added
             added_base_skus = set()
             
-            # First, add any specifically mapped bases from our compatibility mapping
-            if compatible_base_skus:
-                for _, base in bases_df.iterrows():
-                    base_id = str(base.get("Unique ID", "")).strip()
-                    
-                    # Only add bases that are in our compatible list AND not already in our matches
-                    if base_id in compatible_base_skus and base_id not in added_base_skus:
-                        base_data = base.to_dict()
-                        # Remove any NaN values
-                        base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
-                        
-                        logger.info(f"Adding specifically mapped base: {base_id}")
-                        corner_base_matches.append({
-                            "sku": base_id,
-                            "name": base_data.get("Product Name", ""),
-                            "image_url": image_handler.generate_image_url(base_data),
-                            "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
-                            "max_door_width": base_data.get("Max Door Width", ""),
-                            "installation": base_data.get("Installation", ""),
-                            "brand": base_data.get("Brand", ""),
-                            "series": base_data.get("Series", "")
-                        })
-                        added_base_skus.add(base_id)
+            # We don't use specially mapped bases anymore - all matches are determined dynamically
             
             # Now, find all corner shower bases that are compatible with the door
             for _, base in bases_df.iterrows():
@@ -1199,10 +1160,6 @@ def process_combo_product(data, combo_sku):
                     base_series = base.get("series", "").lower() if base.get("series") else ""
                     base_dimensions = base.get("nominal_dimensions", "")
                     
-                    # If this is a known compatible base for this specific combo, rank it first
-                    if base_id in compatible_base_skus:
-                        return (0, 0, 0, 0)
-                    
                     # Extract base width from dimensions (e.g., "48 x 34" -> 34)
                     base_width = 0
                     if base_dimensions:
@@ -1213,9 +1170,8 @@ def process_combo_product(data, combo_sku):
                     # Calculate dimension match score (0 is perfect match)
                     dimension_score = abs(base_width - panel_width_inches) if panel_width_inches > 0 and base_width > 0 else 999
                     
-                    # Rank by (exact match, brand match, dimension match, series match)
+                    # Rank by (brand match, dimension match, series match)
                     return (
-                        1,  # Not an exact match from our mapping
                         0 if base_brand == door_brand_lower else 1,  # Brand match
                         dimension_score,  # Lower is better for dimension match
                         0 if base_series == door_series_lower else 1  # Series match
