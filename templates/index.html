@@ -17,6 +17,7 @@
     <!-- Custom styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/filter-panel.css') }}">
     
     <style>
         /* Fixed width styles for filter panel - slimmer with modern style */
@@ -139,19 +140,20 @@
     </div>
     
     <!-- Main content -->
-    <main class="flex-grow container mx-auto px-4 pt-8 pb-8 md:flex md:flex-row md:gap-12" x-data="compatibilityApp()">
-        <!-- Filters sidebar (visible only after search on larger screens) -->
-        <aside 
-            class="hidden p-0 filter-sidebar-parent" 
-            style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding-right: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important; border-right: 1px solid #e5e7eb !important; flex-shrink: 0 !important;"
-            :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
-        >
-            <!-- Filters panel - shown when search results are available -->
-            <div 
-                x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="p-0 m-0 filter-panel-container"
-                style="position: sticky; top: 32px; height: full; width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;"
+    <main class="flex-grow container mx-auto px-4 pt-8 pb-8" x-data="compatibilityApp()">
+        <!-- Main content container with flex layout -->
+        <div class="main-content-container">
+            <!-- Filters sidebar (visible only after search on larger screens) -->
+            <aside 
+                class="hidden filter-sidebar-container" 
+                :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
             >
+                <!-- Filters panel - shown when search results are available -->
+                <div 
+                    x-show="compatibleProducts.length > 0 && !errorMessage" 
+                    class="filter-panel-inner"
+                    style="position: sticky; top: 32px; height: full;"
+                >
                 <!-- Filter title - completely rebuilt -->
                 <div class="filter-header" style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 0 16px 0 !important; box-sizing: border-box !important; border-bottom: 1px solid #e5e7eb;">
                     <table style="width: 260px; border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0;">
@@ -297,16 +299,10 @@
             </div>
             <!-- No filter options shown before search -->
         </aside>
-        
-        <!-- Visual spacer with separator -->
-        <div class="hidden md:flex flex-col items-center justify-start" 
-             style="width: 60px; min-width: 60px;"
-             x-show="compatibleProducts.length > 0 && !errorMessage">
-            <div class="h-full border-l border-gray-200" style="margin-left: 20px;"></div>
-        </div>
+            <!-- No need for spacer with the new layout -->
 
-        <!-- Search and results area -->
-        <div class="flex-grow">
+            <!-- Search and results area -->
+            <div class="results-container">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
