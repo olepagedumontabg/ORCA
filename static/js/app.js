@@ -1024,6 +1024,61 @@ function compatibilityApp() {
         },
         
         /**
+         * Set filter visibility based on product categories
+         * This makes filters appear/disappear dynamically based on product type
+         */
+        setDynamicFilterVisibility() {
+            // Reset all filter visibility flags first
+            this.hasGlassFilter = false;
+            this.hasDoorsFilter = false;
+            this.hasMaterialFilter = false;
+            
+            // Get unique categories from compatible products
+            const categories = this.compatibleProducts.map(category => category.category);
+            
+            // Also check product details to determine filters
+            const sourceProductType = this.productDetails?.productType;
+            
+            // Check for specific product types to determine which filters to show
+            if (categories.includes('Shower Doors') || 
+                categories.includes('Tub Doors') ||
+                categories.includes('Return Panels') ||
+                sourceProductType === 'Shower Door' ||
+                sourceProductType === 'Tub Door' ||
+                sourceProductType === 'Return Panel') {
+                // Door products should have glass thickness filter
+                this.hasGlassFilter = true;
+            }
+            
+            if (categories.includes('Shower Doors') || 
+                categories.includes('Tub Doors') ||
+                sourceProductType === 'Shower Door' ||
+                sourceProductType === 'Tub Door') {
+                // Show door type filter for doors only
+                this.hasDoorsFilter = true;
+            }
+            
+            if (categories.includes('Bathtubs') || 
+                categories.includes('Shower Bases') ||
+                categories.includes('Showers') ||
+                categories.includes('Tub Showers') ||
+                sourceProductType === 'Bathtub' ||
+                sourceProductType === 'Shower Base' ||
+                sourceProductType === 'Shower' ||
+                sourceProductType === 'Tub Shower') {
+                // Material filter for bathtubs, bases, showers, and tub showers
+                this.hasMaterialFilter = true;
+            }
+            
+            console.log('Filter visibility set based on categories:', {
+                categories,
+                hasGlassFilter: this.hasGlassFilter,
+                hasDoorsFilter: this.hasDoorsFilter, 
+                hasMaterialFilter: this.hasMaterialFilter
+            });
+        },
+        
+        /**
          * Toggle a filter section's visibility
          * @param {Event} event - Click event
          */
