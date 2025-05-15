@@ -99,7 +99,7 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
         return False
 
     # Check for special cases for specific families
-    # Utile, Nextile and Versaline walls should only match with specific bathtub families
+    # Utile and Nextile walls should only match with specific bathtub families
     if wall_family in ["utile", "nextile"] and base_family not in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"]:
         return False
     
@@ -218,11 +218,26 @@ def find_bathtub_compatibilities(data, bathtub_info):
     def find_closest_walls(tub_length, tub_width, candidate_walls):
         """
         Find walls with the closest dimensions to the tub based on combined distance.
+        Only returns walls that are at least as large as the bathtub.
         """
+        # First, filter out walls that are too small for the tub
         candidate_walls = candidate_walls.copy()
-        candidate_walls["distance"] = (candidate_walls["Length"] - tub_length).abs() + (candidate_walls["Width"] - tub_width).abs()
-        min_distance = candidate_walls["distance"].min()
-        return candidate_walls[candidate_walls["distance"] == min_distance]
+        
+        # Only consider walls that are at least as large as the bathtub
+        valid_walls = candidate_walls[(candidate_walls["Length"] >= tub_length) & 
+                                      (candidate_walls["Width"] >= tub_width)]
+        
+        # If no valid walls found, return empty DataFrame
+        if valid_walls.empty:
+            logger.info(f"No walls found that are large enough for tub dimensions {tub_length} x {tub_width}")
+            return valid_walls
+            
+        # Calculate distance metric for valid walls
+        valid_walls["distance"] = (valid_walls["Length"] - tub_length).abs() + (valid_walls["Width"] - tub_width).abs()
+        min_distance = valid_walls["distance"].min()
+        
+        # Return walls with minimum distance
+        return valid_walls[valid_walls["distance"] == min_distance]
 
     # ---------- Walls ----------
     compatible_walls = []
@@ -259,12 +274,14 @@ def find_bathtub_compatibilities(data, bathtub_info):
         })
 
     # Step 2: Cut to Size walls (only closest size)
+    # Only include walls that are large enough to fit the bathtub
     cut_walls_candidates = walls_df[
         (walls_df["Type"].str.lower().str.contains("tub", na=False)) &
         (walls_df["Cut to Size"] == "Yes") &
         (walls_df["Series"].apply(lambda x: series_compatible(tub_series, x))) &
         (walls_df.apply(lambda x: bathtub_brand_family_match(tub_brand, tub_family, x["Brand"], x["Family"]), axis=1)) &
-        pd.notna(walls_df["Length"]) & pd.notna(walls_df["Width"])
+        pd.notna(walls_df["Length"]) & pd.notna(walls_df["Width"]) &
+        (walls_df["Length"] >= tub_length) & (walls_df["Width"] >= tub_width_actual)
     ]
 
     logger.info(f"Found {len(cut_walls_candidates)} cut-to-size wall candidates")
