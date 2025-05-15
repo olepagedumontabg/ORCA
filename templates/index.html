@@ -139,11 +139,11 @@
     </div>
     
     <!-- Main content -->
-    <main class="flex-grow container mx-auto px-4 pt-8 pb-8 md:flex md:flex-row" x-data="compatibilityApp()">
+    <main class="flex-grow container mx-auto px-4 pt-8 pb-8 md:flex md:flex-row md:gap-12" x-data="compatibilityApp()">
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
-            class="hidden p-0" 
-            style="width: 300px !important; min-width: 300px !important; max-width: 300px !important; padding-right: 20px !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important; border-right: 1px solid #e5e7eb !important;"
+            class="hidden p-0 filter-sidebar-parent" 
+            style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding-right: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important; border-right: 1px solid #e5e7eb !important; flex-shrink: 0 !important;"
             :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
         >
             <!-- Filters panel - shown when search results are available -->
@@ -297,9 +297,16 @@
             </div>
             <!-- No filter options shown before search -->
         </aside>
+        
+        <!-- Visual spacer with separator -->
+        <div class="hidden md:flex flex-col items-center justify-start" 
+             style="width: 60px; min-width: 60px;"
+             x-show="compatibleProducts.length > 0 && !errorMessage">
+            <div class="h-full border-l border-gray-200" style="margin-left: 20px;"></div>
+        </div>
 
         <!-- Search and results area -->
-        <div class="flex-grow" style="padding-left: 32px; margin-left: 20px;">
+        <div class="flex-grow">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
