@@ -58,10 +58,10 @@ function compatibilityApp() {
             const sidebar = document.querySelector('.filter-sidebar');
             if (sidebar) {
                 Object.assign(sidebar.style, {
-                    width: '320px',
-                    minWidth: '320px',
-                    maxWidth: '320px',
-                    flex: '0 0 320px'
+                    width: '280px',
+                    minWidth: '280px',
+                    maxWidth: '280px',
+                    flex: '0 0 280px'
                 });
             }
             
@@ -69,9 +69,9 @@ function compatibilityApp() {
             const stickyContainer = document.querySelector('.filter-sidebar > div');
             if (stickyContainer) {
                 Object.assign(stickyContainer.style, {
-                    width: '320px',
-                    minWidth: '320px',
-                    maxWidth: '320px'
+                    width: '280px',
+                    minWidth: '280px',
+                    maxWidth: '280px'
                 });
             }
             
@@ -79,32 +79,42 @@ function compatibilityApp() {
             const container = document.querySelector('.filter-container');
             if (container) {
                 Object.assign(container.style, {
-                    width: '290px',
-                    minWidth: '290px',
-                    maxWidth: '290px'
+                    width: '260px',
+                    minWidth: '260px',
+                    maxWidth: '260px',
+                    border: 'none',
+                    boxShadow: 'none',
+                    padding: '0'
                 });
             }
             
             // Make all filter labels fixed width
             document.querySelectorAll('.filter-label').forEach(label => {
                 Object.assign(label.style, {
-                    width: '210px',
-                    minWidth: '210px',
-                    maxWidth: '210px',
+                    width: '190px',
+                    minWidth: '190px',
+                    maxWidth: '190px',
                     textOverflow: 'ellipsis',
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
-                    display: 'inline-block'
+                    display: 'inline-block',
+                    fontWeight: 'normal'
                 });
             });
             
             // Also fix the filter groups themselves
             document.querySelectorAll('.filter-container > div').forEach(group => {
                 Object.assign(group.style, {
-                    width: '290px',
-                    maxWidth: '290px',
-                    overflow: 'hidden'
+                    width: '260px',
+                    maxWidth: '260px',
+                    overflow: 'hidden',
+                    borderBottom: '1px solid #eaeaea',
+                    paddingBottom: '1rem',
+                    marginBottom: '1rem'
                 });
+                
+                // Add class for styling
+                group.classList.add('filter-section');
             });
         },
         

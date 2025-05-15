@@ -18,27 +18,48 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     
     <style>
-        /* Fixed width styles for filter panel */
+        /* Fixed width styles for filter panel - slimmer with modern style */
         .filter-sidebar {
-            width: 320px !important;
-            min-width: 320px !important;
-            max-width: 320px !important;
-            flex: 0 0 320px !important;
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            flex: 0 0 280px !important;
         }
         .filter-container {
-            width: 290px !important;
-            min-width: 290px !important;
-            max-width: 290px !important;
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        /* Filter section styles */
+        .filter-section {
+            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .filter-section h3 {
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        /* Checkbox container styles */
+        .filter-checkbox-container {
+            padding: 0.25rem 0;
         }
         /* Fixed width for filter labels */
         .filter-label {
-            width: 210px !important;
-            min-width: 210px !important;
-            max-width: 210px !important;
+            width: 190px !important;
+            min-width: 190px !important;
+            max-width: 190px !important;
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
             display: inline-block;
+            font-weight: normal;
         }
         /* Hide elements with x-cloak attribute until Alpine.js is loaded */
         [x-cloak] { display: none !important; }
@@ -104,12 +125,17 @@
                     </button>
                 </div>
 
+                <!-- Filter title -->
+                <div class="mb-4">
+                    <h2 class="text-lg font-semibold">Filter</h2>
+                </div>
+                
                 <!-- Filter groups with fixed height and width container -->
-                <div class="space-y-5 h-[600px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm filter-container">
+                <div class="space-y-5 h-[600px] overflow-y-auto filter-container">
                     <!-- Categories filter -->
-                    <div class="space-y-2">
-                        <h3 class="font-medium text-sm text-gray-700">Categories</h3>
-                        <div class="max-h-32 overflow-y-auto pr-2 space-y-1">
+                    <div class="filter-section">
+                        <h3 class="font-medium text-sm text-gray-700">Categories<span>−</span></h3>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
                             <template x-for="category in availableFilters.categories" :key="category">
                                 <div class="flex items-center">
                                     <input 
@@ -131,9 +157,9 @@
                     </div>
 
                     <!-- Brand filter -->
-                    <div class="space-y-2">
-                        <h3 class="font-medium text-sm text-gray-700">Brands</h3>
-                        <div class="max-h-32 overflow-y-auto pr-2 space-y-1">
+                    <div class="filter-section">
+                        <h3 class="font-medium text-sm text-gray-700">Brands<span>−</span></h3>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
                             <template x-for="brand in availableFilters.brands" :key="brand">
                                 <div class="flex items-center">
                                     <input 
@@ -155,9 +181,9 @@
                     </div>
 
                     <!-- Series filter -->
-                    <div class="space-y-2">
-                        <h3 class="font-medium text-sm text-gray-700">Series</h3>
-                        <div class="max-h-32 overflow-y-auto pr-2 space-y-1">
+                    <div class="filter-section">
+                        <h3 class="font-medium text-sm text-gray-700">Series<span>−</span></h3>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
                             <template x-for="series in availableFilters.series" :key="series">
                                 <div class="flex items-center">
                                     <input 
@@ -169,7 +195,8 @@
                                     >
                                     <label 
                                         :for="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
-                                        class="ml-2 block text-sm text-gray-700 break-words filter-label"
+                                        class="ml-2 block text-sm text-gray-700 filter-label"
+                                        :title="series"
                                         x-text="series"
                                     ></label>
                                 </div>
