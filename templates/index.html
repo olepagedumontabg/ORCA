@@ -124,21 +124,22 @@
             <!-- Filters panel - shown when search results are available -->
             <div 
                 x-show="compatibleProducts.length > 0 && !errorMessage" 
-                class="sticky top-8 h-full pr-0"
-                style="width: 260px !important; min-width: 260px !important; max-width: 260px !important;"
+                class="sticky top-8 h-full p-0 m-0"
+                style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;"
             >
-                <!-- Filter title -->
-                <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2 filter-header" style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding-right: 0 !important; margin-right: 0 !important; box-sizing: border-box !important;">
-                    <h2 class="text-xl font-semibold">Filter</h2>
+                <!-- Filter title - exactly 260px wide -->
+                <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2 filter-header" style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;">
+                    <h2 class="text-lg font-semibold" style="margin: 0; padding: 0;">Filter</h2>
                     <span class="text-xs text-gray-500 flex items-center cursor-pointer hover:text-gray-700"
                           @click="resetFilters()"
-                          title="Reset all filters">
-                        <i class="fas fa-undo mr-1"></i> Reset
+                          title="Reset all filters"
+                          style="margin: 0; padding: 0;">
+                        <i class="fas fa-undo mr-1"></i>Reset
                     </span>
                 </div>
                 
                 <!-- Filter groups with fixed height and width container -->
-                <div class="space-y-5 filter-container">
+                <div class="space-y-5 filter-container" style="width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;">
                     <!-- Categories filter -->
                     <div class="filter-section">
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Categories<span>−</span></h3>

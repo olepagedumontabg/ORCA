@@ -78,14 +78,7 @@ function compatibilityApp() {
             // Fix the filter header
             const header = document.querySelector('.filter-header');
             if (header) {
-                Object.assign(header.style, {
-                    width: '260px',
-                    minWidth: '260px',
-                    maxWidth: '260px',
-                    paddingRight: '0',
-                    marginRight: '0',
-                    boxSizing: 'border-box'
-                });
+                header.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important;";
             }
             
             // Fix the filter container
