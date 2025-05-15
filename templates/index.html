@@ -63,7 +63,8 @@
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
             class="hidden" 
-            :class="{'md:block md:w-80': compatibleProducts.length > 0 && !errorMessage}"
+            :class="{'md:block md:w-[320px]': compatibleProducts.length > 0 && !errorMessage}"
+            style="min-width: 320px; max-width: 320px;"
         >
             <!-- Filters panel - shown when search results are available -->
             <div 
@@ -82,7 +83,7 @@
                 </div>
 
                 <!-- Filter groups with fixed height and width container -->
-                <div class="space-y-5 h-[600px] w-[280px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm">
+                <div class="space-y-5 h-[600px] w-[290px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm" style="min-width: 290px; max-width: 290px;">
                     <!-- Categories filter -->
                     <div class="space-y-2">
                         <h3 class="font-medium text-sm text-gray-700">Categories</h3>
