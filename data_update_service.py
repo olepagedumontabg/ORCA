@@ -301,8 +301,9 @@ def get_initial_data():
 
 def start_scheduler():
     """Start the scheduler to run updates at the specified time"""
-    schedule.every().day.at(Config.UPDATE_TIME).do(update_data)
-    logger.info(f"Scheduled daily updates at {Config.UPDATE_TIME}")
+    # Temporarily disabled for development - Uncomment to enable automated updates
+    # schedule.every().day.at(Config.UPDATE_TIME).do(update_data)
+    logger.info("Automated data updates are temporarily disabled")
     
     while True:
         schedule.run_pending()
