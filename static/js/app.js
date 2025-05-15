@@ -115,14 +115,6 @@ function compatibilityApp() {
                 
                 // Add class for styling
                 group.classList.add('filter-section');
-                
-                // Add click handlers to filter section headers if not already done
-                const header = group.querySelector('h3');
-                if (header && !header.hasAttribute('data-toggle-initialized')) {
-                    header.style.cursor = 'pointer';
-                    header.setAttribute('data-toggle-initialized', 'true');
-                    header.addEventListener('click', this.toggleFilterSection);
-                }
             });
         },
         
@@ -981,9 +973,12 @@ function compatibilityApp() {
             const content = section.querySelector('.filter-checkbox-container');
             const indicator = header.querySelector('span');
             
-            if (content.style.display === 'none') {
+            // If display style is not yet set, defaulting to visible (empty string)
+            const isCurrentlyHidden = content.style.display === 'none';
+            
+            if (isCurrentlyHidden) {
                 // Show the content
-                content.style.display = 'block';
+                content.style.display = '';
                 indicator.textContent = '−'; // Minus sign
             } else {
                 // Hide the content

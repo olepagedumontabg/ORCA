@@ -128,22 +128,20 @@
                 style="width: 320px !important; min-width: 320px !important; max-width: 320px !important;"
             >
                 <!-- Filter title -->
-                <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-2">
+                <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
                     <h2 class="text-xl font-semibold">Filter</h2>
-                    <button 
-                        @click="resetFilters()"
-                        class="text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                        title="Reset all filters"
-                    >
+                    <span class="text-xs text-gray-500 flex items-center cursor-pointer hover:text-gray-700"
+                          @click="resetFilters()"
+                          title="Reset all filters">
                         <i class="fas fa-undo mr-1"></i> Reset
-                    </button>
+                    </span>
                 </div>
                 
                 <!-- Filter groups with fixed height and width container -->
-                <div class="space-y-5 h-[600px] overflow-y-auto filter-container">
+                <div class="space-y-5 filter-container">
                     <!-- Categories filter -->
                     <div class="filter-section">
-                        <h3 class="font-medium text-sm text-gray-700">Categories<span>−</span></h3>
+                        <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Categories<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="category in availableFilters.categories" :key="category">
                                 <div class="flex items-center">
@@ -167,7 +165,7 @@
 
                     <!-- Brand filter -->
                     <div class="filter-section">
-                        <h3 class="font-medium text-sm text-gray-700">Brands<span>−</span></h3>
+                        <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Brands<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="brand in availableFilters.brands" :key="brand">
                                 <div class="flex items-center">
@@ -191,7 +189,7 @@
 
                     <!-- Series filter -->
                     <div class="filter-section">
-                        <h3 class="font-medium text-sm text-gray-700">Series<span>−</span></h3>
+                        <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Series<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="series in availableFilters.series" :key="series">
                                 <div class="flex items-center">
@@ -215,7 +213,7 @@
 
                     <!-- Glass thickness filter -->
                     <div class="filter-section">
-                        <h3 class="font-medium text-sm text-gray-700">Glass Thickness<span>−</span></h3>
+                        <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Glass Thickness<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
                                 <div class="flex items-center">
@@ -239,7 +237,7 @@
 
                     <!-- Door type filter -->
                     <div class="filter-section">
-                        <h3 class="font-medium text-sm text-gray-700">Door Type<span>−</span></h3>
+                        <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Door Type<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
                                 <div class="flex items-center">
