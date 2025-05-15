@@ -18,6 +18,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     
     <style>
+        /* Fixed width styles for filter panel */
+        .filter-sidebar {
+            width: 320px !important;
+            min-width: 320px !important;
+            max-width: 320px !important;
+            flex: 0 0 320px !important;
+        }
+        .filter-container {
+            width: 290px !important;
+            min-width: 290px !important;
+            max-width: 290px !important;
+        }
         /* Hide elements with x-cloak attribute until Alpine.js is loaded */
         [x-cloak] { display: none !important; }
     </style>
@@ -62,9 +74,8 @@
     <main class="flex-grow container mx-auto px-4 pt-8 pb-8 md:flex md:flex-row" x-data="compatibilityApp()">
         <!-- Filters sidebar (visible only after search on larger screens) -->
         <aside 
-            class="hidden" 
-            :class="{'md:block md:w-[320px]': compatibleProducts.length > 0 && !errorMessage}"
-            style="min-width: 320px; max-width: 320px;"
+            class="hidden filter-sidebar" 
+            :class="{'md:block': compatibleProducts.length > 0 && !errorMessage}"
         >
             <!-- Filters panel - shown when search results are available -->
             <div 
@@ -83,7 +94,7 @@
                 </div>
 
                 <!-- Filter groups with fixed height and width container -->
-                <div class="space-y-5 h-[600px] w-[290px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm" style="min-width: 290px; max-width: 290px;">
+                <div class="space-y-5 h-[600px] overflow-y-auto p-2 border border-gray-100 rounded shadow-sm filter-container">
                     <!-- Categories filter -->
                     <div class="space-y-2">
                         <h3 class="font-medium text-sm text-gray-700">Categories</h3>
