@@ -575,6 +575,14 @@ function compatibilityApp() {
                     this.currentSku = data.sku;
                     this.errorMessage = '';
                     
+                    // Extract incompatibility reasons
+                    this.incompatibilityReasons = this.compatibleProducts
+                        .filter(category => category.incompatible_reason)
+                        .map(category => ({
+                            category: category.category,
+                            reason: category.incompatible_reason
+                        }));
+                    
                     // Extract filter options from results
                     this.extractFilterOptions();
                     
@@ -584,6 +592,8 @@ function compatibilityApp() {
                     // Display error message
                     this.productDetails = null;
                     this.compatibleProducts = [];
+                    this.filteredCompatibleProducts = [];
+                    this.incompatibilityReasons = [];
                     this.errorMessage = data.message || 'An error occurred during the search';
                 }
             })
@@ -678,6 +688,15 @@ function compatibilityApp() {
          */
         applyFilters() {
             console.log("Applying filters:", this.filters);
+            
+            // Extract incompatibility reasons before filtering
+            this.incompatibilityReasons = this.compatibleProducts
+                .filter(category => category.incompatible_reason)
+                .map(category => ({
+                    category: category.category,
+                    reason: category.incompatible_reason
+                }));
+                
             // Start with a copy of the original compatible products
             this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
             
