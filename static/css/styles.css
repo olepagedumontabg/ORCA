@@ -1,26 +1,5 @@
 /* Custom styles */
 
-/* Layout spacing fix for filter panel and content */
-.main-content-container {
-    display: table !important;
-    width: 100% !important;
-    table-layout: fixed !important;
-    border-collapse: separate !important;
-    border-spacing: 60px 0 !important;
-}
-
-.filter-sidebar-container,
-.results-container {
-    display: table-cell !important;
-    vertical-align: top !important;
-}
-
-.filter-sidebar-container {
-    width: 260px !important;
-    max-width: 260px !important;
-    padding-right: 0 !important;
-}
-
 /* Scrollbar styling for Webkit browsers */
 ::-webkit-scrollbar {
     width: 8px;
