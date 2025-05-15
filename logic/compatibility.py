@@ -841,13 +841,18 @@ def find_compatible_products(sku):
         }
         
         # Handle max_door_width - this field has different column names in different sheets
-        # For Shower Bases and Bathtubs, use "Max Door Width", for doors use "Maximum Width"
-        if product_category in ["Bathtubs", "Shower Bases"]:
+        # For Shower Bases, Bathtubs, Showers, and Tub Showers, use "Max Door Width", for doors use "Maximum Width"
+        if product_category in ["Bathtubs", "Shower Bases", "Showers", "Tub Showers"]:
             source_product["max_door_width"] = original_product_info.get("Max Door Width", "") if original_product_info.get("Max Door Width") is not None else ""
             logger.debug(f"Using Max Door Width from {product_category}: {source_product['max_door_width']}")
         else:
             source_product["max_door_width"] = original_product_info.get("Maximum Width", "") if original_product_info.get("Maximum Width") is not None else ""
             logger.debug(f"Using Maximum Width from {product_category}: {source_product['max_door_width']}")
+            
+        # Handle max_door_height for Showers and Tub Showers
+        if product_category in ["Showers", "Tub Showers"]:
+            source_product["max_door_height"] = original_product_info.get("Max Door Height", "") if original_product_info.get("Max Door Height") is not None else ""
+            logger.debug(f"Using Max Door Height from {product_category}: {source_product.get('max_door_height', 'N/A')}")
             
         logger.debug(f"Source product name (final): {source_product['name']}")
         

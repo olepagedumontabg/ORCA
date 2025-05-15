@@ -371,10 +371,16 @@
                                     <span class="font-medium text-gray-500">Series:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.series || 'N/A'"></span>
                                 </div>
-                                <!-- Maximum Door Width (ONLY for Bathtubs and Shower Bases - strict matching) -->
-                                <div x-show="productDetails?.category === 'Bathtubs' || productDetails?.category === 'Shower Bases'" class="text-sm">
+                                <!-- Maximum Door Width (for Bathtubs, Shower Bases, Showers and Tub Showers) -->
+                                <div x-show="productDetails?.category === 'Bathtubs' || productDetails?.category === 'Shower Bases' || productDetails?.category === 'Showers' || productDetails?.category === 'Tub Showers'" class="text-sm">
                                     <span class="font-medium text-gray-500">Maximum Door Width:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
+                                </div>
+                                
+                                <!-- Maximum Door Height (ONLY for Showers and Tub Showers) -->
+                                <div x-show="productDetails?.category === 'Showers' || productDetails?.category === 'Tub Showers'" class="text-sm">
+                                    <span class="font-medium text-gray-500">Maximum Door Height:</span> 
+                                    <span class="text-gray-800" x-text="productDetails?.max_door_height ? formatInchFraction(productDetails.max_door_height) + ' in.' : 'N/A'"></span>
                                 </div>
                             </div>
                         </div>
