@@ -81,7 +81,10 @@ function compatibilityApp() {
                 Object.assign(header.style, {
                     width: '260px',
                     minWidth: '260px',
-                    maxWidth: '260px'
+                    maxWidth: '260px',
+                    paddingRight: '0',
+                    marginRight: '0',
+                    boxSizing: 'border-box'
                 });
             }
             
