@@ -47,12 +47,29 @@ def find_tubshower_compatibilities(data, tubshower_info):
         
     Returns:
         list: List of dictionaries containing category and compatible products
+              or dictionaries with incompatibility reasons
     """
     results = []
+    incompatibility_reasons = {}
+    
+    # Check for incompatibility reasons
+    doors_cant_fit_reason = tubshower_info.get("Reason Doors Can't Fit")
+    
+    # If there are specific reasons why doors can't fit, add them to the incompatibility reasons
+    if pd.notna(doors_cant_fit_reason) and doors_cant_fit_reason:
+        incompatibility_reasons["Tub Doors"] = doors_cant_fit_reason
+        logger.info(f"Tub doors incompatibility reason found: {doors_cant_fit_reason}")
 
     # Check if necessary data exists
     if 'Tub Doors' not in data:
         logger.warning("Missing Tub Doors sheet")
+        
+        # Still add incompatibility reasons even if missing sheets
+        for category, reason in incompatibility_reasons.items():
+            results.append({
+                "category": category,
+                "incompatible_reason": reason
+            })
         return results
 
     tub_doors_df = data['Tub Doors']

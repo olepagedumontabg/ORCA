@@ -47,12 +47,29 @@ def find_shower_compatibilities(data, shower_info):
         
     Returns:
         list: List of dictionaries containing category and compatible products
+              or dictionaries with incompatibility reasons
     """
     results = []
+    incompatibility_reasons = {}
+    
+    # Check for incompatibility reasons
+    doors_cant_fit_reason = shower_info.get("Reason Doors Can't Fit")
+    
+    # If there are specific reasons why doors can't fit, add them to the incompatibility reasons
+    if pd.notna(doors_cant_fit_reason) and doors_cant_fit_reason:
+        incompatibility_reasons["Shower Doors"] = doors_cant_fit_reason
+        logger.info(f"Shower doors incompatibility reason found: {doors_cant_fit_reason}")
 
     # Check if necessary data exists
     if 'Shower Doors' not in data:
         logger.warning("Missing Shower Doors sheet")
+        
+        # Still add incompatibility reasons even if missing sheets
+        for category, reason in incompatibility_reasons.items():
+            results.append({
+                "category": category,
+                "incompatible_reason": reason
+            })
         return results
 
     doors_df = data['Shower Doors']
@@ -112,8 +129,15 @@ def find_shower_compatibilities(data, shower_info):
         except Exception as e:
             logger.error(f"Error processing shower door: {e}")
 
-    # Sort products by ranking (lowest to highest) before adding to results
-    if compatible_doors:
+    # Add incompatibility reasons to the results if they exist
+    for category, reason in incompatibility_reasons.items():
+        results.append({
+            "category": category,
+            "incompatible_reason": reason
+        })
+    
+    # Only add compatible products for categories without incompatibility reasons
+    if compatible_doors and "Shower Doors" not in incompatibility_reasons:
         # Sort the doors by ranking
         sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Shower Doors", "products": sorted_doors})
