@@ -36,8 +36,8 @@ def get_fixed_door_type(product_info):
         str: Door type from the approved set or empty string if not available
     """
     # Check for "Door Type" column first
-    if product_info and "Door Type" in product_info and product_info["Door Type"] is not None:
-        door_type = product_info["Door Type"]
+    if product_info and ("Door Type" in product_info or "Door  Type" in product_info) and (product_info.get("Door Type") is not None or product_info.get("Door  Type") is not None):
+        door_type = product_info.get("Door Type") or product_info.get("Door  Type")
         if pd.notna(door_type) and door_type and isinstance(door_type, str) and door_type.strip():
             # If the door type is one of our approved types, return it
             if door_type in ["Pivot", "Sliding", "Bypass"]:
