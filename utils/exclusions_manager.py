@@ -20,6 +20,9 @@ def load_exclusions():
     """
     Load exclusions from CSV file into the exclusions module.
     Creates an empty CSV file if it doesn't exist.
+    
+    Returns:
+        int: Number of exclusion pairs loaded
     """
     if not os.path.exists(EXCLUSIONS_FILE):
         # Create the directory if it doesn't exist
@@ -30,7 +33,7 @@ def load_exclusions():
             writer = csv.writer(file)
             writer.writerow(['SKU1', 'SKU2', 'Reason'])
         logger.info(f"Created new exclusions file at {EXCLUSIONS_FILE}")
-        return
+        return 0
     
     # Read existing exclusions
     exclusion_pairs = []
@@ -48,8 +51,10 @@ def load_exclusions():
         exclusions.EXCLUDED_PAIRS.clear()
         exclusions.load_exclusions_from_list(exclusion_pairs)
         logger.info(f"Loaded {len(exclusion_pairs)} exclusion pairs from {EXCLUSIONS_FILE}")
+        return len(exclusion_pairs)
     except Exception as e:
         logger.error(f"Error loading exclusions from CSV: {str(e)}")
+        return 0
 
 def add_exclusion(sku1, sku2, reason=""):
     """

@@ -156,6 +156,10 @@ def search():
         # Call the compatibility function to find matches
         results = compatibility.find_compatible_products(sku)
         
+        # Apply exclusion filter to results if we have compatible products
+        if results and 'compatibles' in results and results['compatibles']:
+            results['compatibles'] = compatibility.filter_compatible_products(sku, results['compatibles'])
+            
         if results and results['product']:
             # Log the product details for debugging
             product_name = results['product'].get('name', 'Unknown')
