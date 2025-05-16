@@ -17,6 +17,9 @@ INCOMPATIBLE_PAIRS = [
     # Example: Bathtub 105821 is not compatible with Wall 139398
     ('105821', '139398'),
     # Add more incompatible pairs as needed
+    
+    # Test incompatibility - not real data, just for demonstration
+    ('105821', '107181'),
 ]
 
 # For one-way incompatibilities (A can't use B, but B can use A)
