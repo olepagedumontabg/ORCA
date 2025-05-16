@@ -9,7 +9,7 @@ relationships specific to bathtubs.
 import logging
 import pandas as pd
 from logic import image_handler
-from logic.incompatibility_rules import is_incompatible
+from logic.incompatibility_rules import is_incompatible, filter_incompatible_products
 
 logger = logging.getLogger(__name__)
 
