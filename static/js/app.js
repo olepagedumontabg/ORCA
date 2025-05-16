@@ -781,8 +781,8 @@ function compatibilityApp() {
                 // Skip glass thickness filtering if the product doesn't have glass_thickness
                 if (!product.glass_thickness) {
                     console.log(`  Product ${product.sku} has no glass_thickness, skipping filter`);
-                    // If no glass thickness is defined, don't filter this product out
-                    return true;
+                    // No glass thickness defined, so this product doesn't match the filter
+                    return false;
                 }
                 
                 let thicknessMatch = false;
@@ -800,8 +800,8 @@ function compatibilityApp() {
                 // Skip door type filtering if the product doesn't have a door_type
                 if (!product.door_type) {
                     console.log(`  Product ${product.sku} has no door_type, skipping filter`);
-                    // If no door type is defined, don't filter this product out
-                    return true;
+                    // No door type defined, so this product doesn't match the filter
+                    return false;
                 }
                 
                 let doorTypeMatch = false;
@@ -819,8 +819,8 @@ function compatibilityApp() {
                 // Skip material filtering if the product doesn't have a material
                 if (!product.material) {
                     console.log(`  Product ${product.sku} has no material, skipping filter`);
-                    // If no material is defined, don't filter this product out
-                    return true;
+                    // No material defined, so this product doesn't match the filter
+                    return false;
                 }
                 
                 let materialMatch = false;
@@ -874,8 +874,8 @@ function compatibilityApp() {
                 // Skip glass thickness filtering if the product doesn't have glass_thickness
                 if (!mainProduct.glass_thickness) {
                     console.log(`  Main Product ${mainProduct.sku} has no glass_thickness, skipping filter`);
-                    // If no glass thickness is defined, don't filter this product out
-                    return true;
+                    // No glass thickness defined, so this product doesn't match the filter
+                    return false;
                 }
                 
                 let thicknessMatch = false;
@@ -893,8 +893,8 @@ function compatibilityApp() {
                 // Skip door type filtering if the product doesn't have a door_type
                 if (!mainProduct.door_type) {
                     console.log(`  Main Product ${mainProduct.sku} has no door_type, skipping filter`);
-                    // If no door type is defined, don't filter this product out
-                    return true;
+                    // No door type defined, so this product doesn't match the filter
+                    return false;
                 }
                 
                 let doorTypeMatch = false;
@@ -912,8 +912,8 @@ function compatibilityApp() {
                 // Skip material filtering if the product doesn't have a material
                 if (!mainProduct.material) {
                     console.log(`  Main Product ${mainProduct.sku} has no material, skipping filter`);
-                    // If no material is defined, don't filter this product out
-                    return true;
+                    // No material defined, so this product doesn't match the filter
+                    return false;
                 }
                 
                 let materialMatch = false;
