@@ -10,6 +10,7 @@ from logic import bathtub_compatibility
 from logic import shower_compatibility
 from logic import tubshower_compatibility
 from logic import image_handler
+from logic import exclusions
 
 # Global flag to indicate whether the data update service is available
 data_service_available = False
@@ -161,6 +162,38 @@ def load_data():
     except Exception as e:
         logger.error(f"Error in load_data: {str(e)}")
         return {}
+
+def filter_excluded_skus(source_sku, compatible_skus):
+    """
+    Filter out any SKUs that are marked as excluded from compatibility with the source SKU
+    
+    Args:
+        source_sku (str): The source SKU
+        compatible_skus (list): List of SKUs that are compatible with the source SKU
+        
+    Returns:
+        list: Filtered list with excluded SKUs removed
+    """
+    if not compatible_skus:
+        return []
+        
+    filtered_skus = []
+    for sku_item in compatible_skus:
+        # For combo SKUs, we need to check both parts
+        if "|" in sku_item:
+            part1, part2 = sku_item.split("|")
+            if not exclusions.is_excluded(source_sku, part1) and not exclusions.is_excluded(source_sku, part2):
+                filtered_skus.append(sku_item)
+        elif "+" in sku_item:
+            part1, part2 = sku_item.split("+")
+            if not exclusions.is_excluded(source_sku, part1) and not exclusions.is_excluded(source_sku, part2):
+                filtered_skus.append(sku_item)
+        else:
+            if not exclusions.is_excluded(source_sku, sku_item):
+                filtered_skus.append(sku_item)
+                
+    logger.debug(f"Filtered {len(compatible_skus) - len(filtered_skus)} excluded SKUs for {source_sku}")
+    return filtered_skus
 
 def find_compatible_products(sku):
     """
