@@ -946,6 +946,25 @@ def find_compatible_products(sku):
                         del product["_ranking"]
         
         logger.debug(f"Found {len(compatible_products)} compatible categories")
+        
+        # Apply incompatibility filtering to each category in the results
+        if compatible_products:
+            logger.debug(f"Applying incompatibility filtering for source SKU: {sku}")
+            for category_dict in compatible_products:
+                products_list = category_dict.get("products", [])
+                if products_list:
+                    # Get count before filtering
+                    before_count = len(products_list)
+                    
+                    # Filter out incompatible products
+                    filtered_products = filter_incompatible_products(sku, products_list)
+                    category_dict["products"] = filtered_products
+                    
+                    # Log if any products were removed
+                    after_count = len(filtered_products)
+                    if before_count > after_count:
+                        logger.info(f"Removed {before_count - after_count} incompatible products from {category_dict['category']} for SKU {sku}")
+        
         return {
             "product": source_product,
             "compatibles": compatible_products
