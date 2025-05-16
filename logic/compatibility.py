@@ -10,6 +10,7 @@ from logic import bathtub_compatibility
 from logic import shower_compatibility
 from logic import tubshower_compatibility
 from logic import image_handler
+from logic.incompatibility_rules import filter_incompatible_products
 
 # Global flag to indicate whether the data update service is available
 data_service_available = False
