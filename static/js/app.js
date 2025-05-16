@@ -965,9 +965,8 @@ function compatibilityApp() {
                             if (product.main_product.brand) brandsSet.add(product.main_product.brand);
                             if (product.main_product.glass_thickness) glassThicknessSet.add(product.main_product.glass_thickness);
                             if (product.main_product.material) materialSet.add(product.main_product.material);
-                            // Only add door_type if it's one of our valid types
-                            if (product.main_product.door_type && 
-                                ['Sliding', 'Pivot', 'Bypass'].includes(product.main_product.door_type)) {
+                            // Add door_type if it exists
+                            if (product.main_product.door_type && product.main_product.door_type.trim()) {
                                 doorTypeSet.add(product.main_product.door_type);
                             }
                         }
@@ -976,9 +975,8 @@ function compatibilityApp() {
                             if (product.secondary_product.brand) brandsSet.add(product.secondary_product.brand);
                             if (product.secondary_product.glass_thickness) glassThicknessSet.add(product.secondary_product.glass_thickness);
                             if (product.secondary_product.material) materialSet.add(product.secondary_product.material);
-                            // Only add door_type if it's one of our valid types
-                            if (product.secondary_product.door_type && 
-                                ['Sliding', 'Pivot', 'Bypass'].includes(product.secondary_product.door_type)) {
+                            // Add door_type if it exists
+                            if (product.secondary_product.door_type && product.secondary_product.door_type.trim()) {
                                 doorTypeSet.add(product.secondary_product.door_type);
                             }
                         }
@@ -989,9 +987,8 @@ function compatibilityApp() {
                         if (product.brand) brandsSet.add(product.brand);
                         if (product.glass_thickness) glassThicknessSet.add(product.glass_thickness);
                         if (product.material) materialSet.add(product.material);
-                        // Only add door_type if it's one of our valid types
-                        if (product.door_type && 
-                            ['Sliding', 'Pivot', 'Bypass'].includes(product.door_type)) {
+                        // Add door_type if it exists
+                        if (product.door_type && product.door_type.trim()) {
                             doorTypeSet.add(product.door_type);
                         }
                     }
