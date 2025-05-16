@@ -8,7 +8,6 @@ It enhances the product compatibility finder with additional relationships speci
 import logging
 import pandas as pd
 from logic import image_handler
-from logic.incompatibility_rules import is_incompatible
 
 logger = logging.getLogger(__name__)
 
@@ -97,19 +96,6 @@ def find_shower_compatibilities(data, shower_info):
 
             if not door_id:
                 continue
-                
-            # Check for hard-coded incompatibilities
-            shower_sku = shower_info.get("SKU", "")
-            if is_incompatible(shower_sku, door_id):
-                logger.info(f"Hard-coded incompatibility between shower {shower_sku} and door {door_id}")
-                continue  # Skip this door
-            
-            # Check if door data has incompatibility reason field and if it contains a value
-            if "Reason Doors Can't Fit" in door and pd.notna(door["Reason Doors Can't Fit"]):
-                incompatibility_reason = str(door["Reason Doors Can't Fit"]).strip()
-                if incompatibility_reason:
-                    logger.info(f"Incompatible door: {door_id} - {incompatibility_reason}")
-                    continue  # Skip this door
 
             # Match criteria for alcove installation showers
             if (
