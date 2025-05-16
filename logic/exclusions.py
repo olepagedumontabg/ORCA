@@ -59,7 +59,7 @@ def load_exclusions_from_list(exclusion_list):
 # These can be modified or loaded from a file/database as needed
 INITIAL_EXCLUSIONS = [
     # Example format: ('SKU1', 'SKU2')
-    # ('105409', '107180'),  # Uncomment and add real SKUs as needed
+    ('105821', '107180'),  # Uncomment and add real SKUs as needed
 ]
 
 # Load initial exclusions
