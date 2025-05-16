@@ -999,7 +999,11 @@ function compatibilityApp() {
             this.availableFilters.series = [...seriesSet].sort();
             this.availableFilters.brands = [...brandsSet].sort();
             this.availableFilters.glassThicknesses = [...glassThicknessSet].filter(t => t).sort();
-            this.availableFilters.doorTypes = [...doorTypeSet].filter(t => t).sort();
+            // Filter out wall kit types from door types
+            const wallTypes = ["Alcove Shower Wall Kit", "Corner Shower Wall Kit", "Tub Wall Kit"];
+            this.availableFilters.doorTypes = [...doorTypeSet]
+                .filter(t => t && !wallTypes.includes(t))
+                .sort();
             this.availableFilters.materials = [...materialSet].filter(m => m).sort();
         },
         
