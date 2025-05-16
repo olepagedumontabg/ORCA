@@ -207,8 +207,8 @@ def find_bathtub_compatibilities(data, bathtub_info):
                     "nominal_dimensions": door_data.get("Nominal Dimensions", ""),
                     "brand": door_data.get("Brand", ""),
                     "series": door_data.get("Series", ""),
-                    "glass_thickness": door_data.get("Glass Thickness", ""),
-                    "door_type": door_data.get("Door Type", ""),
+                    "glass_thickness": door_data.get("Glass Thickness", "") or door_data.get("Glass", ""),
+                    "door_type": door_data.get("Door Type", "") or door_data.get("Type", ""),
                     "max_door_width": door_data.get("Maximum Width", "")
                 }
                 compatible_doors.append(product_dict)

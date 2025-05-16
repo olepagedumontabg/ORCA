@@ -35,13 +35,28 @@ def get_fixed_door_type(product_info):
     Returns:
         str: Door type from the approved set or empty string if not available
     """
-    # Only use the Door Type column from the Excel file
+    # Check for "Door Type" column first
     if product_info and "Door Type" in product_info and product_info["Door Type"] is not None:
         door_type = product_info["Door Type"]
         if pd.notna(door_type) and door_type and isinstance(door_type, str) and door_type.strip():
             # If the door type is one of our approved types, return it
             if door_type in ["Pivot", "Sliding", "Bypass"]:
                 return door_type
+            # If it's another value, return as is
+            return door_type.strip()
+    
+    # Try "Type" column as fallback for Tub Doors
+    if product_info and "Type" in product_info and product_info["Type"] is not None:
+        door_type = product_info["Type"]
+        if pd.notna(door_type) and door_type and isinstance(door_type, str) and door_type.strip():
+            # Convert to an approved type if possible
+            door_type_lower = door_type.lower().strip()
+            if "pivot" in door_type_lower:
+                return "Pivot"
+            elif "sliding" in door_type_lower:
+                return "Sliding"
+            elif "bypass" in door_type_lower:
+                return "Bypass"
             # If it's another value, return as is
             return door_type.strip()
     
