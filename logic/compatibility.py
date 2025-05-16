@@ -548,7 +548,8 @@ def find_compatible_products(sku):
                             "brand": tubshower_data.get("Brand", ""),
                             "series": tubshower_data.get("Series", ""),
                             "max_door_width": tubshower_data.get("Max Door Width", ""),
-                            "max_door_height": tubshower_data.get("Max Door Height", "")
+                            "max_door_height": tubshower_data.get("Max Door Height", ""),
+                            "material": tubshower_data.get("Material", "")
                         }
                         tubshower_matches.append(product_dict)
                 

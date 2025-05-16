@@ -119,8 +119,8 @@ def find_tubshower_compatibilities(data, tubshower_info):
                     "nominal_dimensions": door_data.get("Nominal Dimensions", ""),
                     "brand": door_data.get("Brand", ""),
                     "series": door_data.get("Series", ""),
-                    "glass_thickness": door_data.get("Glass Thickness", ""),
-                    "door_type": door_data.get("Door Type", "")
+                    "glass_thickness": door_data.get("Glass Thickness", "") or door_data.get("Glass", ""),
+                    "door_type": door_data.get("Door Type", "") or door_data.get("Type", "")
                 }
                 compatible_doors.append(product_dict)
         except Exception as e:
