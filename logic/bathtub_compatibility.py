@@ -9,6 +9,7 @@ relationships specific to bathtubs.
 import logging
 import pandas as pd
 from logic import image_handler
+from logic.incompatibility_rules import is_incompatible
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +178,8 @@ def find_bathtub_compatibilities(data, bathtub_info):
     
     # Find compatible tub doors
     compatible_doors = []
+    bathtub_sku = bathtub_info.get("SKU", "")
+    
     for _, door in tub_doors_df.iterrows():
         try:
             door_min_width = door.get("Minimum Width")
@@ -186,6 +189,11 @@ def find_bathtub_compatibilities(data, bathtub_info):
             
             if not door_id:
                 continue
+            
+            # Check for hard-coded incompatibilities first
+            if is_incompatible(bathtub_sku, door_id):
+                logger.info(f"Hard-coded incompatibility between bathtub {bathtub_sku} and door {door_id}")
+                continue  # Skip this door
                 
             if (
                 tub_install == "Alcove" and
@@ -193,6 +201,13 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 door_min_width <= tub_width <= door_max_width and
                 series_compatible(tub_series, door_series)
             ):
+                # Check if door data has incompatibility reason field and if it contains a value
+                if "Reason Doors Can't Fit" in door and pd.notna(door["Reason Doors Can't Fit"]):
+                    incompatibility_reason = str(door["Reason Doors Can't Fit"]).strip()
+                    if incompatibility_reason:
+                        logger.info(f"Incompatible door: {door_id} - {incompatibility_reason}")
+                        continue  # Skip this door
+                        
                 # Format door product data for the frontend
                 door_data = door.to_dict()
                 # Remove any NaN values
