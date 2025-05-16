@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+from logic.incompatibility_rules import is_incompatible
 
 # Configure logging
 logger = logging.getLogger(__name__)
