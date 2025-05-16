@@ -8,6 +8,7 @@ It enhances the product compatibility finder with additional relationships speci
 import logging
 import pandas as pd
 from logic import image_handler
+from logic.incompatibility_rules import is_incompatible
 
 logger = logging.getLogger(__name__)
 

@@ -274,6 +274,19 @@ def find_bathtub_compatibilities(data, bathtub_info):
 
     for _, wall in nominal_walls.iterrows():
         wall_id = str(wall.get("Unique ID", "")).strip()
+        
+        # Check for hard-coded incompatibilities
+        if is_incompatible(bathtub_info.get("SKU", ""), wall_id):
+            logger.info(f"Hard-coded incompatibility between bathtub {bathtub_info.get('SKU')} and wall {wall_id}")
+            continue  # Skip this wall
+            
+        # Check if wall data has incompatibility reason field and if it contains a value
+        if "Reason Walls Can't Fit" in wall and pd.notna(wall["Reason Walls Can't Fit"]):
+            incompatibility_reason = str(wall["Reason Walls Can't Fit"]).strip()
+            if incompatibility_reason:
+                logger.info(f"Incompatible wall: {wall_id} - {incompatibility_reason}")
+                continue  # Skip this wall
+        
         logger.info(f"✅ Matched exact nominal wall: {wall_id} - {wall.get('Product Name')}")
         wall_data = wall.to_dict()
         wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
@@ -305,6 +318,19 @@ def find_bathtub_compatibilities(data, bathtub_info):
         closest_cut_walls = find_closest_walls(tub_length, tub_width_actual, cut_walls_candidates)
         for _, wall in closest_cut_walls.iterrows():
             wall_id = str(wall.get("Unique ID", "")).strip()
+            
+            # Check for hard-coded incompatibilities
+            if is_incompatible(bathtub_info.get("SKU", ""), wall_id):
+                logger.info(f"Hard-coded incompatibility between bathtub {bathtub_info.get('SKU')} and wall {wall_id}")
+                continue  # Skip this wall
+                
+            # Check if wall data has incompatibility reason field and if it contains a value
+            if "Reason Walls Can't Fit" in wall and pd.notna(wall["Reason Walls Can't Fit"]):
+                incompatibility_reason = str(wall["Reason Walls Can't Fit"]).strip()
+                if incompatibility_reason:
+                    logger.info(f"Incompatible wall: {wall_id} - {incompatibility_reason}")
+                    continue  # Skip this wall
+                    
             logger.info(f"✅ Matched closest cut wall: {wall_id} - {wall.get('Product Name')}")
             wall_data = wall.to_dict()
             wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
