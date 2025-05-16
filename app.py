@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import traceback
 from logic import compatibility
+from utils import exclusions_manager
 
 # Try to import the data update service
 try:
@@ -40,6 +41,13 @@ if data_service_available:
     except Exception as e:
         logger.error(f"Failed to start data update service: {str(e)}")
         data_service_available = False
+
+# Load exclusions on startup
+try:
+    exclusions_manager.load_exclusions()
+    logger.info("Loaded SKU exclusions")
+except Exception as e:
+    logger.error(f"Failed to load SKU exclusions: {str(e)}")
 
 @app.route('/')
 def index():
@@ -235,6 +243,122 @@ def search():
             'success': False,
             'message': f'An error occurred: {str(e)}'
         })
+
+# SKU Exclusions API Endpoints
+@app.route('/api/exclusions', methods=['GET'])
+def list_exclusions():
+    """List all excluded SKU pairs"""
+    try:
+        # Load exclusions if they haven't been loaded yet
+        exclusions_manager.load_exclusions()
+        
+        # Get all exclusions
+        exclusion_list = exclusions_manager.list_exclusions()
+        
+        return jsonify({
+            'success': True,
+            'exclusions': [
+                {
+                    'sku1': sku1, 
+                    'sku2': sku2, 
+                    'reason': reason
+                } for sku1, sku2, reason in exclusion_list
+            ]
+        })
+    except Exception as e:
+        logger.error(f"Error listing exclusions: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error listing exclusions: {str(e)}'
+        }), 500
+
+@app.route('/api/exclusions', methods=['POST'])
+def add_exclusion():
+    """Add a new SKU exclusion pair"""
+    try:
+        # Get data from request
+        if request.is_json:
+            data = request.json
+        else:
+            data = request.form
+            
+        sku1 = data.get('sku1', '').strip()
+        sku2 = data.get('sku2', '').strip()
+        reason = data.get('reason', '').strip()
+        
+        if not sku1 or not sku2:
+            return jsonify({
+                'success': False,
+                'message': 'Both SKU1 and SKU2 are required'
+            }), 400
+            
+        # Add the exclusion
+        result = exclusions_manager.add_exclusion(sku1, sku2, reason)
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'message': f'Exclusion added: {sku1} and {sku2}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Failed to add exclusion or it already exists'
+            }), 400
+    except Exception as e:
+        logger.error(f"Error adding exclusion: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error adding exclusion: {str(e)}'
+        }), 500
+
+@app.route('/api/exclusions', methods=['DELETE'])
+def remove_exclusion():
+    """Remove a SKU exclusion pair"""
+    try:
+        # Get data from request
+        if request.is_json:
+            data = request.json
+        else:
+            # For DELETE requests, parameters may be in URL
+            sku1 = request.args.get('sku1', '').strip()
+            sku2 = request.args.get('sku2', '').strip()
+            
+            if not sku1 or not sku2:
+                # Try form data as fallback
+                sku1 = request.form.get('sku1', '').strip()
+                sku2 = request.form.get('sku2', '').strip()
+            
+            data = {'sku1': sku1, 'sku2': sku2}
+            
+        sku1 = data.get('sku1', '').strip()
+        sku2 = data.get('sku2', '').strip()
+        
+        if not sku1 or not sku2:
+            return jsonify({
+                'success': False,
+                'message': 'Both SKU1 and SKU2 are required'
+            }), 400
+            
+        # Remove the exclusion
+        result = exclusions_manager.remove_exclusion(sku1, sku2)
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'message': f'Exclusion removed: {sku1} and {sku2}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Failed to remove exclusion or it does not exist'
+            }), 404
+    except Exception as e:
+        logger.error(f"Error removing exclusion: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error removing exclusion: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
