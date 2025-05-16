@@ -10,7 +10,7 @@ from logic import bathtub_compatibility
 from logic import shower_compatibility
 from logic import tubshower_compatibility
 from logic import image_handler
-from logic import exclusions
+from logic.incompatibility_rules import filter_incompatible_products
 
 # Global flag to indicate whether the data update service is available
 data_service_available = False
@@ -162,98 +162,6 @@ def load_data():
     except Exception as e:
         logger.error(f"Error in load_data: {str(e)}")
         return {}
-
-def filter_excluded_skus(source_sku, compatible_skus):
-    """
-    Filter out any SKUs that are marked as excluded from compatibility with the source SKU
-    
-    Args:
-        source_sku (str): The source SKU
-        compatible_skus (list): List of SKUs that are compatible with the source SKU
-        
-    Returns:
-        list: Filtered list with excluded SKUs removed
-    """
-    if not compatible_skus:
-        return []
-        
-    filtered_skus = []
-    for sku_item in compatible_skus:
-        # For combo SKUs, we need to check both parts
-        if "|" in sku_item:
-            part1, part2 = sku_item.split("|")
-            if not exclusions.is_excluded(source_sku, part1) and not exclusions.is_excluded(source_sku, part2):
-                filtered_skus.append(sku_item)
-        elif "+" in sku_item:
-            part1, part2 = sku_item.split("+")
-            if not exclusions.is_excluded(source_sku, part1) and not exclusions.is_excluded(source_sku, part2):
-                filtered_skus.append(sku_item)
-        else:
-            if not exclusions.is_excluded(source_sku, sku_item):
-                filtered_skus.append(sku_item)
-                
-    logger.debug(f"Filtered {len(compatible_skus) - len(filtered_skus)} excluded SKUs for {source_sku}")
-    return filtered_skus
-
-def filter_compatible_products(source_sku, compatible_products):
-    """
-    Filter compatible products list to remove excluded SKUs
-    
-    Args:
-        source_sku (str): The source SKU that was searched
-        compatible_products (list): List of category dictionaries with product lists
-        
-    Returns:
-        list: Filtered compatible products with excluded SKUs removed
-    """
-    if not compatible_products:
-        return []
-    
-    # Create a new list to avoid modifying the original
-    filtered_result = []
-    
-    for category_item in compatible_products:
-        # Create a copy of the category item
-        filtered_category = category_item.copy()
-        
-        # Filter products in this category
-        if "products" in filtered_category and isinstance(filtered_category["products"], list):
-            filtered_products = []
-            
-            for product in filtered_category["products"]:
-                product_sku = product.get("sku", "")
-                is_excluded = False
-                
-                # Handle combo products (SKUs with | or +)
-                if "|" in product_sku:
-                    part1, part2 = product_sku.split("|")
-                    is_excluded = exclusions.is_excluded(source_sku, part1) or exclusions.is_excluded(source_sku, part2)
-                elif "+" in product_sku:
-                    part1, part2 = product_sku.split("+")
-                    is_excluded = exclusions.is_excluded(source_sku, part1) or exclusions.is_excluded(source_sku, part2)
-                else:
-                    is_excluded = exclusions.is_excluded(source_sku, product_sku)
-                
-                # Add the product only if it's not excluded
-                if not is_excluded:
-                    filtered_products.append(product)
-            
-            # Update with filtered products
-            filtered_category["products"] = filtered_products
-            
-            # Only add the category if it still has products after filtering
-            if filtered_products:
-                filtered_result.append(filtered_category)
-        else:
-            # Keep the category as is if it doesn't have a products list
-            filtered_result.append(filtered_category)
-    
-    # Log how many products were excluded
-    original_count = sum(len(category.get("products", [])) for category in compatible_products)
-    filtered_count = sum(len(category.get("products", [])) for category in filtered_result)
-    logger.debug(f"Filtered compatibility results: {original_count} products → {filtered_count} after exclusions")
-    
-    return filtered_result
 
 def find_compatible_products(sku):
     """
@@ -1038,6 +946,25 @@ def find_compatible_products(sku):
                         del product["_ranking"]
         
         logger.debug(f"Found {len(compatible_products)} compatible categories")
+        
+        # Apply incompatibility filtering to each category in the results
+        if compatible_products:
+            logger.debug(f"Applying incompatibility filtering for source SKU: {sku}")
+            for category_dict in compatible_products:
+                products_list = category_dict.get("products", [])
+                if products_list:
+                    # Get count before filtering
+                    before_count = len(products_list)
+                    
+                    # Filter out incompatible products
+                    filtered_products = filter_incompatible_products(sku, products_list)
+                    category_dict["products"] = filtered_products
+                    
+                    # Log if any products were removed
+                    after_count = len(filtered_products)
+                    if before_count > after_count:
+                        logger.info(f"Removed {before_count - after_count} incompatible products from {category_dict['category']} for SKU {sku}")
+        
         return {
             "product": source_product,
             "compatibles": compatible_products
