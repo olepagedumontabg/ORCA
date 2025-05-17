@@ -13,6 +13,7 @@ function compatibilityApp() {
         productDetails: null,
         compatibleProducts: [],
         filteredCompatibleProducts: [],
+        incompatibilityReasons: {},
         
         // On initialization, fix the filter panel width
         init() {
@@ -577,7 +578,24 @@ function compatibilityApp() {
                     // Display results
                     this.productDetails = data.product;
                     console.log("Product details received:", this.productDetails);
-                    this.compatibleProducts = data.compatibles || [];
+                    
+                    // Process compatible products and extract incompatibility reasons
+                    this.compatibleProducts = [];
+                    this.incompatibilityReasons = {};
+                    
+                    // Go through each category in the compatibles array
+                    (data.compatibles || []).forEach(category => {
+                        // Check if this is an incompatibility reason entry
+                        if (category.incompatible_reason) {
+                            // Store incompatibility reason
+                            this.incompatibilityReasons[category.category] = category.incompatible_reason;
+                        } else {
+                            // This is a normal category with products
+                            this.compatibleProducts.push(category);
+                        }
+                    });
+                    
+                    console.log("Incompatibility reasons:", this.incompatibilityReasons);
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
                     this.currentSku = data.sku;
                     this.errorMessage = '';
