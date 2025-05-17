@@ -515,6 +515,21 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Incompatibility Reasons Section -->
+                    <div class="mt-4" x-show="incompatibilityReasons && Object.keys(incompatibilityReasons).length > 0">
+                        <div class="border-t border-gray-200 pt-4 mt-2">
+                            <h4 class="text-md font-semibold text-gray-700 mb-2">Incompatibility Reasons:</h4>
+                            <div class="space-y-2">
+                                <template x-for="(reason, category) in incompatibilityReasons" :key="category">
+                                    <div class="text-sm bg-amber-50 border border-amber-200 rounded-md p-3">
+                                        <span class="font-medium text-amber-700" x-text="category + ':'"></span>
+                                        <span class="text-amber-800 ml-2" x-text="reason"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Results cards -->
