@@ -1,6 +1,5 @@
 import pandas as pd
 import logging
-from logic.incompatibility_rules import is_incompatible
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -84,22 +83,6 @@ def find_base_compatibilities(data, base_info):
                 door_brand = door.get("Brand")
                 door_id = str(door.get("Unique ID", "")).strip()
                 door_name = door.get("Product Name", "")
-                
-                if not door_id:
-                    continue
-
-                # Check for hard-coded incompatibilities
-                base_sku = base_info.get("SKU", "")
-                if is_incompatible(base_sku, door_id):
-                    logger.info(f"Hard-coded incompatibility between base {base_sku} and door {door_id}")
-                    continue  # Skip this door
-                
-                # Check if door data has incompatibility reason field and if it contains a value
-                if "Reason Doors Can't Fit" in door and pd.notna(door["Reason Doors Can't Fit"]):
-                    incompatibility_reason = str(door["Reason Doors Can't Fit"]).strip()
-                    if incompatibility_reason:
-                        logger.info(f"Incompatible door: {door_id} - {incompatibility_reason}")
-                        continue  # Skip this door
 
                 logger.debug(f"  Checking door: {door_id} - {door_name}")
                 logger.debug(
@@ -290,19 +273,6 @@ def find_base_compatibilities(data, base_info):
 
                 if not wall_id:
                     continue
-                    
-                # Check for hard-coded incompatibilities
-                base_sku = base_info.get("SKU", "")
-                if is_incompatible(base_sku, wall_id):
-                    logger.info(f"Hard-coded incompatibility between base {base_sku} and wall {wall_id}")
-                    continue  # Skip this wall
-                
-                # Check if wall data has incompatibility reason field and if it contains a value
-                if "Reason Walls Can't Fit" in wall and pd.notna(wall["Reason Walls Can't Fit"]):
-                    incompatibility_reason = str(wall["Reason Walls Can't Fit"]).strip()
-                    if incompatibility_reason:
-                        logger.info(f"Incompatible wall: {wall_id} - {incompatibility_reason}")
-                        continue  # Skip this wall
 
                 alcove_match = (
                     "alcove shower" in wall_type

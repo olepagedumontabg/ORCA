@@ -24,9 +24,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Enable debug logging for incompatibility_rules module
-logging.getLogger('logic.incompatibility_rules').setLevel(logging.DEBUG)
-
 # Initialize data update service
 data_update_thread = None
 if data_service_available:
