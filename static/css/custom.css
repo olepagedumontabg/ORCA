@@ -3,7 +3,7 @@
 /* Fix Product Details section padding */
 .product-details-section {
     padding: 0 0 16px 0 !important;
-    margin: 0 !important;
+    margin: 0 0 32px 0 !important;
 }
 
 /* Fix filter panel width issues */
