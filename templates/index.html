@@ -20,15 +20,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/padding-fix.css') }}">
     
     <style>
-        /* Add left padding to content container - guaranteed high precedence */
-        .content-container,
-        #resultsContainer, 
-        #resultsContainer > div, 
-        .product-details-section, 
-        .compatible-products-section {
-            padding-left: 20px !important;
+        /* Maintain 20px padding on the container */
+        #resultsContainer > div {
+            padding-left: 40px !important;
         }
-        
+
+        /* ...But override it for specific sections to align them left */
+        #resultsContainer > .mb-4,
+        #resultsContainer > .product-details-section,
+        #resultsContainer > .compatible-products-section {
+            padding-left: 0 !important;
+        }
+
         /* Fixed width styles for filter panel - slimmer with modern style */
         .filter-sidebar {
             width: 260px !important;
@@ -39,8 +42,7 @@
             margin: 0 !important;
             box-sizing: border-box !important;
         }
-        
-        /* Strict rules for filter header */
+
         .filter-header {
             width: 260px !important;
             min-width: 260px !important;
@@ -54,8 +56,7 @@
             justify-content: space-between !important;
             overflow: hidden !important;
         }
-        
-        /* Strict rules for filter container */
+
         .filter-container {
             width: 260px !important;
             min-width: 260px !important;
@@ -67,12 +68,13 @@
             box-sizing: border-box !important;
             overflow: hidden !important;
         }
-        /* Filter section styles */
+
         .filter-section {
             border-bottom: 1px solid #eaeaea;
             padding-bottom: 1rem;
             margin-bottom: 1rem;
         }
+
         .filter-section h3 {
             font-weight: 500;
             margin-bottom: 0.75rem;
@@ -81,21 +83,22 @@
             align-items: center;
             color: #333;
         }
+
         .filter-section h3 span {
             color: #666;
             font-size: 1rem;
             margin-left: auto;
         }
-        /* Checkbox container styles */
+
         .filter-checkbox-container {
             padding: 0.25rem 0;
         }
-        /* Custom checkbox styling */
+
         .filter-checkbox-container input[type="checkbox"] {
             border: 1px solid #ccc;
             border-radius: 2px;
         }
-        /* Fixed width for filter labels */
+
         .filter-label {
             width: 190px !important;
             min-width: 190px !important;
@@ -108,8 +111,11 @@
             color: #444;
             padding-left: 0.25rem;
         }
-        /* Hide elements with x-cloak attribute until Alpine.js is loaded */
-        [x-cloak] { display: none !important; }
+
+        /* Hide Alpine.js cloaked elements */
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
     
     <script>
