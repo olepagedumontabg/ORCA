@@ -6,11 +6,6 @@
     margin: 0 0 32px 0 !important;
 }
 
-/* Fix Compatible Products section padding */
-.compatible-products-section {
-    padding-left: 0 !important;
-}
-
 /* Fix filter panel width issues */
 /* Target the exact flex container that's causing problems */
 .filter-header {
