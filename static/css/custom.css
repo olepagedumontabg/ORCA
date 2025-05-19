@@ -11,6 +11,11 @@
     padding-left: 0 !important;
 }
 
+/* Remove padding from the results count section */
+.compatible-products-section .text-sm.text-gray-600.mb-4 {
+    padding-left: 0 !important;
+}
+
 /* Fix filter panel width issues */
 /* Target the exact flex container that's causing problems */
 .filter-header {
