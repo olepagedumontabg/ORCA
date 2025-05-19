@@ -308,13 +308,13 @@
             <!-- Results area -->
             <div id="resultsContainer">
                 <!-- No search performed yet message -->
-                <div x-show="!hasSearched && !errorMessage" class="text-center py-10 text-gray-500">
+                <div x-show="!hasSearched && !errorMessage" class="text-center py-10 text-gray-500" x-cloak>
                     <i class="fas fa-search text-4xl mb-3"></i>
                     <p>Enter a SKU above to find compatible products</p>
                 </div>
                 
                 <!-- Error message -->
-                <div x-show="errorMessage" class="text-center py-8">
+                <div x-show="errorMessage" class="text-center py-8" x-cloak>
                     <div class="inline-block bg-red-50 text-red-700 p-4 rounded-lg">
                         <i class="fas fa-exclamation-circle mr-2"></i>
                         <span x-text="errorMessage"></span>
@@ -322,7 +322,7 @@
                 </div>
                 
                 <!-- Compact search form for when results are showing -->
-                <div x-show="compatibleProducts.length > 0 && !errorMessage" class="mb-4">
+                <div x-show="compatibleProducts.length > 0 && !errorMessage" class="mb-4" x-cloak>
                     <form @submit.prevent="submitSearch" class="flex flex-wrap items-end gap-2">
                         <div class="flex-grow min-w-[200px] relative">
                             <label for="skuInputCompact" class="block text-sm font-medium text-gray-700 mb-1">Enter SKU or Product Name</label>
@@ -370,7 +370,7 @@
                 </div>
                 
                 <!-- Source product details -->
-                <div x-show="productDetails && !errorMessage" class="mb-0 pb-4 product-details-section" style="position: relative; padding-left: 0 !important;">
+                <div x-show="productDetails && !errorMessage" class="mb-0 pb-4 product-details-section" style="position: relative; padding-left: 0 !important;" x-cloak>
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background-color: #e5e7eb;"></div>
                     <h2 class="text-xl font-semibold mb-4">Product Details</h2>
                     <div class="flex flex-wrap md:flex-nowrap gap-6">
@@ -436,7 +436,7 @@
                 </div>
 
                 <!-- Results cards -->
-                <div x-show="compatibleProducts.length > 0 && !errorMessage" class="compatible-products-section">
+                <div x-show="compatibleProducts.length > 0 && !errorMessage" class="compatible-products-section" x-cloak>
                     <div class="flex flex-wrap items-center justify-between mb-4">
                         <h2 class="text-xl font-semibold">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
                     </div>
