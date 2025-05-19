@@ -433,8 +433,8 @@
                     <div class="mt-4" x-show="incompatibilityReasons && Object.keys(incompatibilityReasons).length > 0">
                         <div class="border-t border-gray-200 pt-4 mt-2">
                             <template x-for="(reason, category) in incompatibilityReasons" :key="category">
-                                <div class="text-sm bg-amber-50 border border-amber-200 rounded-md p-3">
-                                    <span class="text-amber-800" x-text="reason"></span>
+                                <div class="text-sm bg-red-50 border border-red-200 rounded-md p-3">
+                                    <span class="text-red-800" x-text="reason"></span>
                                 </div>
                             </template>
                         </div>
