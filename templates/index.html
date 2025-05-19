@@ -23,14 +23,10 @@
         /* Add left padding to content container - guaranteed high precedence */
         .content-container,
         #resultsContainer, 
-        #resultsContainer > div {
-            padding-left: 0 !important;
-        }
-        
-        /* No left padding for product sections */
+        #resultsContainer > div, 
         .product-details-section, 
         .compatible-products-section {
-            padding-left: 0 !important;
+            padding-left: 20px !important;
         }
         
         /* Fixed width styles for filter panel - slimmer with modern style */
@@ -337,7 +333,7 @@
         </aside>
 
         <!-- Search and results area -->
-        <div class="flex-grow content-container">
+        <div class="flex-grow content-container" style="padding-left: 20px;">
             <!-- Search form -->
             <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
                 <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
