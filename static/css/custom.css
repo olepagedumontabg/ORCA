@@ -12,37 +12,72 @@
     width: 260px !important;
     min-width: 260px !important;
     max-width: 260px !important;
+    border: none !important;
+    box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box !important;
     display: flex !important;
     justify-content: space-between !important;
-    align-items: center !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    padding-bottom: 0.5rem !important;
-    margin-bottom: 1rem !important;
+    overflow: hidden !important;
 }
 
-.filter-header.flex.justify-between.items-center * {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.filter-sidebar {
-    width: 260px !important;
-    min-width: 260px !important;
-    max-width: 260px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-}
-
-/* Ensure the filter container has space between items but maintains width */
 .filter-container {
     width: 260px !important;
     min-width: 260px !important;
     max-width: 260px !important;
+    border: none !important;
+    box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.filter-section {
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-section h3 {
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #333;
+}
+
+.filter-section h3 span {
+    color: #666;
+    font-size: 1rem;
+    margin-left: auto;
+}
+
+.filter-checkbox-container {
+    padding: 0.25rem 0;
+}
+
+.filter-checkbox-container input[type="checkbox"] {
+    border: 1px solid #ccc;
+    border-radius: 2px;
+}
+
+.filter-label {
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    display: inline-block;
+    font-weight: normal;
+    color: #444;
+    padding-left: 0.25rem;
+}
+
+/* Hide Alpine.js cloaked elements */
+[x-cloak] {
+    display: none !important;
 }
