@@ -472,12 +472,22 @@
                                         <!-- Regular product -->
                                         <template x-if="!isComboProduct(product)">
                                             <div>
-                                                <div class="aspect-square overflow-hidden">
+                                                <div class="aspect-square overflow-hidden relative">
                                                     <img 
                                                         :src="product.image_url || getPlaceholderImage(product.name)" 
                                                         :alt="product.name || 'Product Image'" 
                                                         class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
                                                     >
+                                                    <!-- External link icon with product page URL -->
+                                                    <a x-show="product.product_page_url" 
+                                                       :href="product.product_page_url" 
+                                                       target="_blank" 
+                                                       rel="noopener noreferrer" 
+                                                       class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </a>
                                                 </div>
                                                 <div class="p-4">
                                                     <h4 class="font-semibold text-gray-800 mb-1" x-text="formatProductName(product)"></h4>
@@ -503,7 +513,7 @@
                                         <!-- Combo product (door + return panel) -->
                                         <template x-if="isComboProduct(product)">
                                             <div>
-                                                <div class="aspect-square flex">
+                                                <div class="aspect-square flex relative">
                                                     <div class="w-1/2 h-full overflow-hidden">
                                                         <img 
                                                             :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
@@ -518,6 +528,16 @@
                                                             class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
                                                         >
                                                     </div>
+                                                    <!-- External link icon for combo products (using main product URL) -->
+                                                    <a x-show="product.main_product.product_page_url" 
+                                                       :href="product.main_product.product_page_url" 
+                                                       target="_blank" 
+                                                       rel="noopener noreferrer" 
+                                                       class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-gray-100 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </a>
                                                 </div>
                                                 <div class="p-4">
                                                     <h4 class="font-semibold text-gray-800 mb-1">
