@@ -86,7 +86,7 @@
                                 <span style="font-size: 12px; color: #6b7280; cursor: pointer;" 
                                       @click="resetFilters()" 
                                       title="Reset all filters">
-                                    <i class="fas fa-undo" style="margin-right: 4px;"></i>Reset
+                                    <i class="fas fa-undo" style="margin-right: 4px;"></i>Reset Filter
                                 </span>
                             </td>
                         </tr>
@@ -398,19 +398,19 @@
                                     <span class="font-medium text-gray-500">Category:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.category || ''"></span>
                                 </div>
-                                <div class="text-sm">
+                                <div class="text-sm" x-show="productDetails?.nominal_dimensions">
                                     <span class="font-medium text-gray-500">Dimensions:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.nominal_dimensions || 'N/A'"></span>
+                                    <span class="text-gray-800" x-text="productDetails?.nominal_dimensions"></span>
                                 </div>
-                                <div class="text-sm">
+                                <div class="text-sm" x-show="productDetails?.installation">
                                     <span class="font-medium text-gray-500">Installation:</span> 
-                                    <span class="text-gray-800" x-text="productDetails?.installation || 'N/A'"></span>
+                                    <span class="text-gray-800" x-text="productDetails?.installation"></span>
                                 </div>
                                 <div class="text-sm">
                                     <span class="font-medium text-gray-500">Brand:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.brand || 'N/A'"></span>
                                 </div>
-                                <div class="text-sm">
+                                <div class="text-sm" x-show="productDetails?.series">
                                     <span class="font-medium text-gray-500">Series:</span> 
                                     <span class="text-gray-800" x-text="productDetails?.series || 'N/A'"></span>
                                 </div>
