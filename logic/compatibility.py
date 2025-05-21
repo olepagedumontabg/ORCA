@@ -821,7 +821,8 @@ def find_compatible_products(sku):
                             "image_url": image_handler.generate_image_url(wall_info),
                             "nominal_dimensions": wall_info.get("Nominal Dimensions", ""),
                             "brand": wall_info.get("Brand", ""),
-                            "series": wall_info.get("Series", "")
+                            "series": wall_info.get("Series", ""),
+                            "product_page_url": wall_info.get("Product Page URL", "")
                         })
                 
                 if enhanced_skus:
