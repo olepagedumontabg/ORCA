@@ -119,6 +119,7 @@ def find_shower_compatibilities(data, shower_info):
                     "_ranking": door_data.get("Ranking", 999),
                     "name": door_data.get("Product Name", ""),
                     "image_url": image_handler.generate_image_url(door_data),
+                    "product_page_url": door_data.get("Product Page URL", ""),
                     "nominal_dimensions": door_data.get("Nominal Dimensions", ""),
                     "brand": door_data.get("Brand", ""),
                     "series": door_data.get("Series", ""),
