@@ -401,6 +401,8 @@ def find_compatible_products(sku):
                             "series": tub_data.get("Series", ""),
                             "max_door_width": tub_data.get("Max Door Width", ""),
                             "installation": tub_data.get("Installation", "")
+                        ,
+                            "product_page_url": product_info.get("Product Page URL", "") if isinstance(product_info, dict) else "" if "product_info" in locals() else base_data.get("Product Page URL", "") if "base_data" in locals() else tub_data.get("Product Page URL", "") if "tub_data" in locals() else shower_data.get("Product Page URL", "") if "shower_data" in locals() else wall_info.get("Product Page URL", "") if "wall_info" in locals() else tubshower_data.get("Product Page URL", "") if "tubshower_data" in locals() else ""
                         }
                         bathtub_matches.append(product_dict)
                 
@@ -457,6 +459,8 @@ def find_compatible_products(sku):
                             "series": base_data.get("Series", ""),
                             "max_door_width": base_data.get("Max Door Width", ""),
                             "installation": base_data.get("Installation", "")
+                        ,
+                            "product_page_url": product_info.get("Product Page URL", "") if isinstance(product_info, dict) else "" if "product_info" in locals() else base_data.get("Product Page URL", "") if "base_data" in locals() else tub_data.get("Product Page URL", "") if "tub_data" in locals() else shower_data.get("Product Page URL", "") if "shower_data" in locals() else wall_info.get("Product Page URL", "") if "wall_info" in locals() else tubshower_data.get("Product Page URL", "") if "tubshower_data" in locals() else ""
                         }
                         base_matches.append(product_dict)
                 
@@ -506,6 +510,8 @@ def find_compatible_products(sku):
                             "max_door_width": shower_data.get("Max Door Width", ""),
                             "max_door_height": shower_data.get("Max Door Height", ""),
                             "installation": shower_data.get("Installation", "")
+                        ,
+                            "product_page_url": product_info.get("Product Page URL", "") if isinstance(product_info, dict) else "" if "product_info" in locals() else base_data.get("Product Page URL", "") if "base_data" in locals() else tub_data.get("Product Page URL", "") if "tub_data" in locals() else shower_data.get("Product Page URL", "") if "shower_data" in locals() else wall_info.get("Product Page URL", "") if "wall_info" in locals() else tubshower_data.get("Product Page URL", "") if "tubshower_data" in locals() else ""
                         }
                         shower_matches.append(product_dict)
                 
@@ -553,6 +559,8 @@ def find_compatible_products(sku):
                             "max_door_width": tubshower_data.get("Max Door Width", ""),
                             "max_door_height": tubshower_data.get("Max Door Height", ""),
                             "material": tubshower_data.get("Material", "")
+                        ,
+                            "product_page_url": product_info.get("Product Page URL", "") if isinstance(product_info, dict) else "" if "product_info" in locals() else base_data.get("Product Page URL", "") if "base_data" in locals() else tub_data.get("Product Page URL", "") if "tub_data" in locals() else shower_data.get("Product Page URL", "") if "shower_data" in locals() else wall_info.get("Product Page URL", "") if "wall_info" in locals() else tubshower_data.get("Product Page URL", "") if "tubshower_data" in locals() else ""
                         }
                         tubshower_matches.append(product_dict)
                 
@@ -636,6 +644,8 @@ def find_compatible_products(sku):
                             "series": tub_data.get("Series", ""),
                             "max_door_width": tub_data.get("Max Door Width", ""),
                             "installation": tub_data.get("Installation", "")
+                        ,
+                            "product_page_url": product_info.get("Product Page URL", "") if isinstance(product_info, dict) else "" if "product_info" in locals() else base_data.get("Product Page URL", "") if "base_data" in locals() else tub_data.get("Product Page URL", "") if "tub_data" in locals() else shower_data.get("Product Page URL", "") if "shower_data" in locals() else wall_info.get("Product Page URL", "") if "wall_info" in locals() else tubshower_data.get("Product Page URL", "") if "tubshower_data" in locals() else ""
                         }
                         bathtub_matches.append(product_dict)
                 
@@ -709,6 +719,8 @@ def find_compatible_products(sku):
                             "series": base_data.get("Series", ""),
                             "max_door_width": base_data.get("Max Door Width", ""),
                             "installation": base_data.get("Installation", "")
+                        ,
+                            "product_page_url": product_info.get("Product Page URL", "") if isinstance(product_info, dict) else "" if "product_info" in locals() else base_data.get("Product Page URL", "") if "base_data" in locals() else tub_data.get("Product Page URL", "") if "tub_data" in locals() else shower_data.get("Product Page URL", "") if "shower_data" in locals() else wall_info.get("Product Page URL", "") if "wall_info" in locals() else tubshower_data.get("Product Page URL", "") if "tubshower_data" in locals() else ""
                         }
                         base_matches.append(product_dict)
                 
