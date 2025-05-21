@@ -863,6 +863,7 @@ def find_compatible_products(sku):
             "brand": original_product_info.get("Brand", "") if original_product_info.get("Brand") is not None else "",
             "series": original_product_info.get("Series", "") if original_product_info.get("Series") is not None else "",
             "family": original_product_info.get("Family", "") if original_product_info.get("Family") is not None else "",
+            "product_page_url": original_product_info.get("Product Page URL", "") if original_product_info.get("Product Page URL") is not None else "",
         }
         
         # Handle max_door_width - this field has different column names in different sheets
