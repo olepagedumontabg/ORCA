@@ -295,7 +295,8 @@ def find_compatible_products(sku):
                                     "glass_thickness": door_info.get("Glass Thickness", ""),
                                     "door_type": get_fixed_door_type(door_info),
                                     "max_door_width": door_info.get("Maximum Width", ""),
-                                    "material": door_info.get("Material", "")
+                                    "material": door_info.get("Material", ""),
+                                    "product_page_url": door_info.get("Product Page URL", "")
                                 },
                                 "secondary_product": {
                                     "sku": panel_sku,
@@ -305,7 +306,8 @@ def find_compatible_products(sku):
                                     "brand": panel_info.get("Brand", ""),
                                     "series": panel_info.get("Series", ""),
                                     "glass_thickness": panel_info.get("Glass Thickness", ""),
-                                    "material": panel_info.get("Material", "")
+                                    "material": panel_info.get("Material", ""),
+                                    "product_page_url": panel_info.get("Product Page URL", "")
                                 }
                             }
                             enhanced_skus.append(combo_product)
@@ -336,7 +338,8 @@ def find_compatible_products(sku):
                                 "glass_thickness": product_info.get("Glass Thickness", "") if product_info.get("Glass Thickness") is not None else "",
                                 "door_type": get_fixed_door_type(product_info),
                                 "max_door_width": product_info.get("Maximum Width", "") if product_info.get("Maximum Width") is not None else "",
-                                "material": product_info.get("Material", "") if product_info.get("Material") is not None else ""
+                                "material": product_info.get("Material", "") if product_info.get("Material") is not None else "",
+                                "product_page_url": product_info.get("Product Page URL", "") if product_info.get("Product Page URL") is not None else ""
                             }
                             enhanced_skus.append(product_dict)
                 
