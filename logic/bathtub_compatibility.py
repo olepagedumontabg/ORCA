@@ -300,6 +300,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 "_ranking": wall_data.get("Ranking", 999),
                 "name": wall_data.get("Product Name", ""),
                 "image_url": wall_data.get("Image URL", ""),
+                "product_page_url": wall_data.get("Product Page URL", ""),
                 "nominal_dimensions": wall_data.get("Nominal Dimensions", ""),
                 "brand": wall_data.get("Brand", ""),
                 "series": wall_data.get("Series", ""),
