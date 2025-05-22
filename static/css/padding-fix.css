@@ -1,33 +1,51 @@
 /* Direct padding fixes with !important to override existing styles */
 
-/* Main content container padding */
-.content-container {
-    padding-left: 20px !important;
+/* Main content container padding - desktop only */
+@media (min-width: 768px) {
+    .content-container {
+        padding-left: 20px !important;
+    }
+
+    /* Target the main results container directly */
+    #resultsContainer {
+        padding-left: 20px !important;
+    }
+
+    /* Target sections with specific attributes receive padding */
+    div[x-show="productDetails && !errorMessage"] {
+        padding-left: 20px !important;
+    }
+
+    div[x-show="compatibleProducts.length > 0 && !errorMessage"] {
+        padding-left: 20px !important;
+    }
+
+    /* Product details section */
+    .product-details-section {
+        padding-left: 20px !important;
+    }
 }
 
-/* Target the main results container directly */
-#resultsContainer {
-    padding-left: 20px !important;
+/* Mobile styles - remove left padding */
+@media (max-width: 767px) {
+    .content-container,
+    #resultsContainer,
+    div[x-show="productDetails && !errorMessage"],
+    div[x-show="compatibleProducts.length > 0 && !errorMessage"],
+    .product-details-section {
+        padding-left: 0 !important;
+    }
 }
 
+/* Common styles for all screen sizes */
 #resultsContainer > .mb-4,
 #resultsContainer > .product-details-section,
 #resultsContainer > .compatible-products-section {
     padding-left: 0 !important;
 }
 
-/* Target sections with specific attributes receive padding */
-div[x-show="productDetails && !errorMessage"] {
-    padding-left: 20px !important;
-}
-
-div[x-show="compatibleProducts.length > 0 && !errorMessage"] {
-    padding-left: 20px !important;
-}
-
-/* Product details section */
+/* Position for product details */
 .product-details-section {
-    padding-left: 20px !important;
     position: relative !important;
     border-bottom: none !important;
 }
