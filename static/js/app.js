@@ -577,8 +577,12 @@ function compatibilityApp() {
                 if (data.success) {
                     // Add class to enable padding for results
                     const resultsContainer = document.getElementById('resultsContainer');
+                    const contentContainer = document.querySelector('.content-container');
                     if (resultsContainer) {
                         resultsContainer.classList.add('has-results');
+                    }
+                    if (contentContainer) {
+                        contentContainer.classList.add('has-results');
                     }
                     
                     // Display results

@@ -2,7 +2,8 @@
 
 /* Main content container padding - desktop only */
 @media (min-width: 768px) {
-    .content-container {
+    /* Only apply padding when results are shown */
+    .content-container.has-results {
         padding-left: 20px !important;
     }
 
