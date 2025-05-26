@@ -1,5 +1,14 @@
 /* Direct padding fixes with !important to override existing styles */
 
+/* Ensure no padding on home page - override all potential sources */
+.content-container {
+    padding-left: 0 !important;
+}
+
+#resultsContainer {
+    padding-left: 0 !important;
+}
+
 /* Main content container padding - desktop only */
 @media (min-width: 768px) {
     /* Only apply padding when results are shown */
