@@ -575,6 +575,12 @@ function compatibilityApp() {
                 // Search history has been removed
                 
                 if (data.success) {
+                    // Add class to enable padding for results
+                    const resultsContainer = document.getElementById('resultsContainer');
+                    if (resultsContainer) {
+                        resultsContainer.classList.add('has-results');
+                    }
+                    
                     // Display results
                     this.productDetails = data.product;
                     console.log("Product details received:", this.productDetails);

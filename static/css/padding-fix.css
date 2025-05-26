@@ -6,8 +6,8 @@
         padding-left: 20px !important;
     }
 
-    /* Target the main results container directly */
-    #resultsContainer {
+    /* Target the main results container directly - only when search results are shown */
+    #resultsContainer.has-results {
         padding-left: 20px !important;
     }
 
