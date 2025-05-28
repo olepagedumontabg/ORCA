@@ -300,21 +300,31 @@ def find_base_compatibilities(data, base_info):
                     and pd.notna(wall_length) and pd.notna(wall_width) \
                     and wall_length >= base_length and wall_width >= base_width_actual:
                     cut_candidates.append({
-                        "id": wall_id,
-                        "length": wall_length,
-                        "width": wall_width
+                        "id":      wall_id,
+                        "family":  str(wall_family).strip().lower(),
+                        "length":  wall_length,
+                        "width":   wall_width
                     })
 
             # ✅ Select closest cut size walls
             closest_cut_ids = []
             if cut_candidates:
-                min_length = min(c["length"] for c in cut_candidates)
-                min_width = min(c["width"] for c in cut_candidates
-                                if c["length"] == min_length)
-                closest_cut_ids = [
-                    c["id"] for c in cut_candidates
-                    if c["length"] == min_length and c["width"] == min_width
-                ]
+                from collections import defaultdict
+
+                by_family = defaultdict(list)
+                for c in cut_candidates:
+                    by_family[c["family"]].append(c)
+
+                for fam, lst in by_family.items():
+                    min_len = min(c["length"] for c in lst)
+                    min_w   = min(
+                        c["width"] for c in lst if c["length"] == min_len
+                    )
+                    closest_cut_ids.extend(
+                        c["id"]
+                        for c in lst
+                        if c["length"] == min_len and c["width"] == min_w
+                    )
 
             # ✅ Add all matches
             matching_walls.extend(nominal_matches + closest_cut_ids)
