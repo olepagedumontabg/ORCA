@@ -1320,7 +1320,7 @@ def find_compatible_products(sku):
                 "glass_thickness": _clean(wl_row.get("Glass Thickness", "")),
                 "door_type":       _clean(wl_row.get("Door Type", "")),
                 "image_url": image_handler.generate_image_url(wl_row),
-                "_ranking": -99999,   # forces whitelisted items to the top
+                "_ranking":     _clean(wl_row.get("Ranking", ""))
             }
 
             # Attach to existing category or create a new one
