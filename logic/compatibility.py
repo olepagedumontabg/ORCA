@@ -11,6 +11,7 @@ from logic import shower_compatibility
 from logic import tubshower_compatibility
 from logic import image_handler
 from logic import blacklist_helper
+from logic import whitelist_helper
 
 # Global flag to indicate whether the data update service is available
 data_service_available = False
@@ -1267,7 +1268,8 @@ def find_compatible_products(sku):
                     return str(prod[k]).strip()
             if prod.get("is_combo"):
                 main = str(prod.get("main_product", {}).get("sku", "")).strip()
-                sec  = str(prod.get("secondary_product", {}).get("sku", "")).strip()
+                sec = str(prod.get("secondary_product", {}).get("sku",
+                                                                "")).strip()
                 return f"{main}|{sec}".strip("|")
             return ""
 
@@ -1275,16 +1277,59 @@ def find_compatible_products(sku):
             before = len(cat["products"])
             cat["products"] = [
                 p for p in cat["products"]
-                if not blacklist_helper.is_blacklisted(
-                    sku,
-                    _extract_sku(p)
-                )
+                if not blacklist_helper.is_blacklisted(sku, _extract_sku(p))
             ]
             if before != len(cat["products"]):
                 logger.info("Blacklist removed %d item(s) from %s for SKU %s",
                             before - len(cat["products"]),
                             cat.get("category", ""), sku)
         compatible_products = [c for c in compatible_products if c["products"]]
+        
+        for wl_sku in whitelist_helper.get_whitelist_for_sku(sku):
+            # Skip if already present
+            if any(_extract_sku(p) == wl_sku
+                   for c in compatible_products for p in c["products"]):
+                continue
+
+            # Locate row & category
+            wl_row = get_product_details(data, wl_sku)
+            if wl_row is None:
+                continue
+            wl_category = next(
+                (name for name, df in data.items()
+                 if "Unique ID" in df.columns
+                 and not df[df["Unique ID"].astype(str)
+                               .str.upper()
+                               .eq(wl_sku.upper())].empty),
+                None,
+            )
+            if wl_category is None:
+                continue
+
+            # Clean NaN values
+            def _clean(v):
+                return "" if (v is None or (isinstance(v, float) and np.isnan(v))) else v
+
+            # Build the same structure the rule engines create
+            wl_product = {
+                "sku": wl_sku,
+                "name":     _clean(wl_row.get("Product Name", "")),
+                "brand":    _clean(wl_row.get("Brand", "")),
+                "series":   _clean(wl_row.get("Series", "")),
+                "category": wl_category,
+                "glass_thickness": _clean(wl_row.get("Glass Thickness", "")),
+                "door_type":       _clean(wl_row.get("Door Type", "")),
+                "image_url": image_handler.generate_image_url(wl_row),
+                "_ranking": -99999,   # forces whitelisted items to the top
+            }
+
+            # Attach to existing category or create a new one
+            target = next((c for c in compatible_products
+                           if c["category"] == wl_category), None)
+            if target is None:
+                target = {"category": wl_category, "products": []}
+                compatible_products.append(target)
+            target["products"].append(wl_product)
         # === END BLACKLIST helper and filter ===
 
         if is_bathtub:
@@ -1294,7 +1339,6 @@ def find_compatible_products(sku):
                 "product": source_product,
                 "compatibles": compatible_products
             }
-
 
         # For all other product types (shower bases, etc.), process as usual
         # Sort each category's products by ranking (lowest to highest)
