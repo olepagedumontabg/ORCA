@@ -22,6 +22,9 @@ def find_base_compatibilities(data, base_info):
         incompatibility_reasons = {}
 
         # Debug: Check what type of object base_info is
+        logger.debug(f"base_info type: {type(base_info)}")
+        logger.debug(f"base_info content: {base_info}")
+        
         if not isinstance(base_info, dict):
             logger.error(f"Expected dict for base_info, got {type(base_info)}: {base_info}")
             return []
