@@ -150,7 +150,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
         for category, reason in incompatibility_reasons.items():
             results.append({
                 "category": category,
-                "incompatible_reason": reason
+                "reason": reason
             })
         return results
 
@@ -313,9 +313,10 @@ def find_bathtub_compatibilities(data, bathtub_info):
 
     # Add incompatibility reasons to the results if they exist
     for category, reason in incompatibility_reasons.items():
+        logger.info(f"Adding incompatibility reason for {category}: {reason}")
         results.append({
             "category": category,
-            "incompatible_reason": reason
+            "reason": reason
         })
 
     # Only add compatible products for categories without incompatibility reasons
