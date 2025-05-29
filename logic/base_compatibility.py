@@ -337,6 +337,7 @@ def find_base_compatibilities(data, base_info):
             logger.debug(f"Starting wall compatibility check for base {base_info.get('sku')}")
             logger.debug(f"Base family: {base_family}, Base brand: {base_brand}")
             logger.debug(f"Base dimensions - Length: {base_length}, Width: {base_width_actual}")
+            logger.debug(f"Base nominal: {base_nominal}")
             logger.debug(f"Number of walls to check: {len(walls_df) if not walls_df.empty else 0}")
 
             nominal_matches = []
@@ -390,9 +391,17 @@ def find_base_compatibilities(data, base_info):
                         "width":   wall_width
                     })
                 
-                # ✅ Compatible wall (matches all criteria except exact dimensions)
-                else:
-                    compatible_walls.append(wall_id)
+                # ✅ Compatible wall (matches all criteria AND has suitable dimensions)
+                elif pd.notna(wall_length) and pd.notna(wall_width) and pd.notna(base_length) and pd.notna(base_width_actual):
+                    # Only add if wall dimensions are reasonably close to base dimensions
+                    # Allow walls that are at least as large but not excessively larger
+                    length_ratio = wall_length / base_length if base_length > 0 else float('inf')
+                    width_ratio = wall_width / base_width_actual if base_width_actual > 0 else float('inf')
+                    
+                    # Wall should be at least as large as base, but not more than 1.25x larger in either dimension
+                    if (wall_length >= base_length and wall_width >= base_width_actual and 
+                        length_ratio <= 1.25 and width_ratio <= 1.25):
+                        compatible_walls.append(wall_id)
 
             # ✅ Select closest cut size walls
             closest_cut_ids = []
