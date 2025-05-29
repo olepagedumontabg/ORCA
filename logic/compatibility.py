@@ -301,7 +301,20 @@ def find_compatible_products(sku):
                 category = category_info["category"]
                 enhanced_skus = []
 
-                for sku_item in category_info["skus"]:
+                # Handle both old format (with "skus") and new format (with "products")
+                if "products" in category_info:
+                    products_list = category_info["products"]
+                else:
+                    products_list = category_info.get("skus", [])
+                
+                for sku_item in products_list:
+                    # Handle both product dictionaries (new format) and SKU strings (old format)
+                    if isinstance(sku_item, dict):
+                        # New format: sku_item is already a product dictionary
+                        enhanced_skus.append(sku_item)
+                        continue
+                    
+                    # Old format: sku_item is a string (SKU)
                     # Check if this is a combined SKU (door + return panel)
                     if "|" in sku_item:
                         door_sku, panel_sku = sku_item.split("|")
