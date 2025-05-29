@@ -341,6 +341,7 @@ def find_base_compatibilities(data, base_info):
 
             nominal_matches = []
             cut_candidates = []
+            compatible_walls = []  # Add this for walls that match all criteria except dimensions
 
             for _, wall in walls_df.iterrows():
                 wall_type = str(wall.get("Type", "")).lower()
@@ -354,12 +355,7 @@ def find_base_compatibilities(data, base_info):
                 wall_id = str(wall.get("Unique ID", "")).strip()
                 wall_name = wall.get("Product Name", "")
 
-                logger.debug(f"  Checking wall: {wall_id} - {wall_name}")
-                logger.debug(f"    Type: '{wall_type}' (original: '{wall.get('Type', '')}')")
-                logger.debug(f"    Brand: {wall_brand}, Family: {wall_family}, Series: {wall_series}")
-
                 if not wall_id:
-                    logger.debug(f"    ✗ Skipping wall with no ID")
                     continue
 
                 alcove_match = (
@@ -375,14 +371,6 @@ def find_base_compatibilities(data, base_info):
                     and series_compatible(base_series, wall_series)
                     and brand_family_match(base_brand, base_family, wall_brand,
                                            wall_family))
-
-                logger.debug(f"    Alcove match: {alcove_match}")
-                logger.debug(f"    Corner match: {corner_match}")
-                logger.debug(f"    Type check: 'alcove shower' in '{wall_type}': {'alcove shower' in wall_type}")
-                logger.debug(f"    Type check: 'corner shower' in '{wall_type}': {'corner shower' in wall_type}")
-                logger.debug(f"    Install check: base_install='{base_install}'")
-                logger.debug(f"    Series check: {series_compatible(base_series, wall_series)}")
-                logger.debug(f"    Brand/family check: {brand_family_match(base_brand, base_family, wall_brand, wall_family)}")
 
                 if not (alcove_match or corner_match):
                     continue
@@ -401,6 +389,10 @@ def find_base_compatibilities(data, base_info):
                         "length":  wall_length,
                         "width":   wall_width
                     })
+                
+                # ✅ Compatible wall (matches all criteria except exact dimensions)
+                else:
+                    compatible_walls.append(wall_id)
 
             # ✅ Select closest cut size walls
             closest_cut_ids = []
@@ -423,7 +415,7 @@ def find_base_compatibilities(data, base_info):
                     )
 
             # ✅ Add all matches - convert IDs to product dictionaries
-            all_wall_ids = nominal_matches + closest_cut_ids
+            all_wall_ids = nominal_matches + closest_cut_ids + compatible_walls
             for wall_id in all_wall_ids:
                 # Find the wall data for this ID
                 wall_row = walls_df[walls_df['Unique ID'] == wall_id]
