@@ -1258,9 +1258,10 @@ def find_compatible_products(sku):
 
         logger.debug(f"Source product name (final): {source_product['name']}")
 
-        # Ensure every category dict has a "products" key
+        # Ensure every category dict has a "products" key (only for categories without incompatibility reasons)
         for cat in compatible_products:
-            cat.setdefault("products", [])
+            if "reason" not in cat:
+                cat.setdefault("products", [])
 
         # If this is a bathtub, use the bathtub compatibility results
         # === BLACKLIST helper and filter ===
