@@ -606,6 +606,8 @@ function compatibilityApp() {
                     });
                     
                     console.log("Incompatibility reasons:", this.incompatibilityReasons);
+                    console.log("Full API response data:", data);
+                    console.log("Compatibles array:", data.compatibles);
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
                     this.currentSku = data.sku;
                     this.errorMessage = '';
