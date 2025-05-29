@@ -421,12 +421,20 @@ def find_base_compatibilities(data, base_info):
         if matching_doors and "Shower Doors" not in incompatibility_reasons:
             # Sort the doors by ranking
             sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
+            logger.debug(f"Adding {len(sorted_doors)} shower doors to results")
+            for door in sorted_doors[:3]:  # Log first few doors
+                logger.debug(f"  Door: {door.get('sku')} - {door.get('name')} (combo: {door.get('is_combo', False)})")
             compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
 
         if matching_walls and "Walls" not in incompatibility_reasons:
             # Sort the walls by ranking
             sorted_walls = sorted(matching_walls, key=lambda x: x.get('_ranking', 999))
+            logger.debug(f"Adding {len(sorted_walls)} walls to results")
+            for wall in sorted_walls[:3]:  # Log first few walls
+                logger.debug(f"  Wall: {wall.get('sku')} - {wall.get('name')}")
             compatible_products.append({"category": "Walls", "products": sorted_walls})
+        else:
+            logger.debug(f"Walls not added: matching_walls={len(matching_walls) if matching_walls else 0}, incompatibility={incompatibility_reasons.get('Walls', 'None')}")
 
         return compatible_products
 
