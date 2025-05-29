@@ -1294,9 +1294,11 @@ def find_compatible_products(sku):
         compatible_products = [c for c in compatible_products if c.get("products") or c.get("reason")]
         
         for wl_sku in whitelist_helper.get_whitelist_for_sku(sku):
-            # Skip if already present
+            # Skip if already present (only check categories that have products)
             if any(_extract_sku(p) == wl_sku
-                   for c in compatible_products for p in c["products"]):
+                   for c in compatible_products 
+                   if "products" in c
+                   for p in c["products"]):
                 continue
 
             # Locate row & category
@@ -1337,25 +1339,101 @@ def find_compatible_products(sku):
             if target is None:
                 target = {"category": wl_category, "products": []}
                 compatible_products.append(target)
+            elif "products" not in target:
+                # This category has an incompatibility reason, add products field
+                target["products"] = []
             target["products"].append(wl_product)
         # === END BLACKLIST helper and filter ===
 
         if is_bathtub:
             logger.debug(f"Using bathtub compatibility results for SKU: {sku}")
-            # For bathtub results, we need to process and clean up the _ranking fields
-            # and separate incompatibility reasons
+            
+            # Process whitelist for bathtubs to potentially override incompatibility reasons
+            whitelist_skus = whitelist_helper.get_whitelist_for_sku(sku)
+            whitelist_overrides = {}  # category -> list of whitelisted products
+            
+            for wl_sku in whitelist_skus:
+                # Find the whitelisted product in the data
+                wl_category = None
+                wl_row = None
+                
+                for category_name, df in data.items():
+                    product_row = df[df['Unique ID'].astype(str).str.strip() == wl_sku]
+                    if not product_row.empty:
+                        wl_category = category_name
+                        wl_row = product_row.iloc[0]
+                        break
+                
+                if wl_row is not None and wl_category:
+                    # Create the whitelisted product
+                    def _clean(v):
+                        if pd.isna(v):
+                            return ""
+                        return str(v).strip()
+                    
+                    wl_product = {
+                        "sku": wl_sku,
+                        "name": _clean(wl_row.get("Product Name", "")),
+                        "brand": _clean(wl_row.get("Brand", "")),
+                        "series": _clean(wl_row.get("Series", "")),
+                        "category": wl_category,
+                        "glass_thickness": _clean(wl_row.get("Glass Thickness", "")),
+                        "door_type": _clean(wl_row.get("Door Type", "")),
+                        "image_url": image_handler.generate_image_url(wl_row),
+                        "product_page_url": _clean(wl_row.get("Product Page URL", "")),
+                        "is_combo": False
+                    }
+                    
+                    if wl_category not in whitelist_overrides:
+                        whitelist_overrides[wl_category] = []
+                    whitelist_overrides[wl_category].append(wl_product)
+                    logger.info(f"Whitelist override for bathtub {sku}: Added {wl_sku} to {wl_category}")
+            
+            # Process bathtub compatibility results with whitelist overrides
             final_compatibles = []
             
             for category in compatible_products:
                 if "reason" in category:
-                    # This is an incompatibility reason category
-                    final_compatibles.append(category)
+                    # Check if this incompatibility reason category has whitelist overrides
+                    category_name = category["category"]
+                    if category_name in whitelist_overrides:
+                        # Replace incompatibility reason with whitelisted products
+                        final_compatibles.append({
+                            "category": category_name,
+                            "products": whitelist_overrides[category_name]
+                        })
+                        logger.info(f"Whitelist override: Replaced incompatibility reason for {category_name} with {len(whitelist_overrides[category_name])} whitelisted products")
+                    else:
+                        # Keep the incompatibility reason
+                        final_compatibles.append(category)
                 elif "products" in category and category["products"]:
-                    # This is a regular category with products - remove _ranking fields
-                    for product in category["products"]:
+                    # Regular category with products - add any whitelist overrides and remove _ranking fields
+                    category_name = category["category"]
+                    all_products = list(category["products"])
+                    
+                    # Add whitelisted products if any
+                    if category_name in whitelist_overrides:
+                        all_products.extend(whitelist_overrides[category_name])
+                        logger.info(f"Whitelist addition: Added {len(whitelist_overrides[category_name])} whitelisted products to {category_name}")
+                    
+                    # Remove _ranking fields
+                    for product in all_products:
                         if "_ranking" in product:
                             del product["_ranking"]
-                    final_compatibles.append(category)
+                    
+                    final_compatibles.append({
+                        "category": category_name,
+                        "products": all_products
+                    })
+            
+            # Add any whitelist categories that weren't in the original results
+            for wl_category, wl_products in whitelist_overrides.items():
+                if not any(cat["category"] == wl_category for cat in final_compatibles):
+                    final_compatibles.append({
+                        "category": wl_category,
+                        "products": wl_products
+                    })
+                    logger.info(f"Whitelist addition: Added new category {wl_category} with {len(wl_products)} whitelisted products")
             
             return {
                 "product": source_product,

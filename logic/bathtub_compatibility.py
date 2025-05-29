@@ -330,5 +330,4 @@ def find_bathtub_compatibilities(data, bathtub_info):
         sorted_walls = sorted(compatible_walls, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Walls", "products": sorted_walls})
 
-    logger.info(f"Final bathtub compatibility results: {results}")
     return results
