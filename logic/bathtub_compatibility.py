@@ -1,11 +1,3 @@
-"""
-Bathtub Compatibility Module
-
-This module provides functions to determine compatibility between bathtubs and other products
-such as tub doors and walls. It enhances the product compatibility finder with additional
-relationships specific to bathtubs.
-"""
-
 import logging
 import pandas as pd
 from logic import image_handler
@@ -19,45 +11,45 @@ TOLERANCE_INCHES = 3  # 3 inches tolerance for dimension matching
 def series_compatible(base_series, compare_series):
     """
     Check if two series are compatible based on business rules.
-    
+
     Args:
         base_series (str): Series of the base product
         compare_series (str): Series of the product to compare with
-        
+
     Returns:
         bool: True if the series are compatible, False otherwise
     """
     # Convert to strings and normalize
     base_series = str(base_series).strip() if base_series else ""
     compare_series = str(compare_series).strip() if compare_series else ""
-    
+
     # If either is empty, they're not compatible
     if not base_series or not compare_series:
         return False
-        
+
     # Same series are always compatible
     if base_series.lower() == compare_series.lower():
         return True
-        
+
     # Special case for Retail compatibility
     if base_series == "Retail" or compare_series == "Retail":
         # Retail is compatible with Retail, MAAX, and Swan
         other_series = compare_series if base_series == "Retail" else base_series
         return other_series in ["Retail", "MAAX", "Swan"]
-        
+
     # MAAX compatibility rules
     if base_series == "MAAX":
         return compare_series in ["Retail", "MAAX", "Collection", "Professional"]
-        
+
     if base_series in ["Collection", "Professional"]:
         return compare_series in ["MAAX", "Collection", "Professional"]
-        
+
     # Swan series compatibility
     if base_series == "Swan" or compare_series == "Swan":
         # Swan is compatible with only Swan and Retail
         other_series = compare_series if base_series == "Swan" else base_series
         return other_series in ["Swan", "Retail"]
-        
+
     # Default case - no other compatibility
     return False
 
@@ -65,13 +57,13 @@ def series_compatible(base_series, compare_series):
 def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family):
     """
     Check if bathtub brand/family matches wall brand/family based on specific business rules.
-    
+
     Args:
         base_brand (str): Brand of the bathtub
         base_family (str): Family of the bathtub
         wall_brand (str): Brand of the wall
         wall_family (str): Family of the wall
-        
+
     Returns:
         bool: True if there's a match according to the business rules, False otherwise
     """
@@ -83,19 +75,19 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     # First check for specifically restricted families
     if base_family == "olio" and wall_family != "olio":
         return False
-    
+
     if wall_family == "olio" and base_family != "olio":
         return False
-    
+
     if base_family == "vellamo" and wall_brand != "vellamo":
         return False
-    
+
     if wall_family == "vellamo" and base_brand != "vellamo":
         return False
-    
+
     if base_family == "interflo" and wall_brand != "interflo":
         return False
-    
+
     if wall_family == "interflo" and base_brand != "interflo":
         return False
 
@@ -103,21 +95,21 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     # Utile and Nextile walls should only match with specific bathtub families
     if wall_family in ["utile", "nextile"] and base_family not in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"]:
         return False
-    
+
     # Different brand checks
     if base_brand == "maax" and wall_brand != "maax":
         return False
-    
+
     if base_brand == "swan" and wall_brand != "swan":
         return False
-    
+
     if base_brand == "bootz" and wall_brand != "bootz":
         return False
-    
+
     # If we passed all restrictions and brands match, we're compatible
     if base_brand == wall_brand:
         return True
-            
+
     # Default case - no match
     return False
 
@@ -125,35 +117,35 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
 def find_bathtub_compatibilities(data, bathtub_info):
     """
     Find compatible products for a bathtub
-    
+
     Args:
         data (dict): Dictionary of DataFrames containing product data
         bathtub_info (dict): Dictionary containing bathtub product information
-        
+
     Returns:
         list: List of dictionaries containing category and compatible products
               or dictionaries with incompatibility reasons
     """
     results = []
     incompatibility_reasons = {}
-    
+
     # Check for incompatibility reasons
     doors_cant_fit_reason = bathtub_info.get("Reason Doors Can't Fit")
     walls_cant_fit_reason = bathtub_info.get("Reason Walls Can't Fit")
-    
+
     # If there are specific reasons why doors or walls can't fit, add them to the incompatibility reasons
     if pd.notna(doors_cant_fit_reason) and doors_cant_fit_reason:
         incompatibility_reasons["Tub Doors"] = doors_cant_fit_reason
         logger.info(f"Tub doors incompatibility reason found: {doors_cant_fit_reason}")
-        
+
     if pd.notna(walls_cant_fit_reason) and walls_cant_fit_reason:
         incompatibility_reasons["Walls"] = walls_cant_fit_reason
         logger.info(f"Walls incompatibility reason found: {walls_cant_fit_reason}")
-    
+
     # Check if necessary data exists
     if 'Tub Doors' not in data or 'Walls' not in data:
         logger.warning("Missing required sheets for bathtub compatibility")
-        
+
         # Still add incompatibility reasons even if missing sheets
         for category, reason in incompatibility_reasons.items():
             results.append({
@@ -161,10 +153,10 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 "incompatible_reason": reason
             })
         return results
-    
+
     tub_doors_df = data['Tub Doors']
     walls_df = data['Walls']
-    
+
     # Get bathtub properties
     tub_width = bathtub_info.get("Max Door Width")
     tub_install = bathtub_info.get("Installation")
@@ -174,7 +166,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
     tub_nominal = bathtub_info.get("Nominal Dimensions")
     tub_length = bathtub_info.get("Length")
     tub_width_actual = bathtub_info.get("Width")
-    
+
     # Find compatible tub doors
     compatible_doors = []
     for _, door in tub_doors_df.iterrows():
@@ -183,10 +175,10 @@ def find_bathtub_compatibilities(data, bathtub_info):
             door_max_width = door.get("Maximum Width")
             door_series = door.get("Series")
             door_id = str(door.get("Unique ID", "")).strip()
-            
+
             if not door_id:
                 continue
-                
+
             if (
                 tub_install == "Alcove" and
                 pd.notna(tub_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
@@ -197,7 +189,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 door_data = door.to_dict()
                 # Remove any NaN values
                 door_data = {k: v for k, v in door_data.items() if pd.notna(v)}
-                
+
                 # Create a properly formatted product entry for the frontend
                 product_dict = {
                     "sku": door_id,
@@ -216,7 +208,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 compatible_doors.append(product_dict)
         except Exception as e:
             logger.error(f"Error processing tub door: {e}")
-    
+
     def find_closest_walls(tub_length, tub_width, candidate_walls):
         """
         Find walls with the closest dimensions to the tub based on combined distance.
@@ -224,20 +216,20 @@ def find_bathtub_compatibilities(data, bathtub_info):
         """
         # First, filter out walls that are too small for the tub
         candidate_walls = candidate_walls.copy()
-        
+
         # Only consider walls that are at least as large as the bathtub
         valid_walls = candidate_walls[(candidate_walls["Length"] >= tub_length) & 
                                       (candidate_walls["Width"] >= tub_width)]
-        
+
         # If no valid walls found, return empty DataFrame
         if valid_walls.empty:
             logger.info(f"No walls found that are large enough for tub dimensions {tub_length} x {tub_width}")
             return valid_walls
-            
+
         # Calculate distance metric for valid walls
         valid_walls["distance"] = (valid_walls["Length"] - tub_length).abs() + (valid_walls["Width"] - tub_width).abs()
         min_distance = valid_walls["distance"].min()
-        
+
         # Return walls with minimum distance
         return valid_walls[valid_walls["distance"] == min_distance]
 
@@ -289,10 +281,20 @@ def find_bathtub_compatibilities(data, bathtub_info):
 
     logger.info(f"Found {len(cut_walls_candidates)} cut-to-size wall candidates")
     if not cut_walls_candidates.empty and pd.notna(tub_length) and pd.notna(tub_width_actual):
-        closest_cut_walls = find_closest_walls(tub_length, tub_width_actual, cut_walls_candidates)
+        # --- NEW: select closest cut-size wall(s) per family ---
+        closest_cut_walls = pd.DataFrame()
+
+        cut_walls_candidates["Family_norm"] = (
+            cut_walls_candidates["Family"].astype(str).str.strip().str.lower()
+        )
+
+        for fam, fam_df in cut_walls_candidates.groupby("Family_norm"):
+            fam_closest = find_closest_walls(tub_length, tub_width_actual, fam_df)
+            closest_cut_walls = pd.concat([closest_cut_walls, fam_closest], ignore_index=True)
+
         for _, wall in closest_cut_walls.iterrows():
             wall_id = str(wall.get("Unique ID", "")).strip()
-            logger.info(f"✅ Matched closest cut wall: {wall_id} - {wall.get('Product Name')}")
+            logger.info(f"✅ Matched closest cut wall (family {wall.get('Family')}): {wall_id} - {wall.get('Product Name')}")
             wall_data = wall.to_dict()
             wall_data = {k: v for k, v in wall_data.items() if pd.notna(v)}
             compatible_walls.append({
@@ -307,23 +309,24 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 "series": wall_data.get("Series", ""),
                 "family": wall_data.get("Family", "")
             })
-    
+
+
     # Add incompatibility reasons to the results if they exist
     for category, reason in incompatibility_reasons.items():
         results.append({
             "category": category,
             "incompatible_reason": reason
         })
-    
+
     # Only add compatible products for categories without incompatibility reasons
     if compatible_doors and "Tub Doors" not in incompatibility_reasons:
         # Sort the doors by ranking
         sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Tub Doors", "products": sorted_doors})
-    
+
     if compatible_walls and "Walls" not in incompatibility_reasons:
         # Sort the walls by ranking
         sorted_walls = sorted(compatible_walls, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Walls", "products": sorted_walls})
-    
+
     return results

@@ -389,7 +389,7 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
             or (base_family == "vellamo" and wall_family == "vellamo")
             or (base_family == "interflo" and wall_family == "interflo")
             or (base_family == "b3"
-                and wall_family in ["utile", "denso", "nextile", "versaline"])
+                and wall_family in ["utile", "denso", "nextile", "versaline", "lineversa"])
             or (base_family
                 in ["finesse", "distinct", "zone", "olympia", "icon", "roka"]
                 and wall_family in ["utile", "nextile"]))
