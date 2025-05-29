@@ -21,6 +21,19 @@ def find_base_compatibilities(data, base_info):
         compatible_products = []
         incompatibility_reasons = {}
 
+        # Check for incompatibility reasons
+        doors_cant_fit_reason = base_info.get("Reason Doors Can't Fit")
+        walls_cant_fit_reason = base_info.get("Reason Walls Can't Fit")
+
+        # If there are specific reasons why doors or walls can't fit, add them to the incompatibility reasons
+        if pd.notna(doors_cant_fit_reason) and doors_cant_fit_reason:
+            incompatibility_reasons["Shower Doors"] = doors_cant_fit_reason
+            logger.info(f"Shower doors incompatibility reason found: {doors_cant_fit_reason}")
+
+        if pd.notna(walls_cant_fit_reason) and walls_cant_fit_reason:
+            incompatibility_reasons["Walls"] = walls_cant_fit_reason
+            logger.info(f"Walls incompatibility reason found: {walls_cant_fit_reason}")
+
         # Get the base product details
         base_width = base_info.get("Max Door Width")
         base_install = str(base_info.get("Installation", "")).lower()
@@ -329,25 +342,23 @@ def find_base_compatibilities(data, base_info):
             # ✅ Add all matches
             matching_walls.extend(nominal_matches + closest_cut_ids)
 
-        # Add incompatibility reasons to the result if they exist
+        # Add incompatibility reasons to the results if they exist
         for category, reason in incompatibility_reasons.items():
             compatible_products.append({
                 "category": category,
-                "incompatible_reason": reason
+                "reason": reason
             })
-            
-        # If there are incompatibility reasons for a category, don't add compatible products for that category
+        
+        # Only add compatible products for categories without incompatibility reasons
         if matching_doors and "Shower Doors" not in incompatibility_reasons:
-            compatible_products.append({
-                "category": "Shower Doors",
-                "skus": matching_doors
-            })
+            # Sort the doors by ranking
+            sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
+            compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
 
         if matching_walls and "Walls" not in incompatibility_reasons:
-            compatible_products.append({
-                "category": "Walls",
-                "skus": matching_walls
-            })
+            # Sort the walls by ranking
+            sorted_walls = sorted(matching_walls, key=lambda x: x.get('_ranking', 999))
+            compatible_products.append({"category": "Walls", "products": sorted_walls})
 
         return compatible_products
 

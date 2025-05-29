@@ -68,7 +68,7 @@ def find_shower_compatibilities(data, shower_info):
         for category, reason in incompatibility_reasons.items():
             results.append({
                 "category": category,
-                "incompatible_reason": reason
+                "reason": reason
             })
         return results
 
@@ -134,7 +134,7 @@ def find_shower_compatibilities(data, shower_info):
     for category, reason in incompatibility_reasons.items():
         results.append({
             "category": category,
-            "incompatible_reason": reason
+            "reason": reason
         })
     
     # Only add compatible products for categories without incompatibility reasons
