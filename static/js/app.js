@@ -1222,22 +1222,32 @@ function compatibilityApp() {
          * @param {string} material - The material to toggle
          */
         toggleMaterialFilter(material) {
-            const index = this.filters.selectedMaterials.indexOf(material);
-            if (index === -1) {
-                // Material not selected, add it
-                this.filters.selectedMaterials.push(material);
-            } else {
-                // Material already selected, remove it
-                this.filters.selectedMaterials.splice(index, 1);
-            }
-            
-            // Apply the updated filters
-            this.applyFilters();
-        }
-    };
-}
+                    const index = this.filters.selectedMaterials.indexOf(material);
+                    if (index === -1) {
+                        // Material not selected, add it
+                        this.filters.selectedMaterials.push(material);
+                    } else {
+                        // Material already selected, remove it
+                        this.filters.selectedMaterials.splice(index, 1);
+                    }
 
-// Initialize AlpineJS data on page load
-document.addEventListener('alpine:init', () => {
-    // Any additional Alpine.js component registrations can go here
-});
+                    // Apply the updated filters
+                    this.applyFilters();
+                }
+
+        ,
+                /**
+                 * Download the filtered compatible products as an Excel file
+                 */
+                downloadXlsx() {
+                    if (!this.currentSku) return;
+                    window.location = `/download/${encodeURIComponent(this.currentSku)}`;
+                }
+
+            };
+        }
+
+        // Initialize AlpineJS data on page load
+        document.addEventListener('alpine:init', () => {
+            // Any additional Alpine.js component registrations can go here
+        });

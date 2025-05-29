@@ -471,6 +471,14 @@
                 <div x-show="compatibleProducts.length > 0 && !errorMessage" class="compatible-products-section" x-cloak>
                     <div class="flex flex-wrap items-center justify-between mb-4">
                         <h2 class="text-xl font-semibold">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
+                            <button
+                                type="button"
+                                @click="downloadXlsx"
+                                class="inline-flex items-center bg-primary hover:bg-[#002A9D] text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition duration-150"
+                            >
+                                Download (.xlsx)
+                            </button>
+
                     </div>
                     
                     <!-- Show results count -->
