@@ -455,6 +455,12 @@ def find_base_compatibilities(data, base_info):
         else:
             logger.debug(f"Walls not added: matching_walls={len(matching_walls) if matching_walls else 0}, incompatibility={incompatibility_reasons.get('Walls', 'None')}")
 
+        logger.debug(f"Final results summary:")
+        logger.debug(f"  Doors found: {len(matching_doors)}")
+        logger.debug(f"  Walls found: {len(matching_walls)}")
+        logger.debug(f"  Incompatibility reasons: {incompatibility_reasons}")
+        logger.debug(f"  Compatible products returned: {len(compatible_products)}")
+
         return compatible_products
 
     except Exception as e:
