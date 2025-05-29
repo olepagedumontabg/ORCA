@@ -135,7 +135,21 @@ def find_base_compatibilities(data, base_info):
 
                 if alcove_match:
                     if door_id:
-                        matching_doors.append(door_id)
+                        # Create product dictionary with all required fields
+                        door_product = {
+                            "sku": door_id,
+                            "name": door.get("Product Name", ""),
+                            "brand": door.get("Brand", ""),
+                            "series": door.get("Series", ""),
+                            "category": "Shower Doors",
+                            "glass_thickness": door.get("Glass Thickness", ""),
+                            "door_type": door.get("Door Type", ""),
+                            "image_url": door.get("Image URL", ""),
+                            "product_page_url": door.get("Product Page URL", ""),
+                            "_ranking": door.get("Ranking", 999),
+                            "is_combo": False
+                        }
+                        matching_doors.append(door_product)
                         logger.debug(
                             f"    ✓ Added door {door_id} to matching doors")
 
@@ -188,7 +202,21 @@ def find_base_compatibilities(data, base_info):
 
                             if panel_match:
                                 combo_id = f"{door_id}|{panel_id}"
-                                matching_doors.append(combo_id)
+                                # Create combo product dictionary
+                                combo_product = {
+                                    "sku": combo_id,
+                                    "name": f"{door.get('Product Name', '')} + {panel.get('Product Name', '')}",
+                                    "brand": door.get("Brand", ""),
+                                    "series": door.get("Series", ""),
+                                    "category": "Shower Doors",
+                                    "glass_thickness": door.get("Glass Thickness", ""),
+                                    "door_type": door.get("Door Type", ""),
+                                    "image_url": door.get("Image URL", ""),
+                                    "product_page_url": door.get("Product Page URL", ""),
+                                    "_ranking": door.get("Ranking", 999),
+                                    "is_combo": True
+                                }
+                                matching_doors.append(combo_product)
                                 logger.debug(
                                     f"      ✓ Added combo product {combo_id} to matching doors"
                                 )
@@ -270,7 +298,21 @@ def find_base_compatibilities(data, base_info):
                 logger.debug(f"    Overall dimension match: {dimension_match}")
 
                 if nominal_match or dimension_match:
-                    matching_doors.append(enc_id)
+                    # Create enclosure product dictionary
+                    enclosure_product = {
+                        "sku": enc_id,
+                        "name": enclosure.get("Product Name", ""),
+                        "brand": enclosure.get("Brand", ""),
+                        "series": enclosure.get("Series", ""),
+                        "category": "Enclosures",
+                        "glass_thickness": enclosure.get("Glass Thickness", ""),
+                        "door_type": enclosure.get("Door Type", ""),
+                        "image_url": enclosure.get("Image URL", ""),
+                        "product_page_url": enclosure.get("Product Page URL", ""),
+                        "_ranking": enclosure.get("Ranking", 999),
+                        "is_combo": False
+                    }
+                    matching_doors.append(enclosure_product)
                     logger.debug(
                         f"    ✓ Added enclosure {enc_id} to matching doors")
 
@@ -347,8 +389,26 @@ def find_base_compatibilities(data, base_info):
                         if c["length"] == min_len and c["width"] == min_w
                     )
 
-            # ✅ Add all matches
-            matching_walls.extend(nominal_matches + closest_cut_ids)
+            # ✅ Add all matches - convert IDs to product dictionaries
+            all_wall_ids = nominal_matches + closest_cut_ids
+            for wall_id in all_wall_ids:
+                # Find the wall data for this ID
+                wall_row = walls_df[walls_df['Unique ID'] == wall_id]
+                if not wall_row.empty:
+                    wall = wall_row.iloc[0]
+                    wall_product = {
+                        "sku": wall_id,
+                        "name": wall.get("Product Name", ""),
+                        "brand": wall.get("Brand", ""),
+                        "series": wall.get("Series", ""),
+                        "category": "Walls",
+                        "image_url": wall.get("Image URL", ""),
+                        "product_page_url": wall.get("Product Page URL", ""),
+                        "_ranking": wall.get("Ranking", 999),
+                        "is_combo": False,
+                        "material": wall.get("Material", "")
+                    }
+                    matching_walls.append(wall_product)
 
         # Add incompatibility reasons to the results if they exist
         for category, reason in incompatibility_reasons.items():
