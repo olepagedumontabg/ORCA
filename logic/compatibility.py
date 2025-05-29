@@ -1258,6 +1258,10 @@ def find_compatible_products(sku):
 
         logger.debug(f"Source product name (final): {source_product['name']}")
 
+        # Ensure every category dict has a "products" key
+        for cat in compatible_products:
+            cat.setdefault("products", [])
+
         # If this is a bathtub, use the bathtub compatibility results
         # === BLACKLIST helper and filter ===
         def _extract_sku(prod):

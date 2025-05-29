@@ -277,7 +277,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
         (walls_df.apply(lambda x: bathtub_brand_family_match(tub_brand, tub_family, x["Brand"], x["Family"]), axis=1)) &
         pd.notna(walls_df["Length"]) & pd.notna(walls_df["Width"]) &
         (walls_df["Length"] >= tub_length) & (walls_df["Width"] >= tub_width_actual)
-    ]
+    ].copy()
 
     logger.info(f"Found {len(cut_walls_candidates)} cut-to-size wall candidates")
     if not cut_walls_candidates.empty and pd.notna(tub_length) and pd.notna(tub_width_actual):

@@ -596,10 +596,10 @@ function compatibilityApp() {
                     // Go through each category in the compatibles array
                     (data.compatibles || []).forEach(category => {
                         // Check if this is an incompatibility reason entry
-                        if (category.incompatible_reason) {
+                        if (category.reason && !category.products) {
                             // Store incompatibility reason
-                            this.incompatibilityReasons[category.category] = category.incompatible_reason;
-                        } else {
+                            this.incompatibilityReasons[category.category] = category.reason;
+                        } else if (category.products && category.products.length > 0) {
                             // This is a normal category with products
                             this.compatibleProducts.push(category);
                         }
