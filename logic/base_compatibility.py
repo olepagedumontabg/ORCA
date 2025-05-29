@@ -21,6 +21,11 @@ def find_base_compatibilities(data, base_info):
         compatible_products = []
         incompatibility_reasons = {}
 
+        # Debug: Check what type of object base_info is
+        if not isinstance(base_info, dict):
+            logger.error(f"Expected dict for base_info, got {type(base_info)}: {base_info}")
+            return []
+
         # Check for incompatibility reasons
         doors_cant_fit_reason = base_info.get("Reason Doors Can't Fit")
         walls_cant_fit_reason = base_info.get("Reason Walls Can't Fit")
