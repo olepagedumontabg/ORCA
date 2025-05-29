@@ -334,9 +334,6 @@ def find_base_compatibilities(data, base_info):
         # ---------- Walls ----------
         if 'Walls' in data:
             walls_df = data['Walls']
-            print(f"DEBUG: Starting wall compatibility check for base {base_info.get('sku')}")
-            print(f"DEBUG: Base family: {base_family}, Base brand: {base_brand}")
-            print(f"DEBUG: Number of walls to check: {len(walls_df) if not walls_df.empty else 0}")
             logger.debug(f"Starting wall compatibility check for base {base_info.get('sku')}")
             logger.debug(f"Base family: {base_family}, Base brand: {base_brand}")
             logger.debug(f"Base dimensions - Length: {base_length}, Width: {base_width_actual}")
@@ -419,13 +416,16 @@ def find_base_compatibilities(data, base_info):
 
             # ✅ Add all matches - convert IDs to product dictionaries
             all_wall_ids = nominal_matches + closest_cut_ids + compatible_walls
-            print(f"DEBUG: Wall matches - nominal: {len(nominal_matches)}, cut: {len(closest_cut_ids)}, compatible: {len(compatible_walls)}")
-            print(f"DEBUG: Total wall IDs to process: {len(all_wall_ids)}")
             
             for wall_id in all_wall_ids:
-                print(f"DEBUG: Looking for wall ID: '{wall_id}' (type: {type(wall_id)})")
+                # Convert wall_id to match the DataFrame type (likely int)
+                try:
+                    wall_id_lookup = int(wall_id) if isinstance(wall_id, str) else wall_id
+                except (ValueError, TypeError):
+                    wall_id_lookup = wall_id
+                
                 # Find the wall data for this ID
-                wall_row = walls_df[walls_df['Unique ID'] == wall_id]
+                wall_row = walls_df[walls_df['Unique ID'] == wall_id_lookup]
                 if not wall_row.empty:
                     wall = wall_row.iloc[0]
                     wall_product = {
@@ -441,14 +441,6 @@ def find_base_compatibilities(data, base_info):
                         "material": wall.get("Material", "")
                     }
                     matching_walls.append(wall_product)
-                    print(f"DEBUG: Added wall {wall_id} - {wall.get('Product Name', '')} to matching_walls")
-                else:
-                    print(f"DEBUG: Could not find wall with ID '{wall_id}' in DataFrame")
-                    # Show a few sample IDs from the DataFrame for comparison
-                    sample_ids = walls_df['Unique ID'].head(3).tolist()
-                    print(f"DEBUG: Sample wall IDs in DataFrame: {sample_ids}")
-            
-            print(f"DEBUG: Final matching_walls count: {len(matching_walls)}")
 
         # Add incompatibility reasons to the results if they exist
         for category, reason in incompatibility_reasons.items():
