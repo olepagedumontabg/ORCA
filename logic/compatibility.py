@@ -1371,6 +1371,18 @@ def find_compatible_products(sku):
                             return ""
                         return str(v).strip()
                     
+                    # Convert None values back to empty strings for image URL generation
+                    # The image handler expects pandas-style data, not None values
+                    wl_row_fixed = {}
+                    for key, value in wl_row.items():
+                        if value is None:
+                            wl_row_fixed[key] = ""
+                        else:
+                            wl_row_fixed[key] = value
+                    
+                    # Generate image URL with the corrected data format
+                    image_url = image_handler.generate_image_url(wl_row_fixed)
+                    
                     wl_product = {
                         "sku": wl_sku,
                         "name": _clean(wl_row.get("Product Name", "")),
@@ -1379,7 +1391,7 @@ def find_compatible_products(sku):
                         "category": wl_category,
                         "glass_thickness": _clean(wl_row.get("Glass Thickness", "")),
                         "door_type": _clean(wl_row.get("Door Type", "")),
-                        "image_url": image_handler.generate_image_url(wl_row),
+                        "image_url": image_url,
                         "product_page_url": _clean(wl_row.get("Product Page URL", "")),
                         "is_combo": False
                     }
