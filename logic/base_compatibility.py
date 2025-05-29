@@ -202,19 +202,32 @@ def find_base_compatibilities(data, base_info):
 
                             if panel_match:
                                 combo_id = f"{door_id}|{panel_id}"
-                                # Create combo product dictionary
+                                # Create combo product dictionary with main_product structure
                                 combo_product = {
                                     "sku": combo_id,
-                                    "name": f"{door.get('Product Name', '')} + {panel.get('Product Name', '')}",
-                                    "brand": door.get("Brand", ""),
-                                    "series": door.get("Series", ""),
-                                    "category": "Shower Doors",
-                                    "glass_thickness": door.get("Glass Thickness", ""),
-                                    "door_type": door.get("Door Type", ""),
-                                    "image_url": door.get("Image URL", ""),
-                                    "product_page_url": door.get("Product Page URL", ""),
+                                    "is_combo": True,
                                     "_ranking": door.get("Ranking", 999),
-                                    "is_combo": True
+                                    "main_product": {
+                                        "sku": door_id,
+                                        "name": door.get("Product Name", ""),
+                                        "brand": door.get("Brand", ""),
+                                        "series": door.get("Series", ""),
+                                        "glass_thickness": door.get("Glass Thickness", ""),
+                                        "door_type": door.get("Door Type", ""),
+                                        "image_url": door.get("Image URL", ""),
+                                        "product_page_url": door.get("Product Page URL", ""),
+                                        "nominal_dimensions": door.get("Nominal Dimensions", ""),
+                                        "max_door_width": door.get("Maximum Width", ""),
+                                        "material": door.get("Material", "")
+                                    },
+                                    "secondary_product": {
+                                        "sku": panel_id,
+                                        "name": panel.get("Product Name", ""),
+                                        "brand": panel.get("Brand", ""),
+                                        "series": panel.get("Series", ""),
+                                        "image_url": panel.get("Image URL", ""),
+                                        "product_page_url": panel.get("Product Page URL", "")
+                                    }
                                 }
                                 matching_doors.append(combo_product)
                                 logger.debug(
@@ -319,6 +332,10 @@ def find_base_compatibilities(data, base_info):
         # ---------- Walls ----------
         if 'Walls' in data:
             walls_df = data['Walls']
+            logger.debug(f"Starting wall compatibility check for base {base_info.get('sku')}")
+            logger.debug(f"Base family: {base_family}, Base brand: {base_brand}")
+            logger.debug(f"Base dimensions - Length: {base_length}, Width: {base_width_actual}")
+            logger.debug(f"Number of walls to check: {len(walls_df) if not walls_df.empty else 0}")
 
             nominal_matches = []
             cut_candidates = []
