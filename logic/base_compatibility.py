@@ -60,11 +60,13 @@ def find_base_compatibilities(data, base_info):
         # If there are specific reasons why doors or walls can't fit, add them to the incompatibility reasons
         if pd.notna(doors_cant_fit_reason) and doors_cant_fit_reason:
             incompatibility_reasons["Shower Doors"] = doors_cant_fit_reason
-            logger.info(f"Doors incompatibility reason found: {doors_cant_fit_reason}")
+            logger.debug(f"Doors incompatibility reason found: {doors_cant_fit_reason}")
             
         if pd.notna(walls_cant_fit_reason) and walls_cant_fit_reason:
             incompatibility_reasons["Walls"] = walls_cant_fit_reason
-            logger.info(f"Walls incompatibility reason found: {walls_cant_fit_reason}")
+            logger.debug(f"Walls incompatibility reason found: {walls_cant_fit_reason}")
+        else:
+            logger.debug(f"No walls incompatibility reason - walls processing will continue")
 
         # Debug output for base product details
         logger.debug(f"Base compatibility details:")
