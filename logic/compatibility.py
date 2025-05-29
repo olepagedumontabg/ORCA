@@ -1263,7 +1263,115 @@ def find_compatible_products(sku):
             if "reason" not in cat:
                 cat.setdefault("products", [])
 
-        # If this is a bathtub, use the bathtub compatibility results
+        # Process whitelist overrides for products with incompatibility reasons
+        # (Bathtubs, Shower Bases, Showers, Tub Showers)
+        if product_category in ['Bathtubs', 'Shower Bases', 'Showers', 'Tub Showers']:
+            logger.debug(f"Processing whitelist overrides for {product_category} SKU: {sku}")
+            
+            # Process whitelist to potentially override incompatibility reasons
+            whitelist_skus = whitelist_helper.get_whitelist_for_sku(sku)
+            whitelist_overrides = {}  # category -> list of whitelisted products
+            
+            for wl_sku in whitelist_skus:
+                # Find the whitelisted product in the data
+                wl_category = None
+                wl_row = None
+                
+                for category_name, df in data.items():
+                    product_row = df[df['Unique ID'].astype(str).str.strip() == wl_sku]
+                    if not product_row.empty:
+                        wl_category = category_name
+                        wl_row = product_row.iloc[0]
+                        break
+                
+                if wl_row is not None and wl_category:
+                    # Create the whitelisted product
+                    def _clean(v):
+                        if pd.isna(v):
+                            return ""
+                        return str(v).strip()
+                    
+                    # Convert None values back to empty strings for image URL generation
+                    # The image handler expects pandas-style data, not None values
+                    wl_row_fixed = {}
+                    for key, value in wl_row.items():
+                        if value is None:
+                            wl_row_fixed[key] = ""
+                        else:
+                            wl_row_fixed[key] = value
+                    
+                    # Generate image URL with the corrected data format
+                    image_url = image_handler.generate_image_url(wl_row_fixed)
+                    
+                    wl_product = {
+                        "sku": wl_sku,
+                        "name": _clean(wl_row.get("Product Name", "")),
+                        "brand": _clean(wl_row.get("Brand", "")),
+                        "series": _clean(wl_row.get("Series", "")),
+                        "category": wl_category,
+                        "glass_thickness": _clean(wl_row.get("Glass Thickness", "")),
+                        "door_type": _clean(wl_row.get("Door Type", "")),
+                        "image_url": image_url,
+                        "product_page_url": _clean(wl_row.get("Product Page URL", "")),
+                        "is_combo": False
+                    }
+                    
+                    if wl_category not in whitelist_overrides:
+                        whitelist_overrides[wl_category] = []
+                    whitelist_overrides[wl_category].append(wl_product)
+                    logger.info(f"Whitelist override for {product_category} {sku}: Added {wl_sku} to {wl_category}")
+            
+            # Process compatibility results with whitelist overrides
+            final_compatibles = []
+            
+            for category in compatible_products:
+                if "reason" in category:
+                    # Check if this incompatibility reason category has whitelist overrides
+                    category_name = category["category"]
+                    if category_name in whitelist_overrides:
+                        # Replace incompatibility reason with whitelisted products
+                        final_compatibles.append({
+                            "category": category_name,
+                            "products": whitelist_overrides[category_name]
+                        })
+                        logger.info(f"Whitelist override: Replaced incompatibility reason for {category_name} with {len(whitelist_overrides[category_name])} whitelisted products")
+                    else:
+                        # Keep the incompatibility reason
+                        final_compatibles.append(category)
+                elif "products" in category and category["products"]:
+                    # Regular category with products - add any whitelist overrides and remove _ranking fields
+                    category_name = category["category"]
+                    all_products = list(category["products"])
+                    
+                    # Add whitelisted products if any
+                    if category_name in whitelist_overrides:
+                        all_products.extend(whitelist_overrides[category_name])
+                        logger.info(f"Whitelist addition: Added {len(whitelist_overrides[category_name])} whitelisted products to {category_name}")
+
+                    # Remove _ranking fields
+                    for product in all_products:
+                        if "_ranking" in product:
+                            del product["_ranking"]
+                    
+                    final_compatibles.append({
+                        "category": category_name,
+                        "products": all_products
+                    })
+            
+            # Add any whitelist categories that weren't in the original results
+            for wl_category, wl_products in whitelist_overrides.items():
+                if not any(cat["category"] == wl_category for cat in final_compatibles):
+                    final_compatibles.append({
+                        "category": wl_category,
+                        "products": wl_products
+                    })
+                    logger.info(f"Whitelist addition: Added new category {wl_category} with {len(wl_products)} whitelisted products")
+            
+            return {
+                "product": source_product,
+                "compatibles": final_compatibles
+            }
+
         # === BLACKLIST helper and filter ===
         def _extract_sku(prod):
             if not isinstance(prod, dict):
