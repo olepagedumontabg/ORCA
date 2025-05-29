@@ -1279,16 +1279,19 @@ def find_compatible_products(sku):
             return ""
 
         for cat in compatible_products:
-            before = len(cat["products"])
-            cat["products"] = [
-                p for p in cat["products"]
-                if not blacklist_helper.is_blacklisted(sku, _extract_sku(p))
-            ]
-            if before != len(cat["products"]):
-                logger.info("Blacklist removed %d item(s) from %s for SKU %s",
-                            before - len(cat["products"]),
-                            cat.get("category", ""), sku)
-        compatible_products = [c for c in compatible_products if c["products"]]
+            # Only process categories that have products (not incompatibility reasons)
+            if "products" in cat:
+                before = len(cat["products"])
+                cat["products"] = [
+                    p for p in cat["products"]
+                    if not blacklist_helper.is_blacklisted(sku, _extract_sku(p))
+                ]
+                if before != len(cat["products"]):
+                    logger.info("Blacklist removed %d item(s) from %s for SKU %s",
+                                before - len(cat["products"]),
+                                cat.get("category", ""), sku)
+        # Keep categories that have products OR incompatibility reasons
+        compatible_products = [c for c in compatible_products if c.get("products") or c.get("reason")]
         
         for wl_sku in whitelist_helper.get_whitelist_for_sku(sku):
             # Skip if already present
@@ -1339,10 +1342,24 @@ def find_compatible_products(sku):
 
         if is_bathtub:
             logger.debug(f"Using bathtub compatibility results for SKU: {sku}")
-            # Use the compatibility results from the bathtub-specific function
+            # For bathtub results, we need to process and clean up the _ranking fields
+            # and separate incompatibility reasons
+            final_compatibles = []
+            
+            for category in compatible_products:
+                if "reason" in category:
+                    # This is an incompatibility reason category
+                    final_compatibles.append(category)
+                elif "products" in category and category["products"]:
+                    # This is a regular category with products - remove _ranking fields
+                    for product in category["products"]:
+                        if "_ranking" in product:
+                            del product["_ranking"]
+                    final_compatibles.append(category)
+            
             return {
                 "product": source_product,
-                "compatibles": compatible_products
+                "compatibles": final_compatibles
             }
 
         # For all other product types (shower bases, etc.), process as usual
@@ -1416,7 +1433,9 @@ def find_compatible_products(sku):
         return {"product": source_product, "compatibles": compatible_products}
 
     except Exception as e:
+        import traceback
         logger.error(f"Error in find_compatible_products: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return {"product": None, "compatibles": []}
 
 
