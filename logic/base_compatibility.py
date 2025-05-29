@@ -371,7 +371,9 @@ def find_base_compatibilities(data, base_info):
         return compatible_products
 
     except Exception as e:
+        import traceback
         logger.error(f"Error in find_base_compatibilities: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return []
 
 
