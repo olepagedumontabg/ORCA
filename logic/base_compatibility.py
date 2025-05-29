@@ -352,8 +352,14 @@ def find_base_compatibilities(data, base_info):
                 wall_width = wall.get("Width")
                 wall_cut = wall.get("Cut to Size")
                 wall_id = str(wall.get("Unique ID", "")).strip()
+                wall_name = wall.get("Product Name", "")
+
+                logger.debug(f"  Checking wall: {wall_id} - {wall_name}")
+                logger.debug(f"    Type: '{wall_type}' (original: '{wall.get('Type', '')}')")
+                logger.debug(f"    Brand: {wall_brand}, Family: {wall_family}, Series: {wall_series}")
 
                 if not wall_id:
+                    logger.debug(f"    ✗ Skipping wall with no ID")
                     continue
 
                 alcove_match = (
@@ -369,6 +375,14 @@ def find_base_compatibilities(data, base_info):
                     and series_compatible(base_series, wall_series)
                     and brand_family_match(base_brand, base_family, wall_brand,
                                            wall_family))
+
+                logger.debug(f"    Alcove match: {alcove_match}")
+                logger.debug(f"    Corner match: {corner_match}")
+                logger.debug(f"    Type check: 'alcove shower' in '{wall_type}': {'alcove shower' in wall_type}")
+                logger.debug(f"    Type check: 'corner shower' in '{wall_type}': {'corner shower' in wall_type}")
+                logger.debug(f"    Install check: base_install='{base_install}'")
+                logger.debug(f"    Series check: {series_compatible(base_series, wall_series)}")
+                logger.debug(f"    Brand/family check: {brand_family_match(base_brand, base_family, wall_brand, wall_family)}")
 
                 if not (alcove_match or corner_match):
                     continue
