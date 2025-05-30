@@ -159,6 +159,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
 
     tub_doors_df = data['Tub Doors']
     walls_df = data['Walls']
+    tub_screens_df = data.get('Tub Screens', pd.DataFrame())
 
     # Get bathtub properties
     tub_width = bathtub_info.get("Max Door Width")
@@ -211,6 +212,45 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 compatible_doors.append(product_dict)
         except Exception as e:
             logger.error(f"Error processing tub door: {e}")
+
+    # Find compatible tub screens using the same logic as tub doors
+    compatible_screens = []
+    if not tub_screens_df.empty:
+        for _, screen in tub_screens_df.iterrows():
+            try:
+                screen_fixed_panel_width = screen.get("Fixed Panel Width")
+                screen_series = screen.get("Series")
+                screen_id = str(screen.get("Unique ID", "")).strip()
+
+                if not screen_id:
+                    continue
+
+                if (
+                    tub_install == "Alcove" and
+                    pd.notna(tub_width) and pd.notna(screen_fixed_panel_width) and
+                    (tub_width - screen_fixed_panel_width) > 22 and
+                    series_compatible(tub_series, screen_series)
+                ):
+                    # Format screen product data for the frontend
+                    screen_data = screen.to_dict()
+                    # Remove any NaN values
+                    screen_data = {k: v for k, v in screen_data.items() if pd.notna(v)}
+
+                    # Create a properly formatted product entry for the frontend
+                    product_dict = {
+                        "sku": screen_id,
+                        "is_combo": False,
+                        "_ranking": screen_data.get("Ranking", 999),
+                        "name": screen_data.get("Product Name", ""),
+                        "image_url": image_handler.generate_image_url(screen_data),
+                        "product_page_url": screen_data.get("Product Page URL", ""),
+                        "brand": screen_data.get("Brand", ""),
+                        "series": screen_data.get("Series", ""),
+                        "fixed_panel_width": screen_data.get("Fixed Panel Width", "")
+                    }
+                    compatible_screens.append(product_dict)
+            except Exception as e:
+                logger.error(f"Error processing tub screen: {e}")
 
     def find_closest_walls(tub_length, tub_width, candidate_walls):
         """
@@ -327,6 +367,11 @@ def find_bathtub_compatibilities(data, bathtub_info):
         # Sort the doors by ranking
         sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Tub Doors", "products": sorted_doors})
+
+    if compatible_screens and "Tub Screens" not in incompatibility_reasons:
+        # Sort the screens by ranking
+        sorted_screens = sorted(compatible_screens, key=lambda x: x.get('_ranking', 999))
+        results.append({"category": "Tub Screens", "products": sorted_screens})
 
     if compatible_walls and "Walls" not in incompatibility_reasons:
         # Sort the walls by ranking
