@@ -506,29 +506,28 @@ def series_compatible(base_series, compare_series):
 
     # Galerie compatibility rules
     if base_series == "Galerie":
-        return compare_series in ["Galerie", "Neptune", "Collection", "MAAX", "Professional"]
+        return compare_series in ["Galerie", "Neptune"]
     
     # Entrepreneur compatibility rules
     if base_series == "Entrepreneur":
-        return compare_series in ["Entrepreneur", "Neptune", "MAAX", "Professional"]
+        return compare_series in ["Entrepreneur", "Neptune"]
     
     # Neptune compatibility rules
     if base_series == "Neptune":
-        return compare_series in ["Galerie", "Neptune", "Entrepreneur", "Collection", "MAAX", "Entrepreneur", "Retail"]
+        return compare_series in ["Galerie", "Neptune", "Entrepreneur"]
     
     # Special case for Retail compatibility
     if base_series == "Retail":
-        return compare_series in ["Retail", "MAAX", "Neptune"]
+        return compare_series in ["Retail", "MAAX"]
     
     # MAAX compatibility rules
     if base_series == "MAAX":
         return compare_series in [
-            "Retail", "MAAX", "Collection", "Professional", "Entrepreneur", "Neptune"
-        ]
+            "Retail", "MAAX", "Collection", "Professional"]
     
     # Collection and Professional compatibility
     if base_series in ["Collection", "Professional"]:
-        return compare_series in ["MAAX", "Collection", "Professional", "Entrepreneur", "Galerie", "Neptune"]
+        return compare_series in ["MAAX", "Collection", "Professional"]
     
     # Default case - no other compatibility
     return False
@@ -584,7 +583,7 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
         return False
 
     # Different brand checks
-    if base_brand == "swan" and wall_brand != "swan":
+    if base_brand == "maax" and wall_brand != "maax":
         return False
 
     if base_brand == "bootz" and wall_brand != "bootz":
