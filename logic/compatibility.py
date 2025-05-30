@@ -27,6 +27,113 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def find_shower_screen_compatibilities(data, screen_info):
+    """
+    Find compatible shower bases for a shower screen
+    
+    Args:
+        data (dict): Dictionary of DataFrames containing product data
+        screen_info (dict): Dictionary containing shower screen product information
+        
+    Returns:
+        list: List of dictionaries containing category and compatible products
+    """
+    try:
+        compatible_products = []
+        matching_bases = []
+        
+        screen_fixed_panel_width = screen_info.get("Fixed Panel Width")
+        screen_series = screen_info.get("Series")
+        screen_brand = screen_info.get("Brand")
+        
+        logger.debug(f"Finding bases compatible with screen: {screen_info.get('Unique ID')}")
+        logger.debug(f"Screen Fixed Panel Width: {screen_fixed_panel_width}")
+        logger.debug(f"Screen Series: {screen_series}")
+        
+        if 'Shower Bases' in data and pd.notna(screen_fixed_panel_width):
+            bases_df = data['Shower Bases']
+            logger.debug(f"Checking {len(bases_df)} shower bases for compatibility")
+            
+            try:
+                screen_width_num = float(screen_fixed_panel_width)
+                logger.debug(f"Screen fixed panel width as number: {screen_width_num}")
+                
+                for _, base in bases_df.iterrows():
+                    base_id = str(base.get("Unique ID", "")).strip()
+                    base_name = base.get("Product Name", "")
+                    base_max_door_width = base.get("Max Door Width")
+                    base_series = base.get("Series")
+                    base_install = str(base.get("Installation", "")).lower()
+                    
+                    logger.debug(f"  Checking base: {base_id} - {base_name}")
+                    logger.debug(f"    Max Door Width: {base_max_door_width}")
+                    logger.debug(f"    Installation: {base_install}")
+                    
+                    if pd.notna(base_max_door_width):
+                        try:
+                            base_width_num = float(base_max_door_width)
+                            width_difference = base_width_num - screen_width_num
+                            
+                            logger.debug(f"    Width difference: {base_width_num} - {screen_width_num} = {width_difference}")
+                            
+                            # Check compatibility: Max Door Width - Fixed Panel Width > 22
+                            # Compatible with both Alcove and Corner bases
+                            from base_compatibility import series_compatible
+                            base_compatible = (
+                                width_difference > 22 and
+                                series_compatible(base_series, screen_series) and
+                                ("alcove" in base_install or "corner" in base_install)
+                            )
+                            
+                            logger.debug(f"    Base compatible: {base_compatible}")
+                            logger.debug(f"    Series match: {series_compatible(base_series, screen_series)}")
+                            logger.debug(f"    Installation type valid: {'alcove' in base_install or 'corner' in base_install}")
+                            
+                            if base_compatible and base_id:
+                                base_product = {
+                                    "sku": base_id,
+                                    "name": base.get("Product Name", ""),
+                                    "brand": base.get("Brand", ""),
+                                    "series": base.get("Series", ""),
+                                    "category": "Shower Bases",
+                                    "image_url": base.get("Image URL", ""),
+                                    "product_page_url": base.get("Product Page URL", ""),
+                                    "_ranking": base.get("Ranking", 999),
+                                    "is_combo": False,
+                                    "max_door_width": base_max_door_width,
+                                    "installation": base.get("Installation", "")
+                                }
+                                matching_bases.append(base_product)
+                                logger.debug(f"    ✓ Added base {base_id} to matching bases")
+                        
+                        except (ValueError, TypeError) as e:
+                            logger.debug(f"    Error converting base measurements to numbers: {e}")
+                            continue
+                    else:
+                        logger.debug(f"    Missing Max Door Width - skipping")
+                        
+            except (ValueError, TypeError) as e:
+                logger.debug(f"Error converting screen measurements to numbers: {e}")
+                return []
+        
+        if matching_bases:
+            # Sort the bases by ranking
+            sorted_bases = sorted(matching_bases, key=lambda x: x.get('_ranking', 999))
+            logger.debug(f"Adding {len(sorted_bases)} shower bases to results")
+            for base in sorted_bases[:3]:  # Log first few bases
+                logger.debug(f"  Base: {base.get('sku')} - {base.get('name')}")
+            compatible_products.append({"category": "Shower Bases", "products": sorted_bases})
+        
+        logger.debug(f"Screen compatibility results: {len(matching_bases)} bases found")
+        return compatible_products
+        
+    except Exception as e:
+        import traceback
+        logger.error(f"Error in find_shower_screen_compatibilities: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return []
+
+
 def get_fixed_door_type(product_info):
     """
     Get door type using only the approved values (Pivot, Sliding, Bypass)
@@ -288,6 +395,51 @@ def find_compatible_products(sku):
             # This returns a list of categories with already enhanced products
             compatible_products = tubshower_compatibility.find_tubshower_compatibilities(
                 data, product_info)
+
+        elif product_category == 'Shower Screens':
+            # Find compatible shower bases for the shower screen
+            logger.debug(f"Using shower screen reverse compatibility logic for SKU: {sku}")
+            compatible_categories = find_shower_screen_compatibilities(data, product_info)
+            
+            # Enhance the results with additional product details
+            for category_info in compatible_categories:
+                category = category_info["category"]
+                enhanced_skus = []
+                
+                # Handle the products format
+                if "products" in category_info:
+                    products_list = category_info["products"]
+                else:
+                    products_list = category_info.get("skus", [])
+                
+                for sku_item in products_list:
+                    # Handle product dictionaries (should already be enhanced)
+                    if isinstance(sku_item, dict):
+                        enhanced_skus.append(sku_item)
+                        continue
+                    
+                    # Handle string SKUs (shouldn't happen with our implementation but just in case)
+                    sku_details = get_product_details(data, sku_item)
+                    if sku_details:
+                        enhanced_product = {
+                            "sku": sku_item,
+                            "name": sku_details.get("Product Name", ""),
+                            "brand": sku_details.get("Brand", ""),
+                            "series": sku_details.get("Series", ""),
+                            "category": category,
+                            "image_url": sku_details.get("Image URL", ""),
+                            "product_page_url": sku_details.get("Product Page URL", ""),
+                            "_ranking": sku_details.get("Ranking", 999),
+                            "is_combo": False
+                        }
+                        enhanced_skus.append(enhanced_product)
+                
+                # Sort by ranking and add to results
+                enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                compatible_products.append({
+                    "category": category,
+                    "products": enhanced_skus
+                })
 
         elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
