@@ -358,15 +358,17 @@ def find_base_compatibilities(data, base_info):
                 if not wall_id:
                     continue
 
+                # Check if wall is compatible with alcove installation
                 alcove_match = (
-                    "alcove shower" in wall_type
+                    ("alcove shower" in wall_type or "tub wall kit" in wall_type or "shower wall kit" in wall_type)
                     and (base_install in ["alcove", "alcove or corner"])
                     and series_compatible(base_series, wall_series)
                     and brand_family_match(base_brand, base_family, wall_brand,
                                            wall_family))
 
+                # Check if wall is compatible with corner installation  
                 corner_match = (
-                    "corner shower" in wall_type
+                    ("corner shower" in wall_type or "tub wall kit" in wall_type or "shower wall kit" in wall_type)
                     and (base_install in ["corner", "alcove or corner"])
                     and series_compatible(base_series, wall_series)
                     and brand_family_match(base_brand, base_family, wall_brand,
@@ -483,11 +485,17 @@ def find_base_compatibilities(data, base_info):
 
 def series_compatible(base_series, compare_series):
     """Check if two series are compatible"""
+    if base_series == "Galerie":
+        return compare_series in ["Galerie", "Neptune"]
+    if base_series == "Entrepreneur":
+        return compare_series in ["Entrepreneur", "Neptune"]
+    if base_series == "Neptune":
+        return compare_series in ["Galerie", "Neptune", "Entrepreneur"]
     if base_series == "Retail":
         return compare_series in ["Retail", "MAAX"]
     if base_series == "MAAX":
         return compare_series in [
-            "Retail", "MAAX", "Collection", "Professional"
+            "Retail", "MAAX", "Collection", "Professional", "Entrepreneur", "Neptune"
         ]
     if base_series in ["Collection", "Professional"]:
         return compare_series in ["MAAX", "Collection", "Professional"]
