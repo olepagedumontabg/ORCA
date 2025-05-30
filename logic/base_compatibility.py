@@ -342,7 +342,6 @@ def find_base_compatibilities(data, base_info):
 
             nominal_matches = []
             cut_candidates = []
-            compatible_walls = []  # Add this for walls that match all criteria except dimensions
 
             for _, wall in walls_df.iterrows():
                 wall_type = str(wall.get("Type", "")).lower()
@@ -391,17 +390,7 @@ def find_base_compatibilities(data, base_info):
                         "width":   wall_width
                     })
                 
-                # ✅ Compatible wall (matches all criteria AND has suitable dimensions)
-                elif pd.notna(wall_length) and pd.notna(wall_width) and pd.notna(base_length) and pd.notna(base_width_actual):
-                    # Only add if wall dimensions are reasonably close to base dimensions
-                    # Allow walls that are at least as large but not excessively larger
-                    length_ratio = wall_length / base_length if base_length > 0 else float('inf')
-                    width_ratio = wall_width / base_width_actual if base_width_actual > 0 else float('inf')
-                    
-                    # Wall should be at least as large as base, but not more than 1.25x larger in either dimension
-                    if (wall_length >= base_length and wall_width >= base_width_actual and 
-                        length_ratio <= 1.25 and width_ratio <= 1.25):
-                        compatible_walls.append(wall_id)
+
 
             # ✅ Select closest cut size walls
             closest_cut_ids = []
@@ -424,7 +413,7 @@ def find_base_compatibilities(data, base_info):
                     )
 
             # ✅ Add all matches - convert IDs to product dictionaries
-            all_wall_ids = nominal_matches + closest_cut_ids + compatible_walls
+            all_wall_ids = nominal_matches + closest_cut_ids
             
             for wall_id in all_wall_ids:
                 # Convert wall_id to match the DataFrame type (likely int)

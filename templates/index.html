@@ -46,30 +46,15 @@
         </div>
     </header>
 
-    <!-- Hero video section -->
+    <!-- Hero image section -->
     <div class="w-full pt-24 pb-0">
         <div class="container mx-auto px-4">
             <div class="relative overflow-hidden rounded-lg shadow-lg max-h-[400px]">
-                <!-- Video replaces the <img> -->
-                <video
-                    class="w-full h-[400px] object-cover object-center"
-                    autoplay
-                    loop
-                    muted
-                    playsinline   <!-- avoids full‑screen autoplay on iOS -->
-                    poster="{{ url_for('static', filename='images/hero-video-poster.jpg') }}"  <!-- optional fallback frame -->
-                >
-                    <source src="{{ url_for('static', filename='videos/hero-video.mp4') }}" type="video/mp4">
-                    Your browser doesn’t support the video tag.
-                </video>
-
-                <!-- Gradient overlay + text remain unchanged -->
+                <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Modern Bathroom" class="w-full object-cover object-center h-[400px]">
                 <div class="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
                     <div class="text-white p-8">
                         <h2 class="text-3xl font-bold mb-2">Product Compatibility Checker</h2>
-                        <p class="text-lg max-w-md">
-                            Find compatible products for specific SKUs, currently limited to MAAX Shower Bases, Showers, Bathtubs and Tub Showers
-                        </p>
+                        <p class="text-lg max-w-md">Find compatible products for specific SKUs, currently limited to MAAX Shower Bases, Showers, Bathtubs and Tub Showers</p>
                     </div>
                 </div>
             </div>
