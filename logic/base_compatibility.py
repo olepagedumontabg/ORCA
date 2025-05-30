@@ -89,6 +89,7 @@ def find_base_compatibilities(data, base_info):
         # Track matches for each category
         matching_doors = []
         matching_walls = []
+        matching_screens = []
 
         # ---------- Doors ----------
         if 'Shower Doors' in data:
@@ -331,6 +332,65 @@ def find_base_compatibilities(data, base_info):
                     logger.debug(
                         f"    ✓ Added enclosure {enc_id} to matching doors")
 
+        # ---------- Shower Screens ----------
+        if 'Shower Screens' in data:
+            screens_df = data['Shower Screens']
+            logger.debug(f"Processing {len(screens_df)} shower screens for compatibility")
+            
+            for _, screen in screens_df.iterrows():
+                screen_id = str(screen.get("Unique ID", "")).strip()
+                screen_name = screen.get("Product Name", "")
+                screen_fixed_panel_width = screen.get("Fixed Panel Width")
+                screen_brand = screen.get("Brand")
+                screen_series = screen.get("Series")
+                
+                logger.debug(f"  Checking screen: {screen_id} - {screen_name}")
+                logger.debug(f"    Fixed Panel Width: {screen_fixed_panel_width}")
+                logger.debug(f"    Base Max Door Width: {base_width}")
+                
+                # Check if we have valid numeric values for both measurements
+                if pd.notna(base_width) and pd.notna(screen_fixed_panel_width):
+                    try:
+                        base_width_num = float(base_width)
+                        screen_width_num = float(screen_fixed_panel_width)
+                        width_difference = base_width_num - screen_width_num
+                        
+                        logger.debug(f"    Width difference: {base_width_num} - {screen_width_num} = {width_difference}")
+                        
+                        # Check compatibility: Max Door Width - Fixed Panel Width > 22
+                        # Compatible with both Alcove and Corner bases
+                        screen_compatible = (
+                            width_difference > 22 and
+                            series_compatible(base_series, screen_series) and
+                            ("alcove" in base_install or "corner" in base_install)
+                        )
+                        
+                        logger.debug(f"    Screen compatible: {screen_compatible}")
+                        logger.debug(f"    Series match: {series_compatible(base_series, screen_series)}")
+                        logger.debug(f"    Installation type valid: {'alcove' in base_install or 'corner' in base_install}")
+                        
+                        if screen_compatible and screen_id:
+                            screen_product = {
+                                "sku": screen_id,
+                                "name": screen.get("Product Name", ""),
+                                "brand": screen.get("Brand", ""),
+                                "series": screen.get("Series", ""),
+                                "category": "Shower Screens",
+                                "image_url": screen.get("Image URL", ""),
+                                "product_page_url": screen.get("Product Page URL", ""),
+                                "_ranking": screen.get("Ranking", 999),
+                                "is_combo": False,
+                                "fixed_panel_width": screen_fixed_panel_width
+                            }
+                            matching_screens.append(screen_product)
+                            logger.debug(f"    ✓ Added screen {screen_id} to matching screens")
+                    
+                    except (ValueError, TypeError) as e:
+                        logger.debug(f"    Error converting measurements to numbers: {e}")
+                        continue
+                else:
+                    logger.debug(f"    Missing required measurements - skipping")
+
         # ---------- Walls ----------
         if 'Walls' in data:
             walls_df = data['Walls']
@@ -456,6 +516,14 @@ def find_base_compatibilities(data, base_info):
                 logger.debug(f"  Door: {door.get('sku')} - {door.get('name')} (combo: {door.get('is_combo', False)})")
             compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
 
+        if matching_screens:
+            # Sort the screens by ranking
+            sorted_screens = sorted(matching_screens, key=lambda x: x.get('_ranking', 999))
+            logger.debug(f"Adding {len(sorted_screens)} shower screens to results")
+            for screen in sorted_screens[:3]:  # Log first few screens
+                logger.debug(f"  Screen: {screen.get('sku')} - {screen.get('name')}")
+            compatible_products.append({"category": "Shower Screens", "products": sorted_screens})
+
         if matching_walls and "Walls" not in incompatibility_reasons:
             # Sort the walls by ranking
             sorted_walls = sorted(matching_walls, key=lambda x: x.get('_ranking', 999))
@@ -468,6 +536,7 @@ def find_base_compatibilities(data, base_info):
 
         logger.debug(f"Final results summary:")
         logger.debug(f"  Doors found: {len(matching_doors)}")
+        logger.debug(f"  Screens found: {len(matching_screens)}")
         logger.debug(f"  Walls found: {len(matching_walls)}")
         logger.debug(f"  Incompatibility reasons: {incompatibility_reasons}")
         logger.debug(f"  Compatible products returned: {len(compatible_products)}")
