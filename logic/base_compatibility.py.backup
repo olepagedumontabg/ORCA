@@ -81,10 +81,9 @@ def find_base_compatibilities(data, base_info):
         except (AttributeError, TypeError):
             pass
 
-        # Get the base product details with safe string conversion
+        # Get the base product details
         base_width = base_info.get("Max Door Width")
-        base_install_raw = base_info.get("Installation", "")
-        base_install = str(base_install_raw).lower() if base_install_raw is not None else ""
+        base_install = str(base_info.get("Installation", "")).lower()
         base_series = base_info.get("Series")
         base_fit_return = base_info.get("Fits Return Panel Size")
         base_length = base_info.get("Length")
