@@ -579,12 +579,6 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
         return False
 
     # Special family compatibility rules
-    if base_family == "b3" and wall_family and wall_family not in ["utile", "denso", "nextile", "versaline", "lineversa"]:
-        return False
-
-    if base_family in ["finesse", "distinct", "zone", "olympia", "icon", "roka"] and wall_family and wall_family not in ["utile", "nextile"]:
-        return False
-
     # Utile and Nextile walls should only match with specific base families
     if wall_family in ["utile", "nextile"] and base_family not in ["b3", "finesse", "distinct", "zone", "olympia", "icon", "roka"]:
         return False
