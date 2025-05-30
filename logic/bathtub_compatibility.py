@@ -103,6 +103,9 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     if base_brand == "swan" and wall_brand != "swan":
         return False
 
+    if base_brand == "neptune" and wall_brand != "neptune":
+        return False
+
     if base_brand == "bootz" and wall_brand != "bootz":
         return False
 
