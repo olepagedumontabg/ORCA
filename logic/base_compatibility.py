@@ -552,20 +552,55 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
 
-    # Rule 1: If Base Brand is maax, Wall Brand MUST be maax
+    # First check for specifically restricted families
+    if base_family == "olio" and wall_family != "olio":
+        return False
+
+    if wall_family == "olio" and base_family != "olio":
+        return False
+
+    if base_family == "vellamo" and wall_family != "vellamo":
+        return False
+
+    if wall_family == "vellamo" and base_family != "vellamo":
+        return False
+
+    if base_family == "interflo" and wall_family != "interflo":
+        return False
+
+    if wall_family == "interflo" and base_family != "interflo":
+        return False
+
+    # Check for special cases for specific families
+    if base_family == "w&b" and wall_family != "w&b":
+        return False
+
+    if wall_family == "w&b" and base_family != "w&b":
+        return False
+
+    # Special family compatibility rules
+    if base_family == "b3" and wall_family not in ["utile", "denso", "nextile", "versaline", "lineversa"]:
+        return False
+
+    if base_family in ["finesse", "distinct", "zone", "olympia", "icon", "roka"] and wall_family not in ["utile", "nextile"]:
+        return False
+
+    # Different brand checks
     if base_brand == "maax" and wall_brand != "maax":
         return False
 
-    # Rule 2: After passing Rule 1, check families + other brand matches
-    return ((base_brand == "swan" and wall_brand == "swan")
-            or (base_brand == "neptune" and wall_brand == "neptune")
-            or (base_brand == "bootz" and wall_brand == "bootz")
-            or (base_family == "w&b" and wall_family == "w&b")
-            or (base_family == "olio" and wall_family == "olio")
-            or (base_family == "vellamo" and wall_family == "vellamo")
-            or (base_family == "interflo" and wall_family == "interflo")
-            or (base_family == "b3"
-                and wall_family in ["utile", "denso", "nextile", "versaline", "lineversa"])
-            or (base_family
-                in ["finesse", "distinct", "zone", "olympia", "icon", "roka"]
-                and wall_family in ["utile", "nextile"]))
+    if base_brand == "swan" and wall_brand != "swan":
+        return False
+
+    if base_brand == "neptune" and wall_brand != "neptune":
+        return False
+
+    if base_brand == "bootz" and wall_brand != "bootz":
+        return False
+
+    # If we passed all restrictions and brands match, we're compatible
+    if base_brand == wall_brand:
+        return True
+
+    # Default case - no match
+    return False
