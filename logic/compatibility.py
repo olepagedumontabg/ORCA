@@ -27,6 +27,107 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def find_tub_screen_compatibilities(data, screen_info):
+    """
+    Find compatible bathtubs for a tub screen
+    
+    Args:
+        data (dict): Dictionary of DataFrames containing product data
+        screen_info (dict): Dictionary containing tub screen product information
+        
+    Returns:
+        list: List of dictionaries containing category and compatible products
+    """
+    try:
+        compatible_products = []
+        matching_bathtubs = []
+        
+        screen_fixed_panel_width = screen_info.get("Fixed Panel Width")
+        screen_series = screen_info.get("Series")
+        screen_brand = screen_info.get("Brand")
+        
+        logger.debug(f"Finding bathtubs compatible with tub screen: {screen_info.get('Unique ID')}")
+        logger.debug(f"Screen Fixed Panel Width: {screen_fixed_panel_width}")
+        logger.debug(f"Screen Series: {screen_series}")
+        
+        if 'Bathtubs' in data and pd.notna(screen_fixed_panel_width):
+            bathtubs_df = data['Bathtubs']
+            logger.debug(f"Checking {len(bathtubs_df)} bathtubs for compatibility")
+            
+            try:
+                screen_width_num = float(screen_fixed_panel_width)
+                logger.debug(f"Screen fixed panel width as number: {screen_width_num}")
+                
+                for _, bathtub in bathtubs_df.iterrows():
+                    bathtub_id = str(bathtub.get("Unique ID", "")).strip()
+                    bathtub_name = bathtub.get("Product Name", "")
+                    bathtub_max_door_width = bathtub.get("Max Door Width")
+                    bathtub_series = bathtub.get("Series")
+                    
+                    logger.debug(f"  Checking bathtub: {bathtub_id} - {bathtub_name}")
+                    logger.debug(f"    Max Door Width: {bathtub_max_door_width}")
+                    
+                    if pd.notna(bathtub_max_door_width):
+                        try:
+                            bathtub_width_num = float(bathtub_max_door_width)
+                            width_difference = bathtub_width_num - screen_width_num
+                            
+                            logger.debug(f"    Width difference: {bathtub_width_num} - {screen_width_num} = {width_difference}")
+                            
+                            # Check compatibility: Max Door Width - Fixed Panel Width > 22
+                            from logic.bathtub_compatibility import series_compatible
+                            bathtub_compatible = (
+                                width_difference > 22 and
+                                series_compatible(bathtub_series, screen_series)
+                            )
+                            
+                            logger.debug(f"    Bathtub compatible: {bathtub_compatible}")
+                            logger.debug(f"    Series match: {series_compatible(bathtub_series, screen_series)}")
+                            
+                            if bathtub_compatible and bathtub_id:
+                                bathtub_product = {
+                                    "sku": bathtub_id,
+                                    "name": bathtub.get("Product Name", ""),
+                                    "brand": bathtub.get("Brand", ""),
+                                    "series": bathtub.get("Series", ""),
+                                    "category": "Bathtubs",
+                                    "image_url": bathtub.get("Image URL", ""),
+                                    "product_page_url": bathtub.get("Product Page URL", ""),
+                                    "_ranking": bathtub.get("Ranking", 999),
+                                    "is_combo": False,
+                                    "max_door_width": bathtub_max_door_width
+                                }
+                                matching_bathtubs.append(bathtub_product)
+                                logger.debug(f"    ✓ Added bathtub {bathtub_id} to matching bathtubs")
+                        
+                        except (ValueError, TypeError) as e:
+                            logger.debug(f"    Error converting bathtub measurements to numbers: {e}")
+                            continue
+                    else:
+                        logger.debug(f"    Missing Max Door Width - skipping")
+                        
+            except (ValueError, TypeError) as e:
+                logger.debug(f"Error converting screen measurements to numbers: {e}")
+                return []
+        
+        if matching_bathtubs:
+            # Sort the bathtubs by ranking
+            sorted_bathtubs = sorted(matching_bathtubs, key=lambda x: x.get('_ranking', 999))
+            logger.debug(f"Adding {len(sorted_bathtubs)} bathtubs to results")
+            for bathtub in sorted_bathtubs[:3]:  # Log first few bathtubs
+                logger.debug(f"  Bathtub: {bathtub.get('sku')} - {bathtub.get('name')}")
+            compatible_products.append({"category": "Bathtubs", "products": sorted_bathtubs})
+        
+        logger.debug(f"Tub screen compatibility results: {len(matching_bathtubs)} bathtubs found")
+        return compatible_products
+        
+    except Exception as e:
+        import traceback
+        logger.error(f"Error in find_tub_screen_compatibilities: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return []
+
+
 def find_shower_screen_compatibilities(data, screen_info):
     """
     Find compatible shower bases for a shower screen
@@ -395,6 +496,51 @@ def find_compatible_products(sku):
             # This returns a list of categories with already enhanced products
             compatible_products = tubshower_compatibility.find_tubshower_compatibilities(
                 data, product_info)
+
+        elif product_category == 'Tub Screens':
+            # Find compatible bathtubs for the tub screen
+            logger.debug(f"Using tub screen reverse compatibility logic for SKU: {sku}")
+            compatible_categories = find_tub_screen_compatibilities(data, product_info)
+            
+            # Enhance the results with additional product details
+            for category_info in compatible_categories:
+                category = category_info["category"]
+                enhanced_skus = []
+                
+                # Handle the products format
+                if "products" in category_info:
+                    products_list = category_info["products"]
+                else:
+                    products_list = category_info.get("skus", [])
+                
+                for sku_item in products_list:
+                    # Handle product dictionaries (should already be enhanced)
+                    if isinstance(sku_item, dict):
+                        enhanced_skus.append(sku_item)
+                        continue
+                    
+                    # Handle string SKUs (shouldn't happen with our implementation but just in case)
+                    sku_details = get_product_details(data, sku_item)
+                    if sku_details:
+                        enhanced_product = {
+                            "sku": sku_item,
+                            "name": sku_details.get("Product Name", ""),
+                            "brand": sku_details.get("Brand", ""),
+                            "series": sku_details.get("Series", ""),
+                            "category": category,
+                            "image_url": sku_details.get("Image URL", ""),
+                            "product_page_url": sku_details.get("Product Page URL", ""),
+                            "_ranking": sku_details.get("Ranking", 999),
+                            "is_combo": False
+                        }
+                        enhanced_skus.append(enhanced_product)
+                
+                # Sort by ranking and add to results
+                enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                compatible_products.append({
+                    "category": category,
+                    "products": enhanced_skus
+                })
 
         elif product_category == 'Shower Screens':
             # Find compatible shower bases for the shower screen
