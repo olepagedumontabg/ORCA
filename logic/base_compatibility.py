@@ -53,7 +53,10 @@ def find_base_compatibilities(data, base_info):
               or dictionaries with incompatibility reasons
     """
     try:
-        base_sku = base_info.get("SKU") or base_info.get("sku")
+        # Try to get the SKU from various possible fields
+        base_sku = (base_info.get("SKU") or 
+                   base_info.get("sku") or 
+                   base_info.get("Unique ID"))
         logger.info(f"Finding compatibilities for base SKU: {base_sku}")
         
         results = []
