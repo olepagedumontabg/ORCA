@@ -158,16 +158,16 @@ def find_base_compatibilities(data, base_info):
                     logger.debug(f"    Cut to size: {wall_cut_to_size}")
                     logger.debug(f"    Wall brand: {wall_brand}, family: {wall_family}, series: {wall_series}")
 
-                    # Type matching
-                    type_match = ("alcove shower" in wall_type or "corner shower" in wall_type)
+                    # Type matching - match the actual wall types in the data
+                    type_match = ("alcove shower wall kit" in wall_type or "corner shower wall kit" in wall_type)
                     
                     # Installation matching
                     install_match = False
-                    if "alcove" in base_install and "alcove shower" in wall_type:
+                    if "alcove" in base_install and "alcove shower wall kit" in wall_type:
                         install_match = True
-                    elif "corner" in base_install and "corner shower" in wall_type:
+                    elif "corner" in base_install and "corner shower wall kit" in wall_type:
                         install_match = True
-                    elif "alcove/corner" in base_install and ("alcove shower" in wall_type or "corner shower" in wall_type):
+                    elif "alcove/corner" in base_install and ("alcove shower wall kit" in wall_type or "corner shower wall kit" in wall_type):
                         install_match = True
 
                     # Brand/Family matching
@@ -347,6 +347,28 @@ def brand_family_match_func(base_brand, base_family, wall_brand, wall_family):
         if base_brand != wall_brand:
             return False
         
+        if base_family and wall_family:
+            base_family = str(base_family).strip() if base_family is not None else ""
+            wall_family = str(wall_family).strip() if wall_family is not None else ""
+            return base_family == wall_family
+        
+        return True
+    except (AttributeError, TypeError):
+        return False
+
+def brand_family_match_func(base_brand, base_family, wall_brand, wall_family):
+    """Check if brands and families match"""
+    try:
+        # Convert to strings and handle None values
+        base_brand = str(base_brand).strip() if base_brand is not None else ""
+        wall_brand = str(wall_brand).strip() if wall_brand is not None else ""
+        
+        # Brand matching
+        if base_brand and wall_brand:
+            if base_brand != wall_brand:
+                return False
+        
+        # Family matching
         if base_family and wall_family:
             base_family = str(base_family).strip() if base_family is not None else ""
             wall_family = str(wall_family).strip() if wall_family is not None else ""
