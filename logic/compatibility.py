@@ -1576,8 +1576,9 @@ def get_product_details(data, sku):
                     if pd.isna(value):
                         product_info[key] = None
 
-                # Add the category to the product info
+                # Add the category and SKU to the product info
                 product_info['_source_category'] = category
+                product_info['SKU'] = sku  # Ensure the SKU is included in the product info
 
                 logger.debug(
                     f"Found product in {category}: {product_info.get('Product Name', 'Unknown')}"
