@@ -158,7 +158,7 @@ def find_base_compatibilities(data, base_info):
                     logger.debug(f"    Cut to size: {wall_cut_to_size}")
                     logger.debug(f"    Wall brand: {wall_brand}, family: {wall_family}, series: {wall_series}")
 
-                    # Type matching - match the actual wall types in the data
+                    # Type matching - match the actual wall types in the data (case insensitive)
                     type_match = ("alcove shower wall kit" in wall_type or "corner shower wall kit" in wall_type)
                     
                     # Installation matching
@@ -170,18 +170,22 @@ def find_base_compatibilities(data, base_info):
                     elif "alcove/corner" in base_install and ("alcove shower wall kit" in wall_type or "corner shower wall kit" in wall_type):
                         install_match = True
 
-                    # Brand/Family matching
-                    brand_family_match = brand_family_match_func(base_brand, base_family, wall_brand, wall_family)
+                    # Brand matching (family matching is not required for walls)
+                    brand_match = True
+                    if base_brand and wall_brand:
+                        base_brand_clean = str(base_brand).strip() if base_brand is not None else ""
+                        wall_brand_clean = str(wall_brand).strip() if wall_brand is not None else ""
+                        brand_match = (base_brand_clean == wall_brand_clean)
                     
                     # Series matching
                     series_match = series_compatible(base_series, wall_series)
 
                     logger.debug(f"    Type match: {type_match}")
                     logger.debug(f"    Install match: {install_match}")
-                    logger.debug(f"    Brand/family match: {brand_family_match}")
+                    logger.debug(f"    Brand match: {brand_match}")
                     logger.debug(f"    Series match: {series_match}")
 
-                    if not (type_match and install_match and brand_family_match and series_match):
+                    if not (type_match and install_match and brand_match and series_match):
                         logger.debug(f"    ❌ Skipping wall {wall_sku} - basic criteria not met")
                         continue
 
@@ -191,7 +195,7 @@ def find_base_compatibilities(data, base_info):
                     # Nominal match
                     if (_safe_notna(base_nominal) and _safe_notna(wall_nominal) and 
                         base_nominal == wall_nominal and wall_cut_to_size != "yes"):
-                        logger.info(f"✅ Matched exact nominal wall: {wall_sku} - {wall.get('Name', '')}")
+                        logger.info(f"✅ Matched exact nominal wall: {wall_sku} - {wall.get('Product Name', '')}")
                         wall_dict = wall.to_dict()
                         wall_dict["category"] = "Walls"
                         compatible_walls.append(wall_dict)
@@ -208,7 +212,7 @@ def find_base_compatibilities(data, base_info):
                         base_width_val = float(base_width_actual) if _safe_notna(base_width_actual) else 0
                         
                         if (wall_length_val >= base_length_val and wall_width_val >= base_width_val):
-                            logger.info(f"✅ Matched cut-to-size wall: {wall_sku} - {wall.get('Name', '')}")
+                            logger.info(f"✅ Matched cut-to-size wall: {wall_sku} - {wall.get('Product Name', '')}")
                             wall_dict = wall.to_dict()
                             wall_dict["category"] = "Walls"
                             compatible_walls.append(wall_dict)
