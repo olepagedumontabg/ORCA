@@ -702,15 +702,11 @@ function compatibilityApp() {
         /**
          * Format a product display name
          * @param {object} product - The product object
-         * @returns {string} The formatted name with dimensions
+         * @returns {string} The product name as-is
          */
         formatProductName(product) {
             if (!product) return '';
-            let name = product.name || '';
-            if (product.nominal_dimensions) {
-                name += ` (${product.nominal_dimensions})`;
-            }
-            return name;
+            return product.name || '';
         },
         
         /**
