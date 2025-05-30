@@ -592,6 +592,10 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     # If we passed all restrictions and brands match, we're compatible
     if base_brand == wall_brand:
         return True
+    
+    # Allow Neptune bases to match with Maax walls
+    if base_brand == "neptune" and wall_brand == "maax":
+        return True
 
     # Default case - no match
     return False
