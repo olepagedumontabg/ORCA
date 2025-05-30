@@ -150,88 +150,162 @@ function selectSuggestionDirect(suggestion, index) {
         
         <section id="compatibility" class="mt-8 bg-white shadow sm:rounded-lg">
             <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Compatibility Logic</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Product Compatibility Logic</h2>
                 <p class="text-gray-600 mb-4">
-                    The compatibility logic is the core of the application. It determines which products are compatible with each other
-                    based on multiple factors.
+                    The compatibility system uses sophisticated algorithms to match products based on dimensions, series compatibility,
+                    brand relationships, and specific business rules for each product category. The system supports bidirectional
+                    compatibility searches.
                 </p>
                 
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Compatibility Factors:</h3>
-                <table class="doc-table mb-4">
-                    <thead>
-                        <tr>
-                            <th>Factor</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Dimensions</td>
-                            <td>Products must have matching dimensions (width, height, depth) where applicable</td>
-                        </tr>
-                        <tr>
-                            <td>Series Compatibility</td>
-                            <td>Some series are specifically designed to work together</td>
-                        </tr>
-                        <tr>
-                            <td>Brand/Family Matching</td>
-                            <td>Different rules apply for same-brand vs cross-brand compatibility</td>
-                        </tr>
-                        <tr>
-                            <td>Installation Type</td>
-                            <td>For bathtubs, specific installation types may require specific compatible doors</td>
-                        </tr>
-                        <tr>
-                            <td>Product Type</td>
-                            <td>Certain product categories have specific compatibility rules</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Shower Base Compatibility</h3>
+                <p class="text-gray-600 mb-4">
+                    When searching for a shower base, the system finds compatible shower doors, shower screens, walls, and return panels.
+                </p>
                 
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Compatibility Code Examples:</h3>
+                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Doors:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Dimensional Match:</strong> Base max door width must be between door's minimum and maximum width</li>
+                    <li><strong>Installation Type:</strong> Only alcove and corner bases are compatible with doors</li>
+                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
+                    <li><strong>Door Type Validation:</strong> Only approved door types (Pivot, Sliding, Bypass) are considered</li>
+                </ul>
                 
-                <h4 class="text-md font-medium text-gray-800 mb-1">Series Compatibility:</h4>
-                <div class="code-block text-sm text-gray-800 mb-4">
-def series_compatible(base_series, compare_series):
-    """Check if two series are compatible"""
-    if not base_series or not compare_series:
-        return True  # Handle null values
-        
-    # Same series are always compatible
-    if base_series.lower() == compare_series.lower():
-        return True
-        
-    # Known compatible series pairs
-    compatible_pairs = [
-        # Each pair represents compatible series
-        ['Collection', 'MAAX'],
-        ['Professional', 'Collection'],
-        # More pairs...
-    ]
-    
-    # Check if the pair exists in either direction
-    for pair in compatible_pairs:
-        if (base_series.lower() == pair[0].lower() and compare_series.lower() == pair[1].lower()) or \
-           (base_series.lower() == pair[1].lower() and compare_series.lower() == pair[0].lower()):
-            return True
-    
-    return False</div>
+                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Screens:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Width Calculation:</strong> Max Door Width - Fixed Panel Width must be > 22 inches</li>
+                    <li><strong>Installation Type:</strong> Compatible with both alcove and corner bases</li>
+                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
+                </ul>
                 
-                <h4 class="text-md font-medium text-gray-800 mb-1">Bathtub Compatibility Logic:</h4>
-                <div class="code-block text-sm text-gray-800 mb-4">
-def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family):
-    """Special brand/family matching rules for bathtubs"""
-    # Same brand products follow different rules than cross-brand
-    if base_brand and wall_brand and base_brand.lower() == wall_brand.lower():
-        # For same brand, family must also match if both have families
-        if base_family and wall_family:
-            return base_family.lower() == wall_family.lower()
-        return True  # If either doesn't have family, they're compatible
-    
-    # Cross-brand compatibility follows different rules
-    # ... additional cross-brand logic
-    
-    return False</div>
+                <h4 class="text-md font-medium text-gray-800 mb-2">Walls:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Brand/Family Match:</strong> Uses brand family matching logic</li>
+                    <li><strong>Nominal Dimensions:</strong> Exact match preferred for shower-type walls</li>
+                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
+                    <li><strong>Special Rules:</strong> "utile" and "nextile" families have specific base family requirements</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Bathtub Compatibility</h3>
+                <p class="text-gray-600 mb-4">
+                    Bathtub compatibility includes tub doors, tub screens, and walls with specific dimensional matching.
+                </p>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Tub Doors:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Installation Requirement:</strong> Only alcove bathtubs are compatible with doors</li>
+                    <li><strong>Dimensional Match:</strong> Tub max door width must be between door's minimum and maximum width</li>
+                    <li><strong>Series Compatibility:</strong> Must pass bathtub series compatibility rules</li>
+                </ul>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Tub Screens:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Installation Requirement:</strong> Only alcove bathtubs are compatible with screens</li>
+                    <li><strong>Width Calculation:</strong> Tub Max Door Width - Screen Fixed Panel Width must be > 22 inches</li>
+                    <li><strong>Series Compatibility:</strong> Must pass bathtub series compatibility rules</li>
+                </ul>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Walls:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Exact Nominal Match:</strong> Priority given to walls with exact nominal dimensions</li>
+                    <li><strong>Cut-to-Size Walls:</strong> For walls marked "Cut to Size = Yes", finds closest dimensions that are larger than tub</li>
+                    <li><strong>Family Grouping:</strong> Cut walls are grouped by family and closest match per family is selected</li>
+                    <li><strong>Brand/Family Rules:</strong> Special matching rules for bathtub brand/family combinations</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Shower Compatibility</h3>
+                <p class="text-gray-600 mb-4">
+                    Shower units are compatible with doors based on dimensional and series matching.
+                </p>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Doors:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Dimensional Match:</strong> Shower max door width must be between door's minimum and maximum width</li>
+                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
+                    <li><strong>Installation Match:</strong> Shower installation type must match door requirements</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Tub Shower Compatibility</h3>
+                <p class="text-gray-600 mb-4">
+                    Tub showers use similar logic to regular showers but with specific tub shower requirements.
+                </p>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Bidirectional Screen Compatibility</h3>
+                <p class="text-gray-600 mb-4">
+                    The system supports reverse compatibility searches for screens to find compatible bases/tubs.
+                </p>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Screen → Shower Base:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Width Calculation:</strong> Base Max Door Width - Screen Fixed Panel Width must be > 22 inches</li>
+                    <li><strong>Installation Types:</strong> Finds alcove and corner bases</li>
+                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
+                </ul>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Tub Screen → Bathtub:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Width Calculation:</strong> Tub Max Door Width - Screen Fixed Panel Width must be > 22 inches</li>
+                    <li><strong>Series Compatibility:</strong> Must pass bathtub series compatibility rules</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Series Compatibility Rules</h3>
+                <p class="text-gray-600 mb-4">
+                    Series compatibility is a core business rule that determines which product lines work together.
+                </p>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">General Rules:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Same Series:</strong> Products with identical series are always compatible</li>
+                    <li><strong>Empty Series:</strong> If either product has no series, they are considered compatible</li>
+                    <li><strong>Retail Series:</strong> Compatible with Retail, MAAX, and Swan series</li>
+                    <li><strong>MAAX Series:</strong> Compatible with Retail, MAAX, Collection, and Professional</li>
+                    <li><strong>Collection/Professional:</strong> Compatible with MAAX, Collection, and Professional</li>
+                    <li><strong>Swan Series:</strong> Only compatible with Swan and Retail</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Brand/Family Matching Logic</h3>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Same Brand Rules:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li>If both products have the same brand, family must also match (if both have families)</li>
+                    <li>Products without family information are considered compatible within the same brand</li>
+                </ul>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Cross-Brand Rules:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Neptune ↔ Maax:</strong> Special compatibility rule allowing Neptune bases with Maax walls</li>
+                    <li><strong>w&b Family:</strong> Products with "w&b" family only match with other "w&b" family products</li>
+                    <li><strong>utile/nextile Families:</strong> Special wall families with specific base family requirements</li>
+                </ul>
+                
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Advanced Features</h3>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Combo Products:</h4>
+                <p class="text-gray-600 mb-4">
+                    Some doors are sold with return panels as combinations. The system handles these by:
+                </p>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li>Combining door and return panel information</li>
+                    <li>Using door properties for compatibility checking</li>
+                    <li>Displaying both components in results</li>
+                    <li>Proper ranking based on door component</li>
+                </ul>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Blacklist/Whitelist System:</h4>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><strong>Blacklist:</strong> Prevents specific SKU pairs from being shown as compatible</li>
+                    <li><strong>Whitelist:</strong> Overrides incompatibility reasons for specific SKU pairs</li>
+                    <li><strong>Order Agnostic:</strong> Works regardless of search direction (A→B or B→A)</li>
+                </ul>
+                
+                <h4 class="text-md font-medium text-gray-800 mb-2">Incompatibility Reasons:</h4>
+                <p class="text-gray-600 mb-4">
+                    When products cannot be matched, the system provides specific reasons:
+                </p>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li>"Doors can't fit" - when dimensional requirements aren't met</li>
+                    <li>"Walls can't fit" - when wall dimensions are incompatible</li>
+                    <li>Custom messages from the data for specific scenarios</li>
+                </ul>
             </div>
         </section>
         
