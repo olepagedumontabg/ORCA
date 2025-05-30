@@ -78,7 +78,7 @@ def find_shower_screen_compatibilities(data, screen_info):
                             
                             # Check compatibility: Max Door Width - Fixed Panel Width > 22
                             # Compatible with both Alcove and Corner bases
-                            from base_compatibility import series_compatible
+                            from logic.base_compatibility import series_compatible
                             base_compatible = (
                                 width_difference > 22 and
                                 series_compatible(base_series, screen_series) and
