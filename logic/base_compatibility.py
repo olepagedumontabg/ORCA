@@ -126,14 +126,14 @@ def find_base_compatibilities(data, base_info):
                     "alcove" in base_install and pd.notna(base_width)
                     and pd.notna(door_min_width) and pd.notna(door_max_width)
                     and door_min_width <= base_width <= door_max_width
-                    and series_compatible(base_series, door_series))
+                    and series_compatible(base_series, door_series, base_info.get("Brand"), door_brand))
 
                 logger.debug(f"    Alcove match: {alcove_match}")
                 logger.debug(
                     f"    Door width range: {door_min_width} <= {base_width} <= {door_max_width}: {door_min_width <= base_width <= door_max_width if pd.notna(base_width) and pd.notna(door_min_width) and pd.notna(door_max_width) else 'Cannot compare'}"
                 )
                 logger.debug(
-                    f"    Series match: {series_compatible(base_series, door_series)}"
+                    f"    Series match: {series_compatible(base_series, door_series, base_info.get('Brand'), door_brand)}"
                 )
 
                 if alcove_match:
@@ -164,7 +164,7 @@ def find_base_compatibilities(data, base_info):
                     and pd.notna(base_width) and pd.notna(door_min_width)
                     and pd.notna(door_max_width)
                     and door_min_width <= base_width <= door_max_width
-                    and series_compatible(base_series, door_series))
+                    and series_compatible(base_series, door_series, base_info.get("Brand"), door_brand))
 
                 logger.debug(f"    Corner match: {corner_match}")
                 if corner_match:
@@ -245,6 +245,7 @@ def find_base_compatibilities(data, base_info):
 
             for _, enclosure in enclosures_df.iterrows():
                 enc_series = enclosure.get("Series")
+                enc_brand = enclosure.get("Brand")
                 enc_nominal = enclosure.get("Nominal Dimensions")
                 enc_door_width = enclosure.get("Door Width")
                 enc_return_width = enclosure.get("Return Panel Width")
@@ -266,7 +267,7 @@ def find_base_compatibilities(data, base_info):
                     logger.debug(f"    ✗ Skipping enclosure with no ID")
                     continue
 
-                series_match = series_compatible(base_series, enc_series)
+                series_match = series_compatible(base_series, enc_series, base_info.get("Brand"), enc_brand)
                 logger.debug(f"    Series match: {series_match}")
 
                 if not series_match:
@@ -361,7 +362,7 @@ def find_base_compatibilities(data, base_info):
                         # Compatible with both Alcove and Corner bases
                         screen_compatible = (
                             width_difference > 22 and
-                            series_compatible(base_series, screen_series) and
+                            series_compatible(base_series, screen_series, base_info.get("Brand"), screen_brand) and
                             ("alcove" in base_install or "corner" in base_install)
                         )
                         
@@ -550,13 +551,15 @@ def find_base_compatibilities(data, base_info):
         return []
 
 
-def series_compatible(base_series, compare_series):
+def series_compatible(base_series, compare_series, base_brand=None, compare_brand=None):
     """
     Check if two series are compatible based on business rules.
 
     Args:
         base_series (str): Series of the base product
         compare_series (str): Series of the product to compare with
+        base_brand (str): Brand of the base product (optional)
+        compare_brand (str): Brand of the compare product (optional)
 
     Returns:
         bool: True if the series are compatible, False otherwise
@@ -564,10 +567,18 @@ def series_compatible(base_series, compare_series):
     # Convert to strings and normalize
     base_series = str(base_series).strip() if base_series else ""
     compare_series = str(compare_series).strip() if compare_series else ""
+    base_brand = str(base_brand).strip().lower() if base_brand else ""
+    compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
 
-    # If either is empty, they're not compatible
+    # Special rule: Dreamline doors are compatible with Maax and Neptune bases regardless of series
+    if compare_brand == "dreamline" and base_brand in ["maax", "neptune"]:
+        return True
+    if base_brand == "dreamline" and compare_brand in ["maax", "neptune"]:
+        return True
+
+    # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
     if not base_series or not compare_series:
-        return False
+        return True
 
     # Same series are always compatible
     if base_series.lower() == compare_series.lower():
