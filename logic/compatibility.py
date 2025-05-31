@@ -777,6 +777,7 @@ def find_compatible_products(sku):
             door_max_width = product_info.get("Maximum Width")
             door_max_height = product_info.get("Maximum Height")
             door_series = product_info.get("Series")
+            door_brand = product_info.get("Brand")
             door_has_return = product_info.get("Has Return Panel") == "Yes"
             door_family = product_info.get("Family")
             door_type = product_info.get("Type", "").lower()
@@ -869,6 +870,7 @@ def find_compatible_products(sku):
                     base_width = base.get("Max Door Width")
                     base_install = str(base.get("Installation", "")).lower()
                     base_series = base.get("Series")
+                    base_brand = base.get("Brand")
                     base_fit_return = base.get("Fits Return Panel Size")
                     base_id = str(base.get("Unique ID", "")).strip()
 
@@ -879,7 +881,7 @@ def find_compatible_products(sku):
                         and pd.notna(door_max_width)
                         and door_min_width <= base_width <= door_max_width
                         and base_compatibility.series_compatible(
-                            base_series, door_series))
+                            base_series, door_series, base_brand, door_brand))
 
                     # Match criteria for corner installation with return panel
                     corner_match = (
@@ -888,7 +890,7 @@ def find_compatible_products(sku):
                         and pd.notna(door_max_width)
                         and door_min_width <= base_width <= door_max_width
                         and base_compatibility.series_compatible(
-                            base_series, door_series))
+                            base_series, door_series, base_brand, door_brand))
 
                     if alcove_match or corner_match:
                         # Format base data for the frontend
