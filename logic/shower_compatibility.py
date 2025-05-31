@@ -11,24 +11,35 @@ from logic import image_handler
 
 logger = logging.getLogger(__name__)
 
-def series_compatible(base_series, compare_series):
+def series_compatible(base_series, compare_series, base_brand=None, compare_brand=None):
     """
     Check if two series are compatible based on business rules.
     
     Args:
         base_series (str): Series of the base product
         compare_series (str): Series of the product to compare with
+        base_brand (str): Brand of the base product (optional)
+        compare_brand (str): Brand of the compare product (optional)
         
     Returns:
         bool: True if the series are compatible, False otherwise
     """
     base_series = str(base_series).strip() if base_series else ""
     compare_series = str(compare_series).strip() if compare_series else ""
+    base_brand = str(base_brand).strip().lower() if base_brand else ""
+    compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
 
     if not base_series or not compare_series:
         return False
     if base_series.lower() == compare_series.lower():
         return True
+    
+    # Special rule: Dreamline shower doors can work with Maax and Neptune bases regardless of series
+    if compare_brand == "dreamline" and base_brand in ["maax", "neptune"]:
+        return True
+    if base_brand == "dreamline" and compare_brand in ["maax", "neptune"]:
+        return True
+    
     if base_series == "Retail":
         return compare_series in ["Retail", "MAAX"]
     if base_series == "MAAX":
@@ -92,6 +103,7 @@ def find_shower_compatibilities(data, shower_info):
             door_max_width = door.get("Maximum Width")
             door_height = door.get("Maximum Height") 
             door_series = door.get("Series")
+            door_brand = door.get("Brand")
             door_id = str(door.get("Unique ID", "")).strip()
 
             if not door_id:
@@ -104,7 +116,7 @@ def find_shower_compatibilities(data, shower_info):
                 pd.notna(door_min_width) and pd.notna(door_max_width) and pd.notna(door_height) and
                 door_min_width <= shower_width <= door_max_width and
                 door_height <= shower_height and
-                series_compatible(shower_series, door_series)
+                series_compatible(shower_series, door_series, shower_info.get("Brand"), door_brand)
             ):
                 logger.debug(f"✅ Found compatible door: {door_id} - {door.get('Product Name')}")
                 

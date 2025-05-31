@@ -367,7 +367,7 @@ def find_base_compatibilities(data, base_info):
                         )
                         
                         logger.debug(f"    Screen compatible: {screen_compatible}")
-                        logger.debug(f"    Series match: {series_compatible(base_series, screen_series)}")
+                        logger.debug(f"    Series match: {series_compatible(base_series, screen_series, base_info.get('Brand'), screen_brand)}")
                         logger.debug(f"    Installation type valid: {'alcove' in base_install or 'corner' in base_install}")
                         
                         if screen_compatible and screen_id:
@@ -422,14 +422,14 @@ def find_base_compatibilities(data, base_info):
                 alcove_match = (
                     "alcove shower" in wall_type
                     and (base_install in ["alcove", "alcove or corner"])
-                    and series_compatible(base_series, wall_series)
+                    and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
                     and brand_family_match(base_brand, base_family, wall_brand,
                                            wall_family))
 
                 corner_match = (
                     "corner shower" in wall_type
                     and (base_install in ["corner", "alcove or corner"])
-                    and series_compatible(base_series, wall_series)
+                    and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
                     and brand_family_match(base_brand, base_family, wall_brand,
                                            wall_family))
 
