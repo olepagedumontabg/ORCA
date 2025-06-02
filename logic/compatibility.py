@@ -922,6 +922,8 @@ def find_compatible_products(sku):
                             base_data.get("Max Door Width", ""),
                             "installation":
                             base_data.get("Installation", ""),
+                            "material":
+                            base_data.get("Material", ""),
                             "product_page_url":
                             product_info.get("Product Page URL", "")
                             if isinstance(product_info, dict) else
@@ -1293,6 +1295,8 @@ def find_compatible_products(sku):
                             base_data.get("Max Door Width", ""),
                             "installation":
                             base_data.get("Installation", ""),
+                            "material":
+                            base_data.get("Material", ""),
                             "product_page_url":
                             product_info.get("Product Page URL", "")
                             if isinstance(product_info, dict) else
