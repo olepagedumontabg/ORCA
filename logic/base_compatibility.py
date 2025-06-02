@@ -88,6 +88,8 @@ def find_base_compatibilities(data, base_info):
 
         # Track matches for each category
         matching_doors = []
+        alcove_doors = []
+        corner_doors = []
         matching_walls = []
         matching_screens = []
 
@@ -152,9 +154,13 @@ def find_base_compatibilities(data, base_info):
                             "_ranking": door.get("Ranking", 999),
                             "is_combo": False
                         }
-                        matching_doors.append(door_product)
-                        logger.debug(
-                            f"    ✓ Added door {door_id} to matching doors")
+                        # Check if base supports both alcove and corner - if so, separate them
+                        if "alcove" in base_install and "corner" in base_install:
+                            alcove_doors.append(door_product)
+                            logger.debug(f"    ✓ Added door {door_id} to alcove doors")
+                        else:
+                            matching_doors.append(door_product)
+                            logger.debug(f"    ✓ Added door {door_id} to matching doors")
 
                 # Corner installation match with return panel
                 corner_match = (
@@ -232,10 +238,13 @@ def find_base_compatibilities(data, base_info):
                                         "product_page_url": panel.get("Product Page URL", "")
                                     }
                                 }
-                                matching_doors.append(combo_product)
-                                logger.debug(
-                                    f"      ✓ Added combo product {combo_id} to matching doors"
-                                )
+                                # Check if base supports both alcove and corner - if so, separate them
+                                if "alcove" in base_install and "corner" in base_install:
+                                    corner_doors.append(combo_product)
+                                    logger.debug(f"      ✓ Added combo product {combo_id} to corner doors")
+                                else:
+                                    matching_doors.append(combo_product)
+                                    logger.debug(f"      ✓ Added combo product {combo_id} to matching doors")
 
         # ---------- Enclosures ----------
         if 'Enclosures' in data and "corner" in base_install:
@@ -509,13 +518,26 @@ def find_base_compatibilities(data, base_info):
             })
         
         # Only add compatible products for categories without incompatibility reasons
-        if matching_doors and "Shower Doors" not in incompatibility_reasons:
-            # Sort the doors by ranking
-            sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
-            logger.debug(f"Adding {len(sorted_doors)} shower doors to results")
-            for door in sorted_doors[:3]:  # Log first few doors
-                logger.debug(f"  Door: {door.get('sku')} - {door.get('name')} (combo: {door.get('is_combo', False)})")
-            compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
+        if "Shower Doors" not in incompatibility_reasons:
+            # Check if we should split doors into separate alcove and corner categories
+            if alcove_doors or corner_doors:
+                # Split mode: separate categories for alcove and corner doors
+                if alcove_doors:
+                    sorted_alcove_doors = sorted(alcove_doors, key=lambda x: x.get('_ranking', 999))
+                    logger.debug(f"Adding {len(sorted_alcove_doors)} alcove doors to results")
+                    compatible_products.append({"category": "Alcove Doors", "products": sorted_alcove_doors})
+                
+                if corner_doors:
+                    sorted_corner_doors = sorted(corner_doors, key=lambda x: x.get('_ranking', 999))
+                    logger.debug(f"Adding {len(sorted_corner_doors)} corner doors to results")
+                    compatible_products.append({"category": "Corner Doors", "products": sorted_corner_doors})
+            elif matching_doors:
+                # Regular mode: single category for all doors
+                sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
+                logger.debug(f"Adding {len(sorted_doors)} shower doors to results")
+                for door in sorted_doors[:3]:  # Log first few doors
+                    logger.debug(f"  Door: {door.get('sku')} - {door.get('name')} (combo: {door.get('is_combo', False)})")
+                compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
 
         if matching_screens:
             # Sort the screens by ranking
@@ -536,7 +558,7 @@ def find_base_compatibilities(data, base_info):
             logger.debug(f"Walls not added: matching_walls={len(matching_walls) if matching_walls else 0}, incompatibility={incompatibility_reasons.get('Walls', 'None')}")
 
         logger.debug(f"Final results summary:")
-        logger.debug(f"  Doors found: {len(matching_doors)}")
+        logger.debug(f"  Doors found: {len(matching_doors)} (regular), {len(alcove_doors)} (alcove), {len(corner_doors)} (corner)")
         logger.debug(f"  Screens found: {len(matching_screens)}")
         logger.debug(f"  Walls found: {len(matching_walls)}")
         logger.debug(f"  Incompatibility reasons: {incompatibility_reasons}")
