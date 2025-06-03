@@ -90,7 +90,6 @@ def find_base_compatibilities(data, base_info):
         matching_doors = []
         alcove_doors = []
         corner_doors = []
-        matching_enclosures = []
         matching_walls = []
         matching_screens = []
 
@@ -339,9 +338,9 @@ def find_base_compatibilities(data, base_info):
                         "_ranking": enclosure.get("Ranking", 999),
                         "is_combo": False
                     }
-                    matching_enclosures.append(enclosure_product)
+                    corner_doors.append(enclosure_product)
                     logger.debug(
-                        f"    ✓ Added enclosure {enc_id} to matching enclosures")
+                        f"    ✓ Added enclosure {enc_id} to corner doors")
 
         # ---------- Shower Screens ----------
         if 'Shower Screens' in data:
@@ -548,12 +547,6 @@ def find_base_compatibilities(data, base_info):
                 logger.debug(f"  Screen: {screen.get('sku')} - {screen.get('name')}")
             compatible_products.append({"category": "Shower Screens", "products": sorted_screens})
 
-        if matching_enclosures:
-            # Sort the enclosures by ranking
-            sorted_enclosures = sorted(matching_enclosures, key=lambda x: x.get('_ranking', 999))
-            logger.debug(f"Adding {len(sorted_enclosures)} enclosures to results")
-            compatible_products.append({"category": "Enclosures", "products": sorted_enclosures})
-
         if matching_walls and "Walls" not in incompatibility_reasons:
             # Sort the walls by ranking
             sorted_walls = sorted(matching_walls, key=lambda x: x.get('_ranking', 999))
@@ -566,7 +559,6 @@ def find_base_compatibilities(data, base_info):
 
         logger.debug(f"Final results summary:")
         logger.debug(f"  Doors found: {len(matching_doors)} (regular), {len(alcove_doors)} (alcove), {len(corner_doors)} (corner)")
-        logger.debug(f"  Enclosures found: {len(matching_enclosures)}")
         logger.debug(f"  Screens found: {len(matching_screens)}")
         logger.debug(f"  Walls found: {len(matching_walls)}")
         logger.debug(f"  Incompatibility reasons: {incompatibility_reasons}")
