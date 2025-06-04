@@ -1245,7 +1245,7 @@ def find_compatible_products(sku):
 
                     # Check series compatibility
                     series_match = base_compatibility.series_compatible(
-                        base_series, wall_series)
+                        base_series, wall_series, base_brand, wall_brand)
 
                     # Skip if no brand or series match
                     if not (brand_match and series_match):
