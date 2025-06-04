@@ -590,10 +590,10 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
     base_brand = str(base_brand).strip().lower() if base_brand else ""
     compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
 
-    # Special rule: Dreamline doors are compatible with Maax and Neptune bases regardless of series
-    if compare_brand == "dreamline" and base_brand in ["maax", "neptune"]:
+    # Special rule: Dreamline doors are compatible with Maax, Neptune and Swan bases regardless of series
+    if compare_brand == "dreamline" and base_brand in ["maax", "neptune", "swan"]:
         return True
-    if base_brand == "dreamline" and compare_brand in ["maax", "neptune"]:
+    if base_brand == "dreamline" and compare_brand in ["maax", "neptune", "swan"]:
         return True
 
     # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
