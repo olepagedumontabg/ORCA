@@ -597,6 +597,12 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
         return True
     if base_brand == "dreamline" and compare_brand in ["maax", "neptune"]:
         return True
+    
+    # Special rule: Swan products are compatible with MAAX, Dreamline and Neptune regardless of series
+    if compare_brand == "swan" and base_brand in ["maax", "dreamline", "neptune"]:
+        return True
+    if base_brand == "swan" and compare_brand in ["maax", "dreamline", "neptune"]:
+        return True
 
     # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
     if not base_series or not compare_series:
