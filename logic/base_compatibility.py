@@ -264,8 +264,8 @@ def find_base_compatibilities(data, base_info):
                                         "product_page_url": panel.get("Product Page URL", "")
                                     }
                                 }
-                                # Check if base supports both alcove and corner - if so, separate them
-                                if "alcove" in base_install and "corner" in base_install:
+                                # For corner-compatible doors, add to corner_doors array
+                                if "corner" in base_install:
                                     corner_doors.append(combo_product)
                                     logger.debug(f"      ✓ Added combo product {combo_id} to corner doors")
                                 else:
@@ -543,18 +543,30 @@ def find_base_compatibilities(data, base_info):
         
         # Only add compatible products for categories without incompatibility reasons
         if "Shower Doors" not in incompatibility_reasons:
-            # Check if we should split doors into separate alcove and corner categories
+            # Check if base supports both alcove and corner installations
+            supports_both = "alcove" in base_install and "corner" in base_install
+            is_corner_only = "corner" in base_install and "alcove" not in base_install
+            
+            # Organize doors by type based on base installation type
             if alcove_doors or corner_doors:
-                # Split mode: separate categories for alcove and corner doors
+                # Split mode: separate categories with installation-specific names
                 if alcove_doors:
                     sorted_alcove_doors = sorted(alcove_doors, key=lambda x: x.get('_ranking', 999))
                     logger.debug(f"Adding {len(sorted_alcove_doors)} alcove doors to results")
-                    compatible_products.append({"category": "Alcove Doors", "products": sorted_alcove_doors})
+                    if supports_both:
+                        compatible_products.append({"category": "Doors for Alcove Installation", "products": sorted_alcove_doors})
+                    else:
+                        compatible_products.append({"category": "Alcove Doors", "products": sorted_alcove_doors})
                 
                 if corner_doors:
                     sorted_corner_doors = sorted(corner_doors, key=lambda x: x.get('_ranking', 999))
                     logger.debug(f"Adding {len(sorted_corner_doors)} corner doors to results")
-                    compatible_products.append({"category": "Corner Doors", "products": sorted_corner_doors})
+                    if supports_both:
+                        compatible_products.append({"category": "Doors + Return Panels for Corner Installation", "products": sorted_corner_doors})
+                    elif is_corner_only:
+                        compatible_products.append({"category": "Doors + Return Panels", "products": sorted_corner_doors})
+                    else:
+                        compatible_products.append({"category": "Corner Doors", "products": sorted_corner_doors})
             elif matching_doors:
                 # Regular mode: single category for all doors
                 sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
