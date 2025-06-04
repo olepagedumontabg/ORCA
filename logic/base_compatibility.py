@@ -590,10 +590,8 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
     base_brand = str(base_brand).strip().lower() if base_brand else ""
     compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
 
-    # Special rule: Dreamline doors are compatible with Maax, Neptune and Swan bases regardless of series
-    if compare_brand == "dreamline" and base_brand in ["maax", "neptune", "swan"]:
-        return True
-    if base_brand == "dreamline" and compare_brand in ["maax", "neptune", "swan"]:
+    # Universal compatibility: Dreamline and Swan are compatible with any series
+    if compare_brand in ["dreamline", "swan"] or base_brand in ["dreamline", "swan"]:
         return True
 
     # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
@@ -650,6 +648,10 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     base_family = str(base_family).strip().lower() if base_family else ""
     wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
+
+    # Universal compatibility: Dreamline and Swan are compatible with anything
+    if base_brand in ["dreamline", "swan"] or wall_brand in ["dreamline", "swan"]:
+        return True
 
     # First check for specifically restricted families
     if base_family == "olio" and wall_family != "olio":

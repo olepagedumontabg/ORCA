@@ -72,6 +72,10 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
 
+    # Universal compatibility: Dreamline and Swan are compatible with anything
+    if base_brand in ["dreamline", "swan"] or wall_brand in ["dreamline", "swan"]:
+        return True
+
     # First check for specifically restricted families
     if base_family == "olio" and wall_family != "olio":
         return False
@@ -98,9 +102,6 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
 
     # Different brand checks
     if base_brand == "maax" and wall_brand != "maax":
-        return False
-
-    if base_brand == "swan" and wall_brand != "swan":
         return False
 
     if base_brand == "neptune" and wall_brand != "neptune":

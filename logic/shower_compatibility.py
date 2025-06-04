@@ -34,10 +34,8 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
     if base_series.lower() == compare_series.lower():
         return True
     
-    # Special rule: Dreamline shower doors can work with Maax and Neptune bases regardless of series
-    if compare_brand == "dreamline" and base_brand in ["maax", "neptune"]:
-        return True
-    if base_brand == "dreamline" and compare_brand in ["maax", "neptune"]:
+    # Universal compatibility: Dreamline and Swan are compatible with any series
+    if compare_brand in ["dreamline", "swan"] or base_brand in ["dreamline", "swan"]:
         return True
     
     if base_series == "Retail":
