@@ -205,31 +205,21 @@ def find_base_compatibilities(data, base_info):
                                                  and door_family == panel_family
                                                  and door_id and panel_id)
                             
-                            # Fallback matching: for corner bases without return panel size info,
-                            # allow combo generation based on dimensional compatibility
-                            # Use more flexible matching: family match, series match, or brand match
-                            door_brand_clean = str(door_brand).strip().lower() if door_brand else ""
-                            panel_brand_clean = str(panel.get("Brand", "")).strip().lower()
-                            door_series_clean = str(door_series).strip().lower() if door_series else ""
-                            panel_series_clean = str(panel.get("Series", "")).strip().lower()
-                            door_family_clean = str(door_family).strip().lower() if door_family else ""
-                            panel_family_clean = str(panel_family).strip().lower() if panel_family else ""
+                            # Fallback matching: for corner bases without return panel size info
+                            # For pure corner bases, be very flexible with family matching
+                            # This allows corner doors to work with any compatible return panel
+                            is_pure_corner = "corner" in base_install and "alcove" not in base_install
                             
-                            # Match if any of these conditions are true:
-                            # 1. Family match
-                            # 2. Series match 
-                            # 3. Brand match (for corner bases, allow cross-brand compatibility)
-                            # 4. For pure corner bases, allow any compatible return panel
-                            compatibility_match = (
-                                (door_family_clean and panel_family_clean and door_family_clean == panel_family_clean) or
-                                (door_series_clean and panel_series_clean and door_series_clean == panel_series_clean) or
-                                (door_brand_clean and panel_brand_clean and door_brand_clean == panel_brand_clean) or
-                                ("corner" in base_install and not "alcove" in base_install)  # Pure corner bases
-                            )
+                            if is_pure_corner:
+                                # For pure corner bases, allow any family combination
+                                family_compatible = True
+                            else:
+                                # For mixed bases, use stricter family matching
+                                family_compatible = door_family == panel_family
                             
                             fallback_panel_match = (not pd.notna(base_fit_return)
                                                    and "corner" in base_install
-                                                   and compatibility_match
+                                                   and family_compatible
                                                    and door_id and panel_id)
                             
                             panel_match = exact_panel_match or fallback_panel_match
