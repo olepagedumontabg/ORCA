@@ -92,6 +92,7 @@ def find_base_compatibilities(data, base_info):
         corner_doors = []
         matching_walls = []
         matching_screens = []
+        matching_enclosures = []
 
         # ---------- Doors ----------
         if 'Shower Doors' in data:
@@ -364,9 +365,9 @@ def find_base_compatibilities(data, base_info):
                         "_ranking": enclosure.get("Ranking", 999),
                         "is_combo": False
                     }
-                    corner_doors.append(enclosure_product)
+                    matching_enclosures.append(enclosure_product)
                     logger.debug(
-                        f"    ✓ Added enclosure {enc_id} to corner doors")
+                        f"    ✓ Added enclosure {enc_id} to matching enclosures")
 
         # ---------- Shower Screens ----------
         if 'Shower Screens' in data:
@@ -593,10 +594,32 @@ def find_base_compatibilities(data, base_info):
         else:
             logger.debug(f"Walls not added: matching_walls={len(matching_walls) if matching_walls else 0}, incompatibility={incompatibility_reasons.get('Walls', 'None')}")
 
+        if matching_enclosures:
+            # Check if base supports both alcove and corner installations
+            supports_both = "alcove" in base_install and "corner" in base_install
+            is_corner_only = "corner" in base_install and "alcove" not in base_install
+            
+            # Sort the enclosures by ranking
+            sorted_enclosures = sorted(matching_enclosures, key=lambda x: x.get('_ranking', 999))
+            logger.debug(f"Adding {len(sorted_enclosures)} enclosures to results")
+            for enclosure in sorted_enclosures[:3]:  # Log first few enclosures
+                logger.debug(f"  Enclosure: {enclosure.get('sku')} - {enclosure.get('name')}")
+            
+            # Use appropriate category name based on installation type
+            if supports_both:
+                category_name = "Enclosures for Corner Installation"
+            elif is_corner_only:
+                category_name = "Enclosures"
+            else:
+                category_name = "Enclosures"
+                
+            compatible_products.append({"category": category_name, "products": sorted_enclosures})
+
         logger.debug(f"Final results summary:")
         logger.debug(f"  Doors found: {len(matching_doors)} (regular), {len(alcove_doors)} (alcove), {len(corner_doors)} (corner)")
         logger.debug(f"  Screens found: {len(matching_screens)}")
         logger.debug(f"  Walls found: {len(matching_walls)}")
+        logger.debug(f"  Enclosures found: {len(matching_enclosures)}")
         logger.debug(f"  Incompatibility reasons: {incompatibility_reasons}")
         logger.debug(f"  Compatible products returned: {len(compatible_products)}")
 
