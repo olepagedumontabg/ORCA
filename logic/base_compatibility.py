@@ -425,47 +425,29 @@ def find_base_compatibilities(data, base_info):
                 wall_id = str(wall.get("Unique ID", "")).strip()
                 wall_name = wall.get("Product Name", "")
 
-                logger.debug(f"Checking wall {wall_id} ({wall_name})")
-                logger.debug(f"  Wall type: {wall_type}, Brand: {wall_brand}, Series: {wall_series}")
-                logger.debug(f"  Base install: {base_install}")
-
                 if not wall_id:
-                    logger.debug(f"  Skipping wall - no ID")
                     continue
-
-                # Check series compatibility (keeping cross-brand rules)
-                series_match = series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
-                logger.debug(f"  Series match: {series_match}")
-                
-                # Check brand/family compatibility (but don't require it for walls)
-                brand_match = brand_family_match(base_brand, base_family, wall_brand, wall_family)
-                logger.debug(f"  Brand/family match: {brand_match}")
-                
-                # For walls, accept if series compatible OR if restricted families match
-                # This allows cross-brand compatibility while respecting specific family restrictions
-                compatibility_check = series_match or brand_match
-                logger.debug(f"  Overall compatibility: {compatibility_check}")
 
                 alcove_match = (
                     "alcove shower" in wall_type
                     and (base_install in ["alcove", "alcove or corner"])
-                    and compatibility_check)
+                    and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
+                    and brand_family_match(base_brand, base_family, wall_brand,
+                                           wall_family))
 
                 corner_match = (
                     "corner shower" in wall_type
                     and (base_install in ["corner", "alcove or corner"])
-                    and compatibility_check)
-
-                logger.debug(f"  Alcove match: {alcove_match}, Corner match: {corner_match}")
+                    and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
+                    and brand_family_match(base_brand, base_family, wall_brand,
+                                           wall_family))
 
                 if not (alcove_match or corner_match):
-                    logger.debug(f"  Wall {wall_id} rejected - no type/install match")
                     continue
 
                 # ✅ Nominal match ONLY if Cut to Size is not Yes
                 if base_nominal == wall_nominal and wall_cut != "Yes":
                     nominal_matches.append(wall_id)
-                    logger.debug(f"  Added to nominal matches: {wall_id}")
 
                 # ✅ Cut to size candidate
                 elif wall_cut == "Yes" and pd.notna(base_length) and pd.notna(base_width_actual) \
@@ -477,14 +459,6 @@ def find_base_compatibilities(data, base_info):
                         "length":  wall_length,
                         "width":   wall_width
                     })
-                    logger.debug(f"  Added to cut candidates: {wall_id}")
-                
-                else:
-                    logger.debug(f"  Wall {wall_id} rejected - no dimensional match")
-                    logger.debug(f"    Base nominal: {base_nominal}, Wall nominal: {wall_nominal}")
-                    logger.debug(f"    Wall cut to size: {wall_cut}")
-                    logger.debug(f"    Base length: {base_length}, Base width: {base_width_actual}")
-                    logger.debug(f"    Wall length: {wall_length}, Wall width: {wall_width}")
                 
 
 
@@ -622,12 +596,6 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
     if compare_brand == "dreamline" and base_brand in ["maax", "neptune"]:
         return True
     if base_brand == "dreamline" and compare_brand in ["maax", "neptune"]:
-        return True
-    
-    # Special rule: Swan products are compatible with MAAX, Dreamline and Neptune regardless of series
-    if compare_brand == "swan" and base_brand in ["maax", "dreamline", "neptune"]:
-        return True
-    if base_brand == "swan" and compare_brand in ["maax", "dreamline", "neptune"]:
         return True
 
     # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
