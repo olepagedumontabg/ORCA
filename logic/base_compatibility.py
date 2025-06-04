@@ -615,6 +615,29 @@ def find_base_compatibilities(data, base_info):
                 
             compatible_products.append({"category": category_name, "products": sorted_enclosures})
 
+        # Sort categories in the specified order
+        category_order = [
+            "Shower Doors",
+            "Doors for Alcove Installation", 
+            "Doors + Return Panels",
+            "Doors + Return Panels for Corner Installation",
+            "Enclosures",
+            "Enclosures for Corner Installation",
+            "Screens",
+            "Walls"
+        ]
+        
+        def get_category_priority(category_name):
+            """Get the priority order for a category, with lower numbers appearing first"""
+            try:
+                return category_order.index(category_name)
+            except ValueError:
+                # If category not in predefined order, put it at the end
+                return len(category_order)
+        
+        # Sort the compatible_products list by category priority
+        compatible_products.sort(key=lambda x: get_category_priority(x.get("category", "")))
+
         logger.debug(f"Final results summary:")
         logger.debug(f"  Doors found: {len(matching_doors)} (regular), {len(alcove_doors)} (alcove), {len(corner_doors)} (corner)")
         logger.debug(f"  Screens found: {len(matching_screens)}")
@@ -622,6 +645,7 @@ def find_base_compatibilities(data, base_info):
         logger.debug(f"  Enclosures found: {len(matching_enclosures)}")
         logger.debug(f"  Incompatibility reasons: {incompatibility_reasons}")
         logger.debug(f"  Compatible products returned: {len(compatible_products)}")
+        logger.debug(f"  Category order: {[x.get('category') for x in compatible_products]}")
 
         return compatible_products
 

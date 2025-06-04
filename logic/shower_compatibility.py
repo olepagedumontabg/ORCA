@@ -153,4 +153,20 @@ def find_shower_compatibilities(data, shower_info):
         sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Shower Doors", "products": sorted_doors})
 
+    # Sort categories in the specified order
+    category_order = [
+        "Shower Doors"
+    ]
+    
+    def get_category_priority(category_name):
+        """Get the priority order for a category, with lower numbers appearing first"""
+        try:
+            return category_order.index(category_name)
+        except ValueError:
+            # If category not in predefined order, put it at the end
+            return len(category_order)
+    
+    # Sort the results list by category priority
+    results.sort(key=lambda x: get_category_priority(x.get("category", "")))
+
     return results
