@@ -425,24 +425,41 @@ def find_base_compatibilities(data, base_info):
                 wall_id = str(wall.get("Unique ID", "")).strip()
                 wall_name = wall.get("Product Name", "")
 
+                logger.debug(f"Checking wall {wall_id} ({wall_name})")
+                logger.debug(f"  Wall type: {wall_type}, Brand: {wall_brand}, Series: {wall_series}")
+                logger.debug(f"  Base install: {base_install}")
+
                 if not wall_id:
+                    logger.debug(f"  Skipping wall - no ID")
                     continue
+
+                # Check series compatibility first
+                series_match = series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
+                logger.debug(f"  Series match: {series_match}")
+                
+                # Check brand/family compatibility
+                brand_match = brand_family_match(base_brand, base_family, wall_brand, wall_family)
+                logger.debug(f"  Brand/family match: {brand_match}")
+                
+                # For walls, we need either series compatibility OR brand/family match
+                # This allows Swan cross-brand compatibility to work properly
+                compatibility_check = series_match or brand_match
+                logger.debug(f"  Overall compatibility: {compatibility_check}")
 
                 alcove_match = (
                     "alcove shower" in wall_type
                     and (base_install in ["alcove", "alcove or corner"])
-                    and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
-                    and brand_family_match(base_brand, base_family, wall_brand,
-                                           wall_family))
+                    and compatibility_check)
 
                 corner_match = (
                     "corner shower" in wall_type
                     and (base_install in ["corner", "alcove or corner"])
-                    and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
-                    and brand_family_match(base_brand, base_family, wall_brand,
-                                           wall_family))
+                    and compatibility_check)
+
+                logger.debug(f"  Alcove match: {alcove_match}, Corner match: {corner_match}")
 
                 if not (alcove_match or corner_match):
+                    logger.debug(f"  Wall {wall_id} rejected - no type/install match")
                     continue
 
                 # ✅ Nominal match ONLY if Cut to Size is not Yes
