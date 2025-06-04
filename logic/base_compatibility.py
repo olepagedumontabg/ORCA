@@ -163,14 +163,17 @@ def find_base_compatibilities(data, base_info):
                             logger.debug(f"    ✓ Added door {door_id} to matching doors")
 
                 # Corner installation match with return panel
-                corner_match = (
-                    # Don't check door_type for now as it might be missing
-                    # "shower" in door_type and
-                    "corner" in base_install and door_has_return == "Yes"
+                # Check if door can work with corner bases - either has explicit return panel support
+                # or is compatible based on width dimensions for corner installations
+                has_return_panel = door_has_return == "Yes"
+                corner_door_compatible = (
+                    "corner" in base_install 
                     and pd.notna(base_width) and pd.notna(door_min_width)
                     and pd.notna(door_max_width)
                     and door_min_width <= base_width <= door_max_width
                     and series_compatible(base_series, door_series, base_info.get("Brand"), door_brand))
+                
+                corner_match = corner_door_compatible
 
                 logger.debug(f"    Corner match: {corner_match}")
                 if corner_match:
