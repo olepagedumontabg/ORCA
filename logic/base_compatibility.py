@@ -613,12 +613,11 @@ def find_base_compatibilities(data, base_info):
         # Sort categories in the specified order
         category_order = [
             "Shower Doors",
-            "Doors for Alcove Installation", 
+            "Alcove Doors", 
             "Doors + Return Panels",
-            "Doors + Return Panels for Corner Installation",
             "Enclosures",
-            "Enclosures for Corner Installation",
-            "Shower Screens",
+            "Corner Enclosures",
+            "Screens",
             "Walls"
         ]
         
