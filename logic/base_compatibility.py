@@ -640,12 +640,19 @@ def find_base_compatibilities(data, base_info):
             # Use appropriate category name based on installation type
             if supports_both:
                 category_name = "Enclosures for Corner Installation"
+                display_name = "Corner Enclosures"
             elif is_corner_only:
                 category_name = "Enclosures"
+                display_name = "Enclosures"
             else:
                 category_name = "Enclosures"
+                display_name = "Enclosures"
                 
-            compatible_products.append({"category": category_name, "products": sorted_enclosures})
+            compatible_products.append({
+                "category": category_name, 
+                "display_name": display_name,
+                "products": sorted_enclosures
+            })
 
         # Sort categories in the specified order
         category_order = [
