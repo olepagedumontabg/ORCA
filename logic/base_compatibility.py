@@ -225,6 +225,9 @@ def find_base_compatibilities(data, base_info):
                             panel_match = exact_panel_match or fallback_panel_match
 
                             logger.debug(f"      Panel match: {panel_match}")
+                            logger.debug(f"        Door family: '{door_family}', Panel family: '{panel_family}'")
+                            logger.debug(f"        Exact match: {exact_panel_match}, Fallback match: {fallback_panel_match}")
+                            logger.debug(f"        Is pure corner: {is_pure_corner}, Family compatible: {family_compatible}")
                             logger.debug(
                                 f"      Base fits return panel size: {base_fit_return} == {panel_size}: {base_fit_return == panel_size if pd.notna(base_fit_return) and pd.notna(panel_size) else 'Cannot compare'}"
                             )
