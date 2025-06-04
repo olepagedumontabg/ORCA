@@ -465,6 +465,7 @@ def find_base_compatibilities(data, base_info):
                 # ✅ Nominal match ONLY if Cut to Size is not Yes
                 if base_nominal == wall_nominal and wall_cut != "Yes":
                     nominal_matches.append(wall_id)
+                    logger.debug(f"  Added to nominal matches: {wall_id}")
 
                 # ✅ Cut to size candidate
                 elif wall_cut == "Yes" and pd.notna(base_length) and pd.notna(base_width_actual) \
@@ -476,6 +477,14 @@ def find_base_compatibilities(data, base_info):
                         "length":  wall_length,
                         "width":   wall_width
                     })
+                    logger.debug(f"  Added to cut candidates: {wall_id}")
+                
+                else:
+                    logger.debug(f"  Wall {wall_id} rejected - no dimensional match")
+                    logger.debug(f"    Base nominal: {base_nominal}, Wall nominal: {wall_nominal}")
+                    logger.debug(f"    Wall cut to size: {wall_cut}")
+                    logger.debug(f"    Base length: {base_length}, Base width: {base_width_actual}")
+                    logger.debug(f"    Wall length: {wall_length}, Wall width: {wall_width}")
                 
 
 
