@@ -437,7 +437,7 @@ def find_base_compatibilities(data, base_info):
 
                 corner_match = (
                     "corner shower" in wall_type
-                    and (base_install in ["corner", "alcove or corner"])
+                    and (base_install in ["corner", "alcove or corner", "alcove"])
                     and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
                     and brand_family_match(base_brand, base_family, wall_brand,
                                            wall_family))
