@@ -195,11 +195,21 @@ def find_base_compatibilities(data, base_info):
                             )
 
                             # Check panel compatibility for corner installation
-                            panel_match = (pd.notna(base_fit_return)
-                                           and pd.notna(panel_size)
-                                           and base_fit_return == panel_size
-                                           and door_family == panel_family
-                                           and door_id and panel_id)
+                            # Primary matching: exact return panel size match
+                            exact_panel_match = (pd.notna(base_fit_return)
+                                                 and pd.notna(panel_size)
+                                                 and base_fit_return == panel_size
+                                                 and door_family == panel_family
+                                                 and door_id and panel_id)
+                            
+                            # Fallback matching: for corner bases without return panel size info,
+                            # allow combo generation based on dimensional compatibility
+                            fallback_panel_match = (not pd.notna(base_fit_return)
+                                                   and "corner" in base_install
+                                                   and door_family == panel_family
+                                                   and door_id and panel_id)
+                            
+                            panel_match = exact_panel_match or fallback_panel_match
 
                             logger.debug(f"      Panel match: {panel_match}")
                             logger.debug(
