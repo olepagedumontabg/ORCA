@@ -473,18 +473,29 @@ def find_base_compatibilities(data, base_info):
 
                 # ✅ Nominal match ONLY if Cut to Size is not Yes
                 if base_nominal == wall_nominal and wall_cut != "Yes":
+                    if wall_id in ["103378", "103388"]:
+                        logger.info(f"  ✅ Wall {wall_id} added to NOMINAL MATCHES")
                     nominal_matches.append(wall_id)
 
                 # ✅ Cut to size candidate
                 elif wall_cut == "Yes" and pd.notna(base_length) and pd.notna(base_width_actual) \
                     and pd.notna(wall_length) and pd.notna(wall_width) \
                     and wall_length >= base_length and wall_width >= base_width_actual:
+                    if wall_id in ["103378", "103388"]:
+                        logger.info(f"  ✅ Wall {wall_id} added to CUT CANDIDATES")
                     cut_candidates.append({
                         "id":      wall_id,
                         "family":  str(wall_family).strip().lower(),
                         "length":  wall_length,
                         "width":   wall_width
                     })
+                else:
+                    if wall_id in ["103378", "103388"]:
+                        logger.info(f"  ❌ Wall {wall_id} did not match nominal or cut-to-size criteria")
+                        logger.info(f"    Base nominal: '{base_nominal}', Wall nominal: '{wall_nominal}'")
+                        logger.info(f"    Wall cut to size: '{wall_cut}'")
+                        logger.info(f"    Wall dimensions: L={wall_length}, W={wall_width}")
+                        logger.info(f"    Base dimensions: L={base_length}, W={base_width_actual}")
                 
 
 
@@ -510,6 +521,8 @@ def find_base_compatibilities(data, base_info):
 
             # ✅ Add all matches - convert IDs to product dictionaries
             all_wall_ids = nominal_matches + closest_cut_ids
+            logger.info(f"Final wall processing: nominal_matches={nominal_matches}, closest_cut_ids={closest_cut_ids}")
+            logger.info(f"Total wall IDs to process: {len(all_wall_ids)} - {all_wall_ids}")
             
             for wall_id in all_wall_ids:
                 # Convert wall_id to match the DataFrame type (likely int)
@@ -518,8 +531,14 @@ def find_base_compatibilities(data, base_info):
                 except (ValueError, TypeError):
                     wall_id_lookup = wall_id
                 
-                # Find the wall data for this ID
-                wall_row = walls_df[walls_df['Unique ID'] == wall_id_lookup]
+                if wall_id in ["103378", "103388"]:
+                    logger.info(f"DEBUG: Looking up wall {wall_id} with lookup value {wall_id_lookup}")
+                
+                # Find the wall data for this ID - handle both string and numeric comparisons
+                wall_row = walls_df[
+                    (walls_df['Unique ID'] == wall_id_lookup) | 
+                    (walls_df['Unique ID'].astype(str) == str(wall_id_lookup))
+                ]
                 if not wall_row.empty:
                     wall = wall_row.iloc[0]
                     wall_product = {
@@ -535,6 +554,13 @@ def find_base_compatibilities(data, base_info):
                         "material": wall.get("Material", "")
                     }
                     matching_walls.append(wall_product)
+                    if wall_id in ["103378", "103388"]:
+                        logger.info(f"  ✅ Wall {wall_id} successfully added to matching_walls")
+                else:
+                    if wall_id in ["103378", "103388"]:
+                        logger.info(f"  ❌ Wall {wall_id} NOT FOUND in DataFrame lookup")
+                        logger.info(f"    Unique ID types in DataFrame: {walls_df['Unique ID'].dtype}")
+                        logger.info(f"    Sample Unique IDs: {walls_df['Unique ID'].head().tolist()}")
 
         # Add incompatibility reasons to the results if they exist
         for category, reason in incompatibility_reasons.items():
