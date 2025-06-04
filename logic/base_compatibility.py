@@ -433,16 +433,16 @@ def find_base_compatibilities(data, base_info):
                     logger.debug(f"  Skipping wall - no ID")
                     continue
 
-                # Check series compatibility first
+                # Check series compatibility (keeping cross-brand rules)
                 series_match = series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
                 logger.debug(f"  Series match: {series_match}")
                 
-                # Check brand/family compatibility
+                # Check brand/family compatibility (but don't require it for walls)
                 brand_match = brand_family_match(base_brand, base_family, wall_brand, wall_family)
                 logger.debug(f"  Brand/family match: {brand_match}")
                 
-                # For walls, we need either series compatibility OR brand/family match
-                # This allows Swan cross-brand compatibility to work properly
+                # For walls, accept if series compatible OR if restricted families match
+                # This allows cross-brand compatibility while respecting specific family restrictions
                 compatibility_check = series_match or brand_match
                 logger.debug(f"  Overall compatibility: {compatibility_check}")
 
