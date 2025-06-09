@@ -233,7 +233,9 @@ function compatibilityApp() {
 
                 if (filterType === 'categories') {
                     // For categories, count products in each category group
+                    console.log('Calculating category counts, compatibleProducts:', this.compatibleProducts);
                     this.compatibleProducts.forEach(category => {
+                        console.log('Processing category:', category.category, 'with', category.products?.length, 'products');
                         if (tempFilters.selectedCategories.length === 0 || 
                             tempFilters.selectedCategories.includes(category.category)) {
                             
@@ -242,12 +244,14 @@ function compatibilityApp() {
                                 return this.filterMatchesProductWithCustomFilters(product, tempFilters);
                             });
                             
+                            console.log('Category', category.category, 'has', matchingProducts.length, 'matching products');
                             if (matchingProducts.length > 0) {
                                 counts[category.category] = matchingProducts.length;
                                 availableOptions.add(category.category);
                             }
                         }
                     });
+                    console.log('Final category counts:', counts);
                 } else {
                     // For other filter types, process individual products
                     const availableProducts = baseProducts.filter(product => {
@@ -1240,7 +1244,9 @@ function compatibilityApp() {
             this.availableFilters.materials = [...materialSet].filter(m => m).sort();
             
             // Initialize dynamic filters after extracting available options
+            console.log('Before calculateDynamicFilters, availableFilters.categories:', this.availableFilters.categories);
             this.calculateDynamicFilters();
+            console.log('After calculateDynamicFilters, filterCounts.categories:', this.filterCounts.categories);
         },
         
         /**
