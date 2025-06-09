@@ -26,9 +26,6 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-center relative">
                 <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="ABG Logo" class="h-12">
-                <div class="absolute right-0 text-sm text-gray-500">
-                    Internal Tool
-                </div>
             </div>
         </div>
     </header>
@@ -64,7 +61,7 @@
                                 @input="onSearchInput($event)"
                                 @keydown="onSearchKeydown($event)"
                                 placeholder="Enter SKU or Product Name..." 
-                                class="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl"
+                                class="w-full px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl h-10"
                                 autocomplete="off"
                                 required
                             >
@@ -91,7 +88,7 @@
                         
                         <button 
                             type="submit" 
-                            class="bg-primary hover:bg-[#002A9D] text-white font-semibold py-4 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[200px]"
+                            class="bg-primary hover:bg-[#002A9D] text-white font-semibold px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[200px] h-10"
                             :disabled="isLoading"
                         >
                             <template x-if="isLoading">
@@ -139,7 +136,7 @@
                                         @input="onSearchInput($event)"
                                         @keydown="onSearchKeydown($event)"
                                         placeholder="Enter SKU or Product Name..." 
-                                        class="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl"
+                                        class="w-full px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl h-10"
                                         autocomplete="off"
                                         required
                                     >
@@ -166,7 +163,7 @@
                                 
                                 <button 
                                     type="submit" 
-                                    class="bg-primary hover:bg-[#002A9D] text-white font-semibold py-4 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[200px]"
+                                    class="bg-primary hover:bg-[#002A9D] text-white font-semibold px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[200px] h-10"
                                     :disabled="isLoading"
                                 >
                                     <template x-if="isLoading">
