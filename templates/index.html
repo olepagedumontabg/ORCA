@@ -205,7 +205,7 @@
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Door Type<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
-                                <div class="flex items-center">
+                                <div class="flex items-center" x-show="filterCounts.doorTypes[doorType] > 0">
                                     <input 
                                         type="checkbox" 
                                         :id="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
@@ -231,7 +231,7 @@
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Material<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="material in availableFilters.materials" :key="material">
-                                <div class="flex items-center">
+                                <div class="flex items-center" x-show="filterCounts.materials[material] > 0">
                                     <input 
                                         type="checkbox" 
                                         :id="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
