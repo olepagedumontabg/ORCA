@@ -175,6 +175,16 @@ function compatibilityApp() {
             materials: []
         },
         
+        // Dynamic filter section visibility
+        showDynamicFilters: {
+            categories: true,
+            brands: true,
+            series: true,
+            glassThicknesses: false,
+            doorTypes: false,
+            materials: false
+        },
+        
         /**
          * Calculate dynamic filter options and counts based on current selections
          */
@@ -290,6 +300,9 @@ function compatibilityApp() {
 
                 this.filterCounts[filterType] = counts;
                 this.dynamicFilters[filterType] = Array.from(availableOptions).sort();
+                
+                // Set visibility based on whether there are available options
+                this.showDynamicFilters[filterType] = Array.from(availableOptions).length > 0;
             });
         },
 

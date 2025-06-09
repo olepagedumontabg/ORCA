@@ -101,7 +101,7 @@
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Categories<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="category in availableFilters.categories" :key="category">
-                                <div class="flex items-center">
+                                <div class="flex items-center" x-show="filterCounts.categories[category] > 0">
                                     <input 
                                         type="checkbox" 
                                         :id="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
@@ -127,7 +127,7 @@
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Brands<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="brand in availableFilters.brands" :key="brand">
-                                <div class="flex items-center">
+                                <div class="flex items-center" x-show="filterCounts.brands[brand] > 0">
                                     <input 
                                         type="checkbox" 
                                         :id="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
@@ -153,7 +153,7 @@
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Series<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="series in availableFilters.series" :key="series">
-                                <div class="flex items-center">
+                                <div class="flex items-center" x-show="filterCounts.series[series] > 0">
                                     <input 
                                         type="checkbox" 
                                         :id="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
@@ -175,11 +175,11 @@
                     </div>
 
                     <!-- Glass thickness filter -->
-                    <div class="filter-section" x-show="hasGlassFilter">
+                    <div class="filter-section" x-show="showDynamicFilters.glassThicknesses">
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Glass Thickness<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
-                                <div class="flex items-center">
+                                <div class="flex items-center" x-show="filterCounts.glassThicknesses[thickness] > 0">
                                     <input 
                                         type="checkbox" 
                                         :id="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
@@ -201,7 +201,7 @@
                     </div>
 
                     <!-- Door type filter -->
-                    <div class="filter-section" x-show="hasDoorsFilter">
+                    <div class="filter-section" x-show="showDynamicFilters.doorTypes">
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Door Type<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
@@ -227,7 +227,7 @@
                     </div>
                     
                     <!-- Material filter -->
-                    <div class="filter-section" x-show="hasMaterialFilter">
+                    <div class="filter-section" x-show="showDynamicFilters.materials">
                         <h3 class="font-medium text-sm text-gray-700 cursor-pointer" @click="toggleFilterSection($event)">Material<span>−</span></h3>
                         <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                             <template x-for="material in availableFilters.materials" :key="material">
