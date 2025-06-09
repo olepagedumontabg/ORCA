@@ -200,13 +200,16 @@ function compatibilityApp() {
 
             // For each filter type, calculate what options are available
             // and how many products would match each option
-            const filterTypes = ['series', 'brands', 'glassThicknesses', 'doorTypes', 'materials'];
+            const filterTypes = ['categories', 'series', 'brands', 'glassThicknesses', 'doorTypes', 'materials'];
             
             filterTypes.forEach(filterType => {
                 const tempFilters = {...this.filters};
                 
                 // Remove current filter type to see what options are available
                 switch(filterType) {
+                    case 'categories':
+                        tempFilters.selectedCategories = [];
+                        break;
                     case 'series':
                         tempFilters.selectedSeries = [];
                         break;
@@ -224,40 +227,59 @@ function compatibilityApp() {
                         break;
                 }
 
-                // Get products that match all other filters
-                const availableProducts = baseProducts.filter(product => {
-                    return this.filterMatchesProductWithCustomFilters(product, tempFilters);
-                });
-
                 // Count occurrences of each option
                 const counts = {};
                 const availableOptions = new Set();
 
-                availableProducts.forEach(product => {
-                    let value;
-                    switch(filterType) {
-                        case 'series':
-                            value = product.series;
-                            break;
-                        case 'brands':
-                            value = product.brand;
-                            break;
-                        case 'glassThicknesses':
-                            value = product.glass_thickness;
-                            break;
-                        case 'doorTypes':
-                            value = product.door_type;
-                            break;
-                        case 'materials':
-                            value = product.material;
-                            break;
-                    }
+                if (filterType === 'categories') {
+                    // For categories, count products in each category group
+                    this.compatibleProducts.forEach(category => {
+                        if (tempFilters.selectedCategories.length === 0 || 
+                            tempFilters.selectedCategories.includes(category.category)) {
+                            
+                            // Count products in this category that match other filters
+                            const matchingProducts = category.products.filter(product => {
+                                return this.filterMatchesProductWithCustomFilters(product, tempFilters);
+                            });
+                            
+                            if (matchingProducts.length > 0) {
+                                counts[category.category] = matchingProducts.length;
+                                availableOptions.add(category.category);
+                            }
+                        }
+                    });
+                } else {
+                    // For other filter types, process individual products
+                    const availableProducts = baseProducts.filter(product => {
+                        return this.filterMatchesProductWithCustomFilters(product, tempFilters);
+                    });
 
-                    if (value) {
-                        counts[value] = (counts[value] || 0) + 1;
-                        availableOptions.add(value);
-                    }
-                });
+                    availableProducts.forEach(product => {
+                        let value;
+                        switch(filterType) {
+                            case 'series':
+                                value = product.series;
+                                break;
+                            case 'brands':
+                                value = product.brand;
+                                break;
+                            case 'glassThicknesses':
+                                value = product.glass_thickness;
+                                break;
+                            case 'doorTypes':
+                                value = product.door_type;
+                                break;
+                            case 'materials':
+                                value = product.material;
+                                break;
+                        }
+
+                        if (value) {
+                            counts[value] = (counts[value] || 0) + 1;
+                            availableOptions.add(value);
+                        }
+                    });
+                }
 
                 this.filterCounts[filterType] = counts;
                 this.dynamicFilters[filterType] = Array.from(availableOptions).sort();
