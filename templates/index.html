@@ -24,11 +24,9 @@
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
         <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="ABG Logo" class="h-12">
-                </div>
-                <div class="text-sm text-gray-500">
+            <div class="flex items-center justify-center relative">
+                <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="ABG Logo" class="h-12">
+                <div class="absolute right-0 text-sm text-gray-500">
                     Internal Tool
                 </div>
             </div>
