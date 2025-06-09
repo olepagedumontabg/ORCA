@@ -1381,7 +1381,8 @@ function compatibilityApp() {
                 this.filters.selectedGlassThicknesses.splice(index, 1);
             }
             
-            // Apply the updated filters
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
             this.applyFilters();
         },
         
@@ -1399,7 +1400,8 @@ function compatibilityApp() {
                 this.filters.selectedDoorTypes.splice(index, 1);
             }
             
-            // Apply the updated filters
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
             this.applyFilters();
         },
         
@@ -1408,18 +1410,19 @@ function compatibilityApp() {
          * @param {string} material - The material to toggle
          */
         toggleMaterialFilter(material) {
-                    const index = this.filters.selectedMaterials.indexOf(material);
-                    if (index === -1) {
-                        // Material not selected, add it
-                        this.filters.selectedMaterials.push(material);
-                    } else {
-                        // Material already selected, remove it
-                        this.filters.selectedMaterials.splice(index, 1);
-                    }
+            const index = this.filters.selectedMaterials.indexOf(material);
+            if (index === -1) {
+                // Material not selected, add it
+                this.filters.selectedMaterials.push(material);
+            } else {
+                // Material already selected, remove it
+                this.filters.selectedMaterials.splice(index, 1);
+            }
 
-                    // Apply the updated filters
-                    this.applyFilters();
-                }
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
+            this.applyFilters();
+        }
 
         ,
                 /**

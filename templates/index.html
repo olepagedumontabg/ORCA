@@ -137,8 +137,10 @@
                                         :for="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="brand"
-                                        x-text="brand"
-                                    ></label>
+                                    >
+                                        <span x-text="brand"></span>
+                                        <span x-show="filterCounts.brands[brand]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.brands[brand] || 0) + ')'"></span>
+                                    </label>
                                 </div>
                             </template>
                         </div>
@@ -161,8 +163,10 @@
                                         :for="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="series"
-                                        x-text="series"
-                                    ></label>
+                                    >
+                                        <span x-text="series"></span>
+                                        <span x-show="filterCounts.series[series]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.series[series] || 0) + ')'"></span>
+                                    </label>
                                 </div>
                             </template>
                         </div>
@@ -185,8 +189,10 @@
                                         :for="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="thickness"
-                                        x-text="thickness"
-                                    ></label>
+                                    >
+                                        <span x-text="thickness"></span>
+                                        <span x-show="filterCounts.glassThicknesses[thickness]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.glassThicknesses[thickness] || 0) + ')'"></span>
+                                    </label>
                                 </div>
                             </template>
                         </div>
@@ -209,8 +215,10 @@
                                         :for="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="doorType"
-                                        x-text="doorType"
-                                    ></label>
+                                    >
+                                        <span x-text="doorType"></span>
+                                        <span x-show="filterCounts.doorTypes[doorType]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.doorTypes[doorType] || 0) + ')'"></span>
+                                    </label>
                                 </div>
                             </template>
                         </div>
@@ -233,8 +241,10 @@
                                         :for="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="material"
-                                        x-text="material"
-                                    ></label>
+                                    >
+                                        <span x-text="material"></span>
+                                        <span x-show="filterCounts.materials[material]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.materials[material] || 0) + ')'"></span>
+                                    </label>
                                 </div>
                             </template>
                         </div>
