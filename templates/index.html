@@ -113,8 +113,10 @@
                                         :for="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
                                         class="ml-2 block text-sm text-gray-700 filter-label"
                                         :title="category"
-                                        x-text="category"
-                                    ></label>
+                                    >
+                                        <span x-text="category"></span>
+                                        <span x-show="filterCounts.categories[category]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.categories[category] || 0) + ')'"></span>
+                                    </label>
                                 </div>
                             </template>
                         </div>

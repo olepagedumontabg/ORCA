@@ -179,6 +179,9 @@ function compatibilityApp() {
          * Calculate dynamic filter options and counts based on current selections
          */
         calculateDynamicFilters() {
+            console.log('=== calculateDynamicFilters called ===');
+            console.log('compatibleProducts length:', this.compatibleProducts.length);
+            
             // Reset counts
             this.filterCounts = {
                 series: {},
