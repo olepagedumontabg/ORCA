@@ -270,34 +270,33 @@ function compatibilityApp() {
                     // Use baseProducts which already respects current category selection
                     console.log(`Calculating ${filterType} filter from ${baseProducts.length} base products`);
                     baseProducts.forEach(product => {
-                        // Check if product matches all other filters except the current one being calculated
-                        if (this.filterMatchesProductWithCustomFilters(product, tempFilters)) {
-                            let value;
-                            switch(filterType) {
-                                case 'series':
-                                    value = product.series;
-                                    break;
-                                case 'brands':
-                                    value = product.brand;
-                                    break;
-                                case 'glassThicknesses':
-                                    value = product.glass_thickness;
-                                    break;
-                                case 'doorTypes':
-                                    value = product.door_type;
-                                    break;
-                                case 'materials':
-                                    value = product.material;
-                                    break;
-                            }
+                        // For non-category filters, just use the base products that are already filtered by category
+                        // Don't apply additional filtering here since baseProducts already respects category selection
+                        let value;
+                        switch(filterType) {
+                            case 'series':
+                                value = product.series;
+                                break;
+                            case 'brands':
+                                value = product.brand;
+                                break;
+                            case 'glassThicknesses':
+                                value = product.glass_thickness;
+                                break;
+                            case 'doorTypes':
+                                value = product.door_type;
+                                break;
+                            case 'materials':
+                                value = product.material;
+                                break;
+                        }
 
-                            if (value) {
-                                console.log(`Found ${filterType} value: "${value}" for product ${product.sku}`);
-                                counts[value] = (counts[value] || 0) + 1;
-                                availableOptions.add(value);
-                            } else {
-                                console.log(`No ${filterType} value for product ${product.sku}:`, product);
-                            }
+                        if (value) {
+                            console.log(`Found ${filterType} value: "${value}" for product ${product.sku}`);
+                            counts[value] = (counts[value] || 0) + 1;
+                            availableOptions.add(value);
+                        } else {
+                            console.log(`No ${filterType} value for product ${product.sku}:`, product);
                         }
                     });
                     console.log(`Final ${filterType} counts:`, counts);
