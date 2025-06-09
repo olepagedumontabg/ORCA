@@ -156,6 +156,191 @@ function compatibilityApp() {
             materials: []
         },
         
+        // Dynamic filter counts and availability
+        filterCounts: {
+            series: {},
+            brands: {},
+            glassThicknesses: {},
+            doorTypes: {},
+            categories: {},
+            materials: {}
+        },
+        
+        dynamicFilters: {
+            series: [],
+            brands: [],
+            glassThicknesses: [],
+            doorTypes: [],
+            categories: [],
+            materials: []
+        },
+        
+        /**
+         * Calculate dynamic filter options and counts based on current selections
+         */
+        calculateDynamicFilters() {
+            // Reset counts
+            this.filterCounts = {
+                series: {},
+                brands: {},
+                glassThicknesses: {},
+                doorTypes: {},
+                categories: {},
+                materials: {}
+            };
+
+            // Get all products that would be visible with current category filter
+            let baseProducts = [];
+            for (let category of this.compatibleProducts) {
+                if (this.filters.selectedCategories.length === 0 || 
+                    this.filters.selectedCategories.includes(category.category)) {
+                    baseProducts = baseProducts.concat(category.products);
+                }
+            }
+
+            // For each filter type, calculate what options are available
+            // and how many products would match each option
+            const filterTypes = ['series', 'brands', 'glassThicknesses', 'doorTypes', 'materials'];
+            
+            filterTypes.forEach(filterType => {
+                const tempFilters = {...this.filters};
+                
+                // Remove current filter type to see what options are available
+                switch(filterType) {
+                    case 'series':
+                        tempFilters.selectedSeries = [];
+                        break;
+                    case 'brands':
+                        tempFilters.selectedBrands = [];
+                        break;
+                    case 'glassThicknesses':
+                        tempFilters.selectedGlassThicknesses = [];
+                        break;
+                    case 'doorTypes':
+                        tempFilters.selectedDoorTypes = [];
+                        break;
+                    case 'materials':
+                        tempFilters.selectedMaterials = [];
+                        break;
+                }
+
+                // Get products that match all other filters
+                const availableProducts = baseProducts.filter(product => {
+                    return this.filterMatchesProductWithCustomFilters(product, tempFilters);
+                });
+
+                // Count occurrences of each option
+                const counts = {};
+                const availableOptions = new Set();
+
+                availableProducts.forEach(product => {
+                    let value;
+                    switch(filterType) {
+                        case 'series':
+                            value = product.series;
+                            break;
+                        case 'brands':
+                            value = product.brand;
+                            break;
+                        case 'glassThicknesses':
+                            value = product.glass_thickness;
+                            break;
+                        case 'doorTypes':
+                            value = product.door_type;
+                            break;
+                        case 'materials':
+                            value = product.material;
+                            break;
+                    }
+
+                    if (value) {
+                        counts[value] = (counts[value] || 0) + 1;
+                        availableOptions.add(value);
+                    }
+                });
+
+                this.filterCounts[filterType] = counts;
+                this.dynamicFilters[filterType] = Array.from(availableOptions).sort();
+            });
+        },
+
+        /**
+         * Check if product matches filters with custom filter set
+         */
+        filterMatchesProductWithCustomFilters(product, customFilters) {
+            // Category filter
+            if (customFilters.selectedCategories.length > 0 && product.category) {
+                if (!customFilters.selectedCategories.includes(product.category)) {
+                    return false;
+                }
+            }
+
+            // Series filter
+            if (customFilters.selectedSeries.length > 0 && product.series) {
+                let seriesMatch = false;
+                for (let selectedSeries of customFilters.selectedSeries) {
+                    if (product.series.toLowerCase() === selectedSeries.toLowerCase()) {
+                        seriesMatch = true;
+                        break;
+                    }
+                }
+                if (!seriesMatch) return false;
+            }
+
+            // Brand filter
+            if (customFilters.selectedBrands.length > 0 && product.brand) {
+                let brandMatch = false;
+                for (let selectedBrand of customFilters.selectedBrands) {
+                    if (product.brand.toLowerCase() === selectedBrand.toLowerCase()) {
+                        brandMatch = true;
+                        break;
+                    }
+                }
+                if (!brandMatch) return false;
+            }
+
+            // Glass thickness filter
+            if (customFilters.selectedGlassThicknesses.length > 0) {
+                if (!product.glass_thickness) return false;
+                let thicknessMatch = false;
+                for (let selectedThickness of customFilters.selectedGlassThicknesses) {
+                    if (product.glass_thickness.toLowerCase() === selectedThickness.toLowerCase()) {
+                        thicknessMatch = true;
+                        break;
+                    }
+                }
+                if (!thicknessMatch) return false;
+            }
+
+            // Door type filter
+            if (customFilters.selectedDoorTypes.length > 0) {
+                if (!product.door_type) return false;
+                let doorTypeMatch = false;
+                for (let selectedType of customFilters.selectedDoorTypes) {
+                    if (product.door_type.toLowerCase() === selectedType.toLowerCase()) {
+                        doorTypeMatch = true;
+                        break;
+                    }
+                }
+                if (!doorTypeMatch) return false;
+            }
+
+            // Material filter
+            if (customFilters.selectedMaterials.length > 0) {
+                if (!product.material) return false;
+                let materialMatch = false;
+                for (let selectedMaterial of customFilters.selectedMaterials) {
+                    if (product.material.toLowerCase() === selectedMaterial.toLowerCase()) {
+                        materialMatch = true;
+                        break;
+                    }
+                }
+                if (!materialMatch) return false;
+            }
+
+            return true;
+        },
+
         /**
          * Convert decimal inches to a fraction format (e.g., 58.375 to "58 3/8")
          * @param {number|string} value - The decimal value to convert
@@ -1139,7 +1324,8 @@ function compatibilityApp() {
                 this.filters.selectedCategories.splice(index, 1);
             }
             
-            // Apply the updated filters
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
             this.applyFilters();
         },
         
@@ -1157,7 +1343,8 @@ function compatibilityApp() {
                 this.filters.selectedSeries.splice(index, 1);
             }
             
-            // Apply the updated filters
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
             this.applyFilters();
         },
         
@@ -1175,7 +1362,8 @@ function compatibilityApp() {
                 this.filters.selectedBrands.splice(index, 1);
             }
             
-            // Apply the updated filters
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
             this.applyFilters();
         },
         
