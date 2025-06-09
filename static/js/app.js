@@ -268,6 +268,7 @@ function compatibilityApp() {
                 } else {
                     // For other filter types, process individual products
                     // Use baseProducts which already respects current category selection
+                    console.log(`Calculating ${filterType} filter from ${baseProducts.length} base products`);
                     baseProducts.forEach(product => {
                         // Check if product matches all other filters except the current one being calculated
                         if (this.filterMatchesProductWithCustomFilters(product, tempFilters)) {
@@ -291,11 +292,15 @@ function compatibilityApp() {
                             }
 
                             if (value) {
+                                console.log(`Found ${filterType} value: "${value}" for product ${product.sku}`);
                                 counts[value] = (counts[value] || 0) + 1;
                                 availableOptions.add(value);
+                            } else {
+                                console.log(`No ${filterType} value for product ${product.sku}:`, product);
                             }
                         }
                     });
+                    console.log(`Final ${filterType} counts:`, counts);
                 }
 
                 this.filterCounts[filterType] = counts;
