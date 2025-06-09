@@ -51,7 +51,7 @@
             <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
                 <div class="text-center mb-4">
                     <label for="skuInput" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
-                    <div class="flex flex-col md:flex-row gap-4 items-end">
+                    <div class="flex flex-row gap-4 items-end">
                         <div class="flex-1 search-container relative">
                             <input 
                                 type="text" 
@@ -140,7 +140,7 @@
                     <form @submit.prevent="submitSearch" class="space-y-4">
                         <div class="text-center mb-4">
                             <label for="skuInputCompact" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
-                            <div class="flex flex-col md:flex-row gap-4 items-end">
+                            <div class="flex flex-row gap-4 items-end">
                                 <div class="flex-1 search-container relative">
                                     <input 
                                         type="text" 
@@ -195,12 +195,27 @@
                 <!-- Horizontal layout for Filter and Product Details -->
                 <div class="flex flex-col lg:flex-row gap-6">
                     <!-- Left column: Filters -->
-                    <div class="lg:w-80 flex-shrink-0">
+                    <div class="lg:w-80 flex-shrink-0" x-data="{ mobileFiltersOpen: false }">
+                        <!-- Mobile filter toggle button -->
+                        <div class="lg:hidden mb-4">
+                            <button 
+                                @click="mobileFiltersOpen = !mobileFiltersOpen"
+                                class="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex justify-between items-center"
+                            >
+                                <span class="text-lg font-semibold">Filters</span>
+                                <i class="fas fa-chevron-down transition-transform duration-200" :class="{ 'rotate-180': mobileFiltersOpen }"></i>
+                            </button>
+                        </div>
+                        
                         <!-- Filter panel -->
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-4">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-4" 
+                             :class="{ 'hidden': !mobileFiltersOpen }" 
+                             x-show="mobileFiltersOpen || window.innerWidth >= 1024"
+                             x-init="$watch('mobileFiltersOpen', value => { if (window.innerWidth >= 1024) mobileFiltersOpen = true; })"
+                        >
                             <!-- Filter header -->
                             <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
-                                <h2 class="text-lg font-semibold">Filter</h2>
+                                <h2 class="text-lg font-semibold lg:block hidden">Filter</h2>
                                 <button 
                                     @click="resetFilters()" 
                                     class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
