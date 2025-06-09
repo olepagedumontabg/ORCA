@@ -267,33 +267,33 @@ function compatibilityApp() {
                     console.log('Final category counts:', counts);
                 } else {
                     // For other filter types, process individual products
-                    const availableProducts = baseProducts.filter(product => {
-                        return this.filterMatchesProductWithCustomFilters(product, tempFilters);
-                    });
+                    // Use baseProducts which already respects current category selection
+                    baseProducts.forEach(product => {
+                        // Check if product matches all other filters except the current one being calculated
+                        if (this.filterMatchesProductWithCustomFilters(product, tempFilters)) {
+                            let value;
+                            switch(filterType) {
+                                case 'series':
+                                    value = product.series;
+                                    break;
+                                case 'brands':
+                                    value = product.brand;
+                                    break;
+                                case 'glassThicknesses':
+                                    value = product.glass_thickness;
+                                    break;
+                                case 'doorTypes':
+                                    value = product.door_type;
+                                    break;
+                                case 'materials':
+                                    value = product.material;
+                                    break;
+                            }
 
-                    availableProducts.forEach(product => {
-                        let value;
-                        switch(filterType) {
-                            case 'series':
-                                value = product.series;
-                                break;
-                            case 'brands':
-                                value = product.brand;
-                                break;
-                            case 'glassThicknesses':
-                                value = product.glass_thickness;
-                                break;
-                            case 'doorTypes':
-                                value = product.door_type;
-                                break;
-                            case 'materials':
-                                value = product.material;
-                                break;
-                        }
-
-                        if (value) {
-                            counts[value] = (counts[value] || 0) + 1;
-                            availableOptions.add(value);
+                            if (value) {
+                                counts[value] = (counts[value] || 0) + 1;
+                                availableOptions.add(value);
+                            }
                         }
                     });
                 }
