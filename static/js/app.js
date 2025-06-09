@@ -1216,6 +1216,9 @@ function compatibilityApp() {
                 .filter(t => t && !wallTypes.includes(t))
                 .sort();
             this.availableFilters.materials = [...materialSet].filter(m => m).sort();
+            
+            // Initialize dynamic filters after extracting available options
+            this.calculateDynamicFilters();
         },
         
         /**
@@ -1231,7 +1234,8 @@ function compatibilityApp() {
                 selectedMaterials: []
             };
             
-            // Apply the reset filters
+            // Recalculate dynamic filters and apply
+            this.calculateDynamicFilters();
             this.applyFilters();
         },
         
