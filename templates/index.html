@@ -122,6 +122,19 @@
             
             <!-- Results layout container -->
             <div x-show="compatibleProducts.length > 0 && !errorMessage" x-cloak>
+                <!-- Hero section for results page -->
+                <div class="text-center mb-8">
+                    <div class="relative rounded-lg overflow-hidden mb-6">
+                        <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Bathroom Products" class="w-full h-64 object-cover">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                            <div class="text-white">
+                                <h2 class="text-3xl md:text-4xl font-bold mb-2">Find Compatible Bathroom Products</h2>
+                                <p class="text-lg md:text-xl opacity-90">Enter a SKU to discover matching products instantly</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Compact search form positioned above everything -->
                 <div class="mb-6 max-w-3xl mx-auto">
                     <form @submit.prevent="submitSearch" class="space-y-4">
