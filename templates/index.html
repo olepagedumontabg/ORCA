@@ -19,8 +19,13 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        [x-cloak] { display: none !important; }
+        .alpine-loading { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .alpine-ready { opacity: 1; }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col" x-data="compatibilityApp()">
+<body class="bg-gray-50 min-h-screen flex flex-col alpine-loading" x-data="compatibilityApp()" x-init="$nextTick(() => $el.classList.add('alpine-ready'))">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
         <div class="container mx-auto px-4 py-4">
@@ -34,7 +39,7 @@
     <main class="flex-grow container mx-auto px-4 py-6">
         
         <!-- Hero section for landing page -->
-        <div x-show="!compatibleProducts.length" class="text-center mb-8">
+        <div x-show="!compatibleProducts.length" class="text-center mb-8" x-cloak>
             <div class="relative rounded-lg overflow-hidden mb-6">
                 <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Bathroom Products" class="w-full h-64 object-cover">
                 <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
@@ -47,7 +52,7 @@
         </div>
         
         <!-- Search form for landing page -->
-        <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length">
+        <div class="mb-6 max-w-3xl mx-auto" x-show="!compatibleProducts.length" x-cloak>
             <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
                 <div class="text-center mb-4">
                     <label for="skuInput" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
