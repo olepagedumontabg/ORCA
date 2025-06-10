@@ -267,32 +267,37 @@ function compatibilityApp() {
                     console.log('Final category counts:', counts);
                 } else {
                     // For other filter types, process individual products
-                    // Use baseProducts which already respects current category selection
+                    // Apply all OTHER filters except the one we're calculating
                     baseProducts.forEach(product => {
-                        // For non-category filters, just use the base products that are already filtered by category
-                        // Don't apply additional filtering here since baseProducts already respects category selection
-                        let value;
-                        switch(filterType) {
-                            case 'series':
-                                value = product.series;
-                                break;
-                            case 'brands':
-                                value = product.brand;
-                                break;
-                            case 'glassThicknesses':
-                                value = product.glass_thickness;
-                                break;
-                            case 'doorTypes':
-                                value = product.door_type;
-                                break;
-                            case 'materials':
-                                value = product.material;
-                                break;
-                        }
+                        // Check if this product matches all OTHER active filters
+                        if (this.filterMatchesProductWithCustomFilters(product, tempFilters)) {
+                            let value;
+                            
+                            // Handle combo products - get value from main_product
+                            const sourceProduct = this.isComboProduct(product) && product.main_product ? product.main_product : product;
+                            
+                            switch(filterType) {
+                                case 'series':
+                                    value = sourceProduct.series;
+                                    break;
+                                case 'brands':
+                                    value = sourceProduct.brand;
+                                    break;
+                                case 'glassThicknesses':
+                                    value = sourceProduct.glass_thickness;
+                                    break;
+                                case 'doorTypes':
+                                    value = sourceProduct.door_type;
+                                    break;
+                                case 'materials':
+                                    value = sourceProduct.material;
+                                    break;
+                            }
 
-                        if (value) {
-                            counts[value] = (counts[value] || 0) + 1;
-                            availableOptions.add(value);
+                            if (value) {
+                                counts[value] = (counts[value] || 0) + 1;
+                                availableOptions.add(value);
+                            }
                         }
                     });
                 }
@@ -309,6 +314,22 @@ function compatibilityApp() {
          * Check if product matches filters with custom filter set
          */
         filterMatchesProductWithCustomFilters(product, customFilters) {
+            // Handle combo products - use main_product for filtering
+            if (this.isComboProduct(product)) {
+                if (product.main_product) {
+                    return this.filterMatchesProductAttributesWithCustomFilters(product.main_product, customFilters);
+                }
+                return false;
+            }
+            
+            // Regular products
+            return this.filterMatchesProductAttributesWithCustomFilters(product, customFilters);
+        },
+
+        /**
+         * Check if product attributes match filters with custom filter set
+         */
+        filterMatchesProductAttributesWithCustomFilters(product, customFilters) {
             // Category filter
             if (customFilters.selectedCategories.length > 0 && product.category) {
                 if (!customFilters.selectedCategories.includes(product.category)) {
@@ -985,6 +1006,9 @@ function compatibilityApp() {
             this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(
                 category => category.products && category.products.length > 0
             );
+            
+            // Recalculate dynamic filters after applying filters
+            this.calculateDynamicFilters();
         },
         
         /**
