@@ -14,6 +14,7 @@ function compatibilityApp() {
         compatibleProducts: [],
         filteredCompatibleProducts: [],
         incompatibilityReasons: {},
+        mobileFiltersOpen: false,
         
         // On initialization, fix the filter panel width
         init() {
@@ -1009,6 +1010,11 @@ function compatibilityApp() {
             
             // Recalculate dynamic filters after applying filters
             this.calculateDynamicFilters();
+            
+            // Auto-close mobile filters after applying filters
+            if (window.innerWidth < 1024) { // lg breakpoint
+                this.mobileFiltersOpen = false;
+            }
         },
         
         /**
