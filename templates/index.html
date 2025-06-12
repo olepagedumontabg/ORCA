@@ -10,7 +10,9 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#003DB3'
+                        primary: '#001A70',
+                        'text-dark': '#2A314C',
+                        'text-light': '#4B5563'
                     }
                 }
             }
@@ -215,7 +217,7 @@
                         @click="mobileFiltersOpen = !mobileFiltersOpen"
                         class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                     >
-                        <span class="font-medium text-gray-900">
+                        <span class="font-medium text-text-dark">
                             <i class="fas fa-filter mr-2"></i>Filters
                         </span>
                         <svg 
@@ -241,10 +243,10 @@
                         >
                             <!-- Filter header -->
                             <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
-                                <h2 class="text-lg font-semibold">Filter</h2>
+                                <h2 class="text-lg font-semibold text-text-dark">Filter</h2>
                                 <button 
                                     @click="resetFilters()" 
-                                    class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                                    class="text-sm text-text-light hover:text-text-dark transition-colors"
                                     title="Reset all filters"
                                 >
                                     <i class="fas fa-undo mr-1"></i>Clear All
@@ -255,7 +257,7 @@
                             <div class="space-y-4">
                                 <!-- Categories filter -->
                                 <div class="filter-section">
-                                    <h3 class="font-medium text-sm text-gray-700 cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
                                         Categories<span class="float-right">−</span>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
@@ -270,7 +272,7 @@
                                                 >
                                                 <label 
                                                     :for="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
-                                                    class="ml-2 block text-sm text-gray-700 filter-label cursor-pointer"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
                                                     :title="category"
                                                 >
                                                     <span x-text="category"></span>
@@ -283,7 +285,7 @@
 
                                 <!-- Brand filter -->
                                 <div class="filter-section">
-                                    <h3 class="font-medium text-sm text-gray-700 cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
                                         Brands<span class="float-right">−</span>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">

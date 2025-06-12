@@ -1,5 +1,13 @@
 /* Custom styles */
 
+/* Color Variables */
+:root {
+    --color-primary: #001A70;
+    --color-primary-hover: #001558;
+    --color-text-dark: #2A314C;
+    --color-text-light: #4B5563;
+}
+
 /* Scrollbar styling for Webkit browsers */
 ::-webkit-scrollbar {
     width: 8px;
