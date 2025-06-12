@@ -25,6 +25,16 @@
         [x-cloak] { display: none !important; }
         .alpine-loading { opacity: 0; transition: opacity 0.3s ease-in-out; }
         .alpine-ready { opacity: 1; }
+        
+        /* Custom checkbox styling */
+        input[type="checkbox"]:checked {
+            background-color: #001A70 !important;
+            border-color: #001A70 !important;
+        }
+        
+        input[type="checkbox"]:focus {
+            box-shadow: 0 0 0 2px rgba(0, 26, 112, 0.2) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col alpine-loading" x-data="compatibilityApp()" x-init="$nextTick(() => $el.classList.add('alpine-ready'))">
