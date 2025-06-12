@@ -512,11 +512,11 @@
                         <!-- Compatible products section -->
                         <div x-show="compatibleProducts.length > 0 && !errorMessage" class="compatible-products-section" x-cloak>
                             <div class="flex flex-wrap items-center justify-between mb-4">
-                                <h2 class="text-xl font-semibold">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
+                                <h2 class="text-xl font-semibold text-text-dark">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
                                     <button
                                         type="button"
                                         @click="downloadXlsx"
-                                        class="inline-flex items-center bg-primary hover:bg-[#002A9D] text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition duration-150"
+                                        class="inline-flex items-center bg-primary hover:bg-primary text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition duration-150"
                                     >
                                         Download (.xlsx)
                                     </button>
@@ -524,14 +524,14 @@
                             </div>
                             
                             <!-- Show results count -->
-                            <div class="text-sm text-gray-600 mb-4">
+                            <div class="text-sm text-text-light mb-4">
                                 <template x-if="filteredCompatibleProducts.length === 0">
-                                    <p>No products match your filters. <a href="#" @click.prevent="resetFilters()" class="text-primary hover:text-blue-700 hover:underline">Clear All</a></p>
+                                    <p>No products match your filters. <a href="#" @click.prevent="resetFilters()" class="text-primary hover:text-primary hover:underline">Clear All</a></p>
                                 </template>
                                 <template x-if="filteredCompatibleProducts.length > 0">
                                     <p>
-                                        Showing <span class="font-medium" x-text="filteredCompatibleProducts.reduce((acc, cat) => acc + cat.products.length, 0)"></span> 
-                                        compatible products in <span class="font-medium" x-text="filteredCompatibleProducts.length"></span> categories
+                                        Showing <span class="font-medium text-text-dark" x-text="filteredCompatibleProducts.reduce((acc, cat) => acc + cat.products.length, 0)"></span> 
+                                        compatible products in <span class="font-medium text-text-dark" x-text="filteredCompatibleProducts.length"></span> categories
                                     </p>
                                 </template>
                             </div>
@@ -539,7 +539,7 @@
                             <!-- Product listing -->
                             <template x-for="(category, catIndex) in filteredCompatibleProducts" :key="catIndex">
                                 <div class="mb-8">
-                                    <h3 class="text-lg font-semibold mb-3 px-1" x-text="category.category"></h3>
+                                    <h3 class="text-lg font-semibold mb-3 px-1 text-text-dark" x-text="category.category"></h3>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <!-- Single product cards -->
@@ -570,19 +570,19 @@
                                                         </div>
                                                         <div class="p-4 flex-grow flex flex-col">
                                                             <div class="mb-1">
-                                                                <div class="font-semibold text-gray-800" x-text="formatProductName(product)"></div>
+                                                                <div class="font-semibold text-text-dark" x-text="formatProductName(product)"></div>
                                                             </div>
-                                                            <div class="text-xs text-gray-500 mb-1">
+                                                            <div class="text-xs text-text-light mb-1">
                                                                 <span class="font-medium">SKU:</span> <span x-text="product.sku"></span>
                                                             </div>
                                                             <div class="border-t mt-2 pt-2 space-y-1 flex-grow flex flex-col justify-end">
                                                                 <div class="flex justify-between text-xs">
-                                                                    <span class="font-medium text-gray-500">Brand:</span>
-                                                                    <span class="text-gray-700" x-text="product.brand || 'N/A'"></span>
+                                                                    <span class="font-medium text-text-light">Brand:</span>
+                                                                    <span class="text-text-dark" x-text="product.brand || 'N/A'"></span>
                                                                 </div>
                                                                 <div class="flex justify-between text-xs">
-                                                                    <span class="font-medium text-gray-500">Series:</span>
-                                                                    <span class="text-gray-700" x-text="product.series || 'N/A'"></span>
+                                                                    <span class="font-medium text-text-light">Series:</span>
+                                                                    <span class="text-text-dark" x-text="product.series || 'N/A'"></span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -643,16 +643,16 @@
                                                             </div>
                                                             
                                                             <!-- Combo indicator overlay -->
-                                                            <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+                                                            <div class="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
                                                                 Combo
                                                             </div>
                                                         </div>
                                                         <div class="p-4 flex-grow flex flex-col">
                                                             <div class="mb-1">
-                                                                <div class="font-semibold text-gray-800" x-text="formatProductName(product.main_product)"></div>
-                                                                <div class="font-semibold text-gray-800" x-text="formatProductName(product.secondary_product)"></div>
+                                                                <div class="font-semibold text-text-dark" x-text="formatProductName(product.main_product)"></div>
+                                                                <div class="font-semibold text-text-dark" x-text="formatProductName(product.secondary_product)"></div>
                                                             </div>
-                                                            <div class="text-xs text-gray-500 mb-1 flex items-center flex-wrap gap-1">
+                                                            <div class="text-xs text-text-light mb-1 flex items-center flex-wrap gap-1">
                                                                 <span class="font-medium">SKUs:</span>
                                                                 <span x-text="product.main_product.sku"></span>
                                                                 <span>+</span>
@@ -660,15 +660,15 @@
                                                             </div>
                                                             <div class="border-t mt-2 pt-2 flex justify-between">
                                                                 <div class="flex flex-col">
-                                                                    <span class="text-xs font-medium text-blue-600">Door + Return Panel</span>
-                                                                    <span class="text-xs text-gray-500">
+                                                                    <span class="text-xs font-medium text-primary">Door + Return Panel</span>
+                                                                    <span class="text-xs text-text-light">
                                                                         <span class="font-medium">Brand:</span> 
-                                                                        <span x-text="product.main_product.brand || 'N/A'"></span>
+                                                                        <span class="text-text-dark" x-text="product.main_product.brand || 'N/A'"></span>
                                                                     </span>
                                                                 </div>
-                                                                <span class="text-xs text-gray-500">
+                                                                <span class="text-xs text-text-light">
                                                                     <span class="font-medium">Series:</span> 
-                                                                    <span x-text="product.main_product.series || 'N/A'"></span>
+                                                                    <span class="text-text-dark" x-text="product.main_product.series || 'N/A'"></span>
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -688,7 +688,7 @@
 
     <!-- Footer -->
     <footer class="bg-gray-100 border-t border-gray-200 mt-auto">
-        <div class="container mx-auto px-4 py-4 text-center text-gray-600 text-sm">
+        <div class="container mx-auto px-4 py-4 text-center text-text-light text-sm">
             <p>Compatibility Finder - Internal Tool</p>
         </div>
     </footer>
