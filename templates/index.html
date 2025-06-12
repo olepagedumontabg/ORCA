@@ -58,60 +58,62 @@
             <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
                 <div class="text-center mb-4">
                     <label for="skuInput" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
-                    <div class="flex gap-2 md:gap-4 items-end">
-                        <div class="flex-1 md:flex-1 search-container relative" style="width: 80%;">
-                            <input 
-                                type="text" 
-                                id="skuInput" 
-                                name="sku" 
-                                x-model="searchInput"
-                                @input="onSearchInput($event)"
-                                @keydown="onSearchKeydown($event)"
-                                placeholder="Enter SKU or Product Name..." 
-                                class="w-full px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl h-10"
-                                autocomplete="off"
-                                required
-                            >
-                            
-                            <!-- Reset search button when there's input -->
-                            <button 
-                                type="button" 
-                                @click="clearSearch()"
-                                x-show="searchInput.length > 0"
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            
-                            <!-- Hard-coded, non-reactive suggestions dropdown -->
-                            <div id="suggestionsContainer" class="hidden absolute z-10 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
-                                <ul id="suggestionsList" class="py-1">
-                                    <!-- Suggestions will be inserted here by JavaScript -->
-                                </ul>
+                    <div class="relative w-full max-w-2xl mx-auto">
+                        <!-- Merged search container -->
+                        <div class="flex bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition duration-150 ease-in-out shadow-sm">
+                            <div class="flex-1 relative">
+                                <input 
+                                    type="text" 
+                                    id="skuInput" 
+                                    name="sku" 
+                                    x-model="searchInput"
+                                    @input="onSearchInput($event)"
+                                    @keydown="onSearchKeydown($event)"
+                                    placeholder="Enter SKU or Product Name..." 
+                                    class="w-full px-4 h-12 text-xl border-0 rounded-l-lg focus:ring-0 focus:outline-none bg-transparent"
+                                    autocomplete="off"
+                                    required
+                                >
+                                
+                                <!-- Reset search button when there's input -->
+                                <button 
+                                    type="button" 
+                                    @click="clearSearch()"
+                                    x-show="searchInput.length > 0"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                             </div>
+                            
+                            <!-- Search button integrated into container -->
+                            <button 
+                                type="submit" 
+                                class="bg-primary hover:bg-primary text-white font-semibold px-6 h-12 rounded-r-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[120px] border-l border-primary"
+                                :disabled="isLoading"
+                            >
+                                <template x-if="isLoading">
+                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </template>
+                                <template x-if="!isLoading">
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </template>
+                            </button>
                         </div>
                         
-                        <button 
-                            type="submit" 
-                            class="bg-primary hover:bg-[#002A9D] text-white font-semibold px-2 md:px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center h-10 text-sm md:text-base md:min-w-[200px]"
-                            style="width: 20%; min-width: 40px;"
-                            :disabled="isLoading"
-                        >
-                            <template x-if="isLoading">
-                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            </template>
-                            <template x-if="!isLoading">
-                                <!-- Magnifying glass icon for all screen sizes -->
-                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </template>
-                        </button>
+                        <!-- Suggestions dropdown -->
+                        <div id="suggestionsContainer" class="hidden absolute z-10 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
+                            <ul id="suggestionsList" class="py-1">
+                                <!-- Suggestions will be inserted here by JavaScript -->
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -153,59 +155,61 @@
                     <form @submit.prevent="submitSearch" class="space-y-4">
                         <div class="text-center mb-4">
                             <label for="skuInputCompact" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
-                            <div class="flex gap-2 md:gap-4 items-end">
-                                <div class="flex-1 md:flex-1 search-container relative" style="width: 80%;">
-                                    <input 
-                                        type="text" 
-                                        id="skuInputCompact" 
-                                        x-model="searchInput"
-                                        @input="onSearchInput($event)"
-                                        @keydown="onSearchKeydown($event)"
-                                        placeholder="Enter SKU or Product Name..." 
-                                        class="w-full px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out text-xl h-10"
-                                        autocomplete="off"
-                                        required
-                                    >
-                                    
-                                    <!-- Reset search button -->
-                                    <button 
-                                        type="button" 
-                                        @click="clearSearch()"
-                                        x-show="searchInput.length > 0"
-                                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
-                                    
-                                    <!-- Hard-coded, non-reactive suggestions dropdown for compact search -->
-                                    <div id="suggestionsCompactContainer" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
-                                        <ul id="suggestionsCompactList" class="py-1">
-                                            <!-- Suggestions will be inserted here by JavaScript -->
-                                        </ul>
+                            <div class="relative w-full max-w-2xl mx-auto">
+                                <!-- Merged search container for compact view -->
+                                <div class="flex bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition duration-150 ease-in-out shadow-sm">
+                                    <div class="flex-1 relative">
+                                        <input 
+                                            type="text" 
+                                            id="skuInputCompact" 
+                                            x-model="searchInput"
+                                            @input="onSearchInput($event)"
+                                            @keydown="onSearchKeydown($event)"
+                                            placeholder="Enter SKU or Product Name..." 
+                                            class="w-full px-4 h-12 text-xl border-0 rounded-l-lg focus:ring-0 focus:outline-none bg-transparent"
+                                            autocomplete="off"
+                                            required
+                                        >
+                                        
+                                        <!-- Reset search button -->
+                                        <button 
+                                            type="button" 
+                                            @click="clearSearch()"
+                                            x-show="searchInput.length > 0"
+                                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
                                     </div>
+                                    
+                                    <!-- Search button integrated into container -->
+                                    <button 
+                                        type="submit" 
+                                        class="bg-primary hover:bg-primary text-white font-semibold px-6 h-12 rounded-r-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[120px] border-l border-primary"
+                                        :disabled="isLoading"
+                                    >
+                                        <template x-if="isLoading">
+                                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </template>
+                                        <template x-if="!isLoading">
+                                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </template>
+                                    </button>
                                 </div>
                                 
-                                <button 
-                                    type="submit" 
-                                    class="bg-primary hover:bg-[#002A9D] text-white font-semibold px-2 md:px-6 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center h-10 text-sm md:text-base md:min-w-[200px]"
-                                    style="width: 20%; min-width: 40px;"
-                                    :disabled="isLoading"
-                                >
-                                    <template x-if="isLoading">
-                                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </template>
-                                    <template x-if="!isLoading">
-                                        <!-- Magnifying glass icon for all screen sizes -->
-                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
-                                    </template>
-                                </button>
+                                <!-- Suggestions dropdown for compact search -->
+                                <div id="suggestionsCompactContainer" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
+                                    <ul id="suggestionsCompactList" class="py-1">
+                                        <!-- Suggestions will be inserted here by JavaScript -->
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </form>
