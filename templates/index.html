@@ -27,13 +27,20 @@
         .alpine-ready { opacity: 1; }
         
         /* Custom checkbox styling */
+        input[type="checkbox"] {
+            accent-color: #001A70;
+            border: none !important;
+            outline: none !important;
+        }
+        
         input[type="checkbox"]:checked {
             background-color: #001A70 !important;
-            border-color: #001A70 !important;
+            border: none !important;
         }
         
         input[type="checkbox"]:focus {
-            box-shadow: 0 0 0 2px rgba(0, 26, 112, 0.2) !important;
+            box-shadow: none !important;
+            outline: none !important;
         }
     </style>
 </head>
@@ -282,7 +289,7 @@
                                                     :id="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
                                                     :checked="filters.selectedCategories.includes(category)"
                                                     @click="toggleCategoryFilter(category)"
-                                                    class="h-4 w-4 border-gray-300 rounded focus:ring-2 focus:ring-[#001A70] checked:bg-[#001A70] checked:border-[#001A70]"
+                                                    class="h-4 w-4 rounded"
                                                 >
                                                 <label 
                                                     :for="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
@@ -310,7 +317,7 @@
                                                     :id="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
                                                     :checked="filters.selectedBrands.includes(brand)"
                                                     @click="toggleBrandFilter(brand)"
-                                                    class="h-4 w-4 border-gray-300 rounded focus:ring-2 focus:ring-[#001A70] checked:bg-[#001A70] checked:border-[#001A70]"
+                                                    class="h-4 w-4 rounded"
                                                 >
                                                 <label 
                                                     :for="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
@@ -338,7 +345,7 @@
                                                     :id="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
                                                     :checked="filters.selectedSeries.includes(series)"
                                                     @click="toggleSeriesFilter(series)"
-                                                    class="h-4 w-4 border-gray-300 rounded focus:ring-2 focus:ring-[#001A70] checked:bg-[#001A70] checked:border-[#001A70]"
+                                                    class="h-4 w-4 rounded"
                                                 >
                                                 <label 
                                                     :for="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
@@ -366,7 +373,7 @@
                                                     :id="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
                                                     :checked="filters.selectedGlassThicknesses.includes(thickness)"
                                                     @click="toggleGlassThicknessFilter(thickness)"
-                                                    class="h-4 w-4 border-gray-300 rounded focus:ring-2 focus:ring-[#001A70] checked:bg-[#001A70] checked:border-[#001A70]"
+                                                    class="h-4 w-4 rounded"
                                                 >
                                                 <label 
                                                     :for="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
@@ -394,7 +401,7 @@
                                                     :id="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
                                                     :checked="filters.selectedDoorTypes.includes(doorType)"
                                                     @click="toggleDoorTypeFilter(doorType)"
-                                                    class="h-4 w-4 border-gray-300 rounded focus:ring-2 focus:ring-[#001A70] checked:bg-[#001A70] checked:border-[#001A70]"
+                                                    class="h-4 w-4 rounded"
                                                 >
                                                 <label 
                                                     :for="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
@@ -422,7 +429,7 @@
                                                     :id="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
                                                     :checked="filters.selectedMaterials.includes(material)"
                                                     @click="toggleMaterialFilter(material)"
-                                                    class="h-4 w-4 border-gray-300 rounded focus:ring-2 focus:ring-[#001A70] checked:bg-[#001A70] checked:border-[#001A70]"
+                                                    class="h-4 w-4 rounded"
                                                 >
                                                 <label 
                                                     :for="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
