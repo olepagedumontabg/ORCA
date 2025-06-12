@@ -300,7 +300,7 @@
                                                 >
                                                 <label 
                                                     :for="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
-                                                    class="ml-2 block text-sm text-gray-700 filter-label cursor-pointer"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
                                                     :title="brand"
                                                 >
                                                     <span x-text="brand"></span>
@@ -313,7 +313,7 @@
 
                                 <!-- Series filter -->
                                 <div class="filter-section">
-                                    <h3 class="font-medium text-sm text-gray-700 cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
                                         Series<span class="float-right">−</span>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
@@ -328,7 +328,7 @@
                                                 >
                                                 <label 
                                                     :for="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
-                                                    class="ml-2 block text-sm text-gray-700 filter-label cursor-pointer"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
                                                     :title="series"
                                                 >
                                                     <span x-text="series"></span>
@@ -341,7 +341,7 @@
 
                                 <!-- Glass thickness filter -->
                                 <div class="filter-section" x-show="showDynamicFilters.glassThicknesses">
-                                    <h3 class="font-medium text-sm text-gray-700 cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
                                         Glass Thickness<span class="float-right">−</span>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
@@ -356,7 +356,7 @@
                                                 >
                                                 <label 
                                                     :for="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
-                                                    class="ml-2 block text-sm text-gray-700 filter-label cursor-pointer"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
                                                     :title="thickness"
                                                 >
                                                     <span x-text="thickness"></span>
@@ -369,7 +369,7 @@
 
                                 <!-- Door type filter -->
                                 <div class="filter-section" x-show="showDynamicFilters.doorTypes">
-                                    <h3 class="font-medium text-sm text-gray-700 cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
                                         Door Type<span class="float-right">−</span>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
@@ -384,7 +384,7 @@
                                                 >
                                                 <label 
                                                     :for="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
-                                                    class="ml-2 block text-sm text-gray-700 filter-label cursor-pointer"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
                                                     :title="doorType"
                                                 >
                                                     <span x-text="doorType"></span>
@@ -397,7 +397,7 @@
 
                                 <!-- Material filter -->
                                 <div class="filter-section" x-show="showDynamicFilters.materials">
-                                    <h3 class="font-medium text-sm text-gray-700 cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
                                         Material<span class="float-right">−</span>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
@@ -412,7 +412,7 @@
                                                 >
                                                 <label 
                                                     :for="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
-                                                    class="ml-2 block text-sm text-gray-700 filter-label cursor-pointer"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
                                                     :title="material"
                                                 >
                                                     <span x-text="material"></span>
