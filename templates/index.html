@@ -153,7 +153,7 @@
             </div>
             
             <!-- Results layout container -->
-            <div x-show="compatibleProducts.length > 0 && !errorMessage" x-cloak>
+            <div x-show="(compatibleProducts.length > 0 || (productDetails && hasSearched)) && !errorMessage" x-cloak>
                 <!-- Hero section for results page -->
                 <div class="text-center mb-8">
                     <div class="relative rounded-lg overflow-hidden mb-6">
