@@ -89,10 +89,10 @@ def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family)
     if wall_family == "vellamo" and base_brand != "vellamo":
         return False
 
-    if base_family == "interflo" and wall_brand != "interflo":
+    if base_family == "interflo" and wall_family != "interflo":
         return False
 
-    if wall_family == "interflo" and base_brand != "interflo":
+    if wall_family == "interflo" and base_family != "interflo":
         return False
 
     # Check for special cases for specific families
