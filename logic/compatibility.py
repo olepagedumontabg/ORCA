@@ -594,20 +594,21 @@ def find_compatible_products(sku):
                 f"Using shower base compatibility logic for SKU: {sku}")
             compatible_categories = base_compatibility.find_base_compatibilities(
                 data, product_info)
+            logger.info(f"Base compatibility returned {len(compatible_categories)} items: {[item.get('category') for item in compatible_categories]}")
 
             # Separate incompatibility reasons from product categories
             shower_base_incompatibility_reasons = {}
             
             # Enhance the results with additional product details
-            logger.debug(f"Processing {len(compatible_categories)} categories from base compatibility")
+            logger.info(f"Processing {len(compatible_categories)} categories from base compatibility")
             for category_info in compatible_categories:
                 category = category_info["category"]
-                logger.debug(f"Processing category: {category}, keys: {list(category_info.keys())}")
+                logger.info(f"Processing category: {category}, keys: {list(category_info.keys())}")
                 
                 # Handle incompatibility reasons
                 if "reason" in category_info:
                     reason = category_info["reason"]
-                    logger.debug(f"Found incompatibility reason for {category}: {reason}")
+                    logger.info(f"Found incompatibility reason for {category}: {reason}")
                     shower_base_incompatibility_reasons[category] = reason
                     incompatibility_reasons[category] = reason
                     continue
