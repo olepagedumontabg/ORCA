@@ -841,6 +841,11 @@ function compatibilityApp() {
                     this.compatibleProducts = [];
                     this.incompatibilityReasons = {};
                     
+                    // First, get incompatibility reasons from the direct field in the API response
+                    if (data.incompatibility_reasons) {
+                        this.incompatibilityReasons = { ...data.incompatibility_reasons };
+                    }
+                    
                     // Go through each category in the compatibles array
                     (data.compatibles || []).forEach(category => {
                         // Check if this is an incompatibility reason entry
