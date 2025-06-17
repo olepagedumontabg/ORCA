@@ -782,6 +782,8 @@ def find_compatible_products(sku):
                     "category": category,
                     "products": enhanced_skus
                 })
+            
+            logger.info(f"After shower base processing, incompatibility_reasons: {incompatibility_reasons}")
 
         # BACKWARDS COMPATIBILITY: Find bases/bathtubs compatible with doors
         elif product_category in ['Shower Doors', 'Tub Doors']:
@@ -1854,6 +1856,7 @@ def find_compatible_products(sku):
                         del product["_ranking"]
 
         logger.debug(f"Found {len(compatible_products)} compatible categories")
+        logger.info(f"Final incompatibility_reasons before return: {incompatibility_reasons}")
         return {"product": source_product, "compatibles": compatible_products, "incompatibility_reasons": incompatibility_reasons}
 
     except Exception as e:
