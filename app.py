@@ -227,11 +227,13 @@ def search():
 
         # ---------------------------------------------------------------
         # Build the incompatibility_reasons object for the front‑end
-        incompatibility_reasons = {
-            cat["category"]: cat.get("reason", "")
-            for cat in results.get("compatibles", [])
-            if cat.get("reason") and not cat.get("products")
-        }
+        # First, get any incompatibility reasons from the results directly
+        incompatibility_reasons = results.get("incompatibility_reasons", {})
+        
+        # Then, add any incompatibility reasons from compatibles array (for backward compatibility)
+        for cat in results.get("compatibles", []):
+            if cat.get("reason") and not cat.get("products"):
+                incompatibility_reasons[cat["category"]] = cat.get("reason", "")
         # ---------------------------------------------------------------
 
 
