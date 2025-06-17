@@ -1593,6 +1593,11 @@ def find_compatible_products(sku):
 
         logger.debug(f"Source product name (final): {source_product['name']}")
 
+        # Early return for shower bases with incompatibility reasons only
+        if product_category == 'Shower Bases' and incompatibility_reasons and not compatible_products:
+            logger.info(f"Early return for shower base with incompatibility reasons: {incompatibility_reasons}")
+            return {"product": source_product, "compatibles": [], "incompatibility_reasons": incompatibility_reasons}
+
         # Ensure every category dict has a "products" key (only for categories without incompatibility reasons)
         for cat in compatible_products:
             if "reason" not in cat:
