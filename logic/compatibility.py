@@ -1855,15 +1855,20 @@ def find_compatible_products(sku):
                     if "_ranking" in product:
                         del product["_ranking"]
 
+        logger.info(f"Before final return - incompatibility_reasons still has: {incompatibility_reasons}")
         logger.debug(f"Found {len(compatible_products)} compatible categories")
-        logger.info(f"Final incompatibility_reasons before return: {incompatibility_reasons}")
-        return {"product": source_product, "compatibles": compatible_products, "incompatibility_reasons": incompatibility_reasons}
+        logger.info(f"About to return - incompatibility_reasons: {incompatibility_reasons}")
+        logger.info(f"About to return - len(incompatibility_reasons): {len(incompatibility_reasons)}")
+        
+        result = {"product": source_product, "compatibles": compatible_products, "incompatibility_reasons": incompatibility_reasons}
+        logger.info(f"Final result incompatibility_reasons: {result.get('incompatibility_reasons', {})}")
+        return result
 
     except Exception as e:
         import traceback
         logger.error(f"Error in find_compatible_products: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        return {"product": None, "compatibles": []}
+        return {"product": None, "compatibles": [], "incompatibility_reasons": {}}
 
 
 def get_product_details(data, sku):
