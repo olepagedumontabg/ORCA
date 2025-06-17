@@ -465,6 +465,7 @@ def find_compatible_products(sku):
 
         # Set up the empty results list
         compatible_products = []
+        incompatibility_reasons = {}
         is_bathtub = False
 
         # Call the appropriate compatibility logic based on product category
@@ -594,9 +595,18 @@ def find_compatible_products(sku):
             compatible_categories = base_compatibility.find_base_compatibilities(
                 data, product_info)
 
+            # Separate incompatibility reasons from product categories
+            shower_base_incompatibility_reasons = {}
+            
             # Enhance the results with additional product details
             for category_info in compatible_categories:
                 category = category_info["category"]
+                
+                # Handle incompatibility reasons
+                if "reason" in category_info:
+                    incompatibility_reasons[category] = category_info["reason"]
+                    continue
+                
                 enhanced_skus = []
 
                 # Handle both old format (with "skus") and new format (with "products")

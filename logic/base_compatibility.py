@@ -589,7 +589,7 @@ def find_base_compatibilities(data, base_info):
         else:
             logger.debug(f"Walls not added: matching_walls={len(matching_walls) if matching_walls else 0}, incompatibility={incompatibility_reasons.get('Walls', 'None')}")
 
-        if matching_enclosures:
+        if matching_enclosures and "Shower Doors" not in incompatibility_reasons:
             # Check if base supports both alcove and corner installations
             supports_both = "alcove" in base_install and "corner" in base_install
             is_corner_only = "corner" in base_install and "alcove" not in base_install
