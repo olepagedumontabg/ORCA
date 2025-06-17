@@ -641,6 +641,13 @@ def find_base_compatibilities(data, base_info):
         logger.debug(f"  Compatible products returned: {len(compatible_products)}")
         logger.debug(f"  Category order: {[x.get('category') for x in compatible_products]}")
 
+        # Add incompatibility reasons as separate entries in the result
+        for category, reason in incompatibility_reasons.items():
+            compatible_products.append({
+                "category": category,
+                "reason": reason
+            })
+
         return compatible_products
 
     except Exception as e:

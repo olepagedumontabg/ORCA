@@ -599,12 +599,17 @@ def find_compatible_products(sku):
             shower_base_incompatibility_reasons = {}
             
             # Enhance the results with additional product details
+            logger.debug(f"Processing {len(compatible_categories)} categories from base compatibility")
             for category_info in compatible_categories:
                 category = category_info["category"]
+                logger.debug(f"Processing category: {category}, keys: {list(category_info.keys())}")
                 
                 # Handle incompatibility reasons
                 if "reason" in category_info:
-                    incompatibility_reasons[category] = category_info["reason"]
+                    reason = category_info["reason"]
+                    logger.debug(f"Found incompatibility reason for {category}: {reason}")
+                    shower_base_incompatibility_reasons[category] = reason
+                    incompatibility_reasons[category] = reason
                     continue
                 
                 enhanced_skus = []
@@ -1848,7 +1853,7 @@ def find_compatible_products(sku):
                         del product["_ranking"]
 
         logger.debug(f"Found {len(compatible_products)} compatible categories")
-        return {"product": source_product, "compatibles": compatible_products}
+        return {"product": source_product, "compatibles": compatible_products, "incompatibility_reasons": incompatibility_reasons}
 
     except Exception as e:
         import traceback
