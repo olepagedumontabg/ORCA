@@ -95,7 +95,7 @@ def find_base_compatibilities(data, base_info):
         matching_enclosures = []
 
         # ---------- Doors ----------
-        if 'Shower Doors' in data:
+        if 'Shower Doors' in data and "Shower Doors" not in incompatibility_reasons:
             doors_df = data['Shower Doors']
             logger.debug(
                 f"Checking compatibility with {len(doors_df)} shower doors")
@@ -429,7 +429,7 @@ def find_base_compatibilities(data, base_info):
                     logger.debug(f"    Missing required measurements - skipping")
 
         # ---------- Walls ----------
-        if 'Walls' in data:
+        if 'Walls' in data and "Walls" not in incompatibility_reasons:
             walls_df = data['Walls']
 
             nominal_matches = []
