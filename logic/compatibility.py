@@ -1494,6 +1494,68 @@ def find_compatible_products(sku):
                         "products": enhanced_skus
                     })
 
+        # ENCLOSURES: Find compatible shower bases for enclosures
+        elif product_category == 'Enclosures':
+            logger.debug(f"Using enclosure reverse compatibility logic for SKU: {sku}")
+            
+            # Get key enclosure properties
+            enclosure_nominal = product_info.get("Nominal Dimensions", "")
+            enclosure_door_width = product_info.get("Door Width")
+            enclosure_return_width = product_info.get("Return Panel Width")
+            enclosure_brand = product_info.get("Brand")
+            enclosure_series = product_info.get("Series")
+            
+            logger.debug(f"Enclosure properties: Nominal={enclosure_nominal}, Door Width={enclosure_door_width}, Return Width={enclosure_return_width}")
+            logger.debug(f"Enclosure Brand={enclosure_brand}, Series={enclosure_series}")
+            
+            # Find compatible shower bases
+            if 'Shower Bases' in data:
+                base_matches = []
+                bases_df = data['Shower Bases']
+                
+                for _, base in bases_df.iterrows():
+                    base_nominal = base.get("Nominal Dimensions", "")
+                    base_return_size = base.get("Fits Return Panel Size")
+                    base_brand = base.get("Brand")
+                    base_series = base.get("Series")
+                    base_id = str(base.get("Unique ID", "")).strip()
+                    
+                    # Check if dimensions match and series are compatible
+                    if (base_nominal == enclosure_nominal and
+                        pd.notna(base_return_size) and pd.notna(enclosure_return_width) and
+                        abs(float(base_return_size) - float(enclosure_return_width)) < 1.0 and
+                        base_compatibility.series_compatible(base_series, enclosure_series, base_brand, enclosure_brand)):
+                        
+                        # Format base data for the frontend
+                        base_data = base.to_dict()
+                        # Remove any NaN values
+                        base_data = {k: v for k, v in base_data.items() if pd.notna(v)}
+                        
+                        product_dict = {
+                            "sku": base_id,
+                            "is_combo": False,
+                            "_ranking": base_data.get("Ranking", 999),
+                            "name": base_data.get("Product Name", ""),
+                            "image_url": image_handler.generate_image_url(base_data),
+                            "nominal_dimensions": base_data.get("Nominal Dimensions", ""),
+                            "brand": base_data.get("Brand", ""),
+                            "series": base_data.get("Series", ""),
+                            "family": base_data.get("Family", ""),
+                            "installation": base_data.get("Installation", ""),
+                            "material": base_data.get("Material", ""),
+                            "max_door_width": base_data.get("Max Door Width", ""),
+                            "product_page_url": base_data.get("Product Page URL", "")
+                        }
+                        base_matches.append(product_dict)
+                
+                # Sort shower bases by ranking
+                if base_matches:
+                    base_matches.sort(key=lambda x: x.get('_ranking', 999))
+                    compatible_products.append({
+                        "category": "Shower Bases",
+                        "products": base_matches
+                    })
+
         # THIS IS THE ROOT CAUSE FIX: Always get the correct original product information
         # before proceeding with compatibility checks
 
