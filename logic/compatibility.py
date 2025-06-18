@@ -1505,8 +1505,8 @@ def find_compatible_products(sku):
             enclosure_brand = product_info.get("Brand")
             enclosure_series = product_info.get("Series")
             
-            logger.debug(f"Enclosure properties: Nominal={enclosure_nominal}, Door Width={enclosure_door_width}, Return Width={enclosure_return_width}")
-            logger.debug(f"Enclosure Brand={enclosure_brand}, Series={enclosure_series}")
+            logger.info(f"Enclosure properties: Nominal={enclosure_nominal}, Door Width={enclosure_door_width}, Return Width={enclosure_return_width}")
+            logger.info(f"Enclosure Brand={enclosure_brand}, Series={enclosure_series}")
             
             # Find compatible shower bases
             if 'Shower Bases' in data:
@@ -1523,7 +1523,7 @@ def find_compatible_products(sku):
                     # Check if dimensions match and series are compatible
                     if (base_nominal == enclosure_nominal and
                         pd.notna(base_return_size) and pd.notna(enclosure_return_width) and
-                        abs(float(base_return_size) - float(enclosure_return_width)) < 1.0 and
+                        abs(float(base_return_size) - float(enclosure_return_width)) <= 3.0 and
                         base_compatibility.series_compatible(base_series, enclosure_series, base_brand, enclosure_brand)):
                         
                         # Format base data for the frontend
