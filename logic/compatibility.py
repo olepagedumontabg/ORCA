@@ -588,6 +588,107 @@ def find_compatible_products(sku):
                     "products": enhanced_skus
                 })
 
+        elif product_category == 'Enclosures':
+            # Find compatible shower bases for enclosures (reverse of base→enclosure logic)
+            logger.info(f"=== ENCLOSURE LOGIC TRIGGERED for SKU {sku} ===")
+            logger.debug(f"Using enclosure reverse compatibility logic for SKU: {sku}")
+            
+            # Get enclosure properties (these become the constraints)
+            enc_nominal = product_info.get("Nominal Dimensions", "")
+            enc_door_width = product_info.get("Door Width")
+            enc_return_width = product_info.get("Return Panel Width")
+            enc_brand = product_info.get("Brand")
+            enc_series = product_info.get("Series")
+            
+            logger.info(f"Enclosure: {enc_nominal}, Door: {enc_door_width}, Return: {enc_return_width}")
+            logger.info(f"Enclosure Brand: {enc_brand}, Series: {enc_series}")
+            
+            # Parse enclosure dimensions
+            try:
+                if enc_nominal and 'x' in str(enc_nominal):
+                    dimensions = str(enc_nominal).split('x')
+                    enc_length = float(dimensions[0].strip())
+                    enc_width_actual = float(dimensions[1].strip())
+                else:
+                    enc_length = None
+                    enc_width_actual = None
+            except (ValueError, IndexError):
+                enc_length = None
+                enc_width_actual = None
+            
+            # Find compatible shower bases (mirror the existing logic from base_compatibility.py)
+            if 'Shower Bases' in data:
+                matching_bases = []
+                bases_df = data['Shower Bases']
+                tolerance = 3.0
+                
+                for _, base in bases_df.iterrows():
+                    base_install = str(base.get("Installation", "")).lower()
+                    base_id = str(base.get("Unique ID", "")).strip()
+                    
+                    # Only check corner bases (enclosures require corner installation)
+                    if "corner" not in base_install or not base_id:
+                        continue
+                        
+                    base_series = base.get("Series")
+                    base_brand = base.get("Brand")
+                    base_nominal = base.get("Nominal Dimensions")
+                    base_length = base.get("Length")
+                    base_width_actual = base.get("Width Actual")
+                    
+                    logger.debug(f"  Checking base: {base_id}")
+                    
+                    # Check series compatibility (same as original)
+                    series_match = base_compatibility.series_compatible(enc_series, base_series, enc_brand, base_brand)
+                    if not series_match:
+                        logger.debug(f"    ✗ Series mismatch")
+                        continue
+                    
+                    # Check nominal dimensions match
+                    nominal_match = base_nominal == enc_nominal
+                    
+                    # Check detailed dimension compatibility (reversed from original logic)
+                    dimension_match = False
+                    if (pd.notna(enc_length) and pd.notna(base_length) and 
+                        pd.notna(enc_width_actual) and pd.notna(base_width_actual) and
+                        pd.notna(enc_door_width) and pd.notna(enc_return_width)):
+                        try:
+                            dimension_match = (
+                                float(base_length) >= float(enc_door_width) and
+                                (float(base_length) - float(enc_door_width)) <= tolerance and
+                                float(base_width_actual) >= float(enc_return_width) and
+                                (float(base_width_actual) - float(enc_return_width)) <= tolerance
+                            )
+                        except (ValueError, TypeError):
+                            dimension_match = False
+                    
+                    logger.debug(f"    Nominal: {nominal_match}, Dimension: {dimension_match}")
+                    
+                    # Accept if either match (same as original logic)
+                    if nominal_match or dimension_match:
+                        base_product = {
+                            "sku": base_id,
+                            "name": base.get("Product Name", ""),
+                            "brand": base.get("Brand", ""),
+                            "series": base.get("Series", ""),
+                            "category": "Shower Bases",
+                            "image_url": base.get("Image URL", ""),
+                            "product_page_url": base.get("Product Page URL", ""),
+                            "_ranking": base.get("Ranking", 999),
+                            "is_combo": False
+                        }
+                        matching_bases.append(base_product)
+                        logger.debug(f"    ✓ Added base {base_id}")
+                
+                # Add results if any matches found
+                if matching_bases:
+                    sorted_bases = sorted(matching_bases, key=lambda x: x.get('_ranking', 999))
+                    compatible_products.append({
+                        "category": "Shower Bases",
+                        "products": sorted_bases
+                    })
+                    logger.info(f"Added {len(sorted_bases)} shower bases")
+
         elif product_category == 'Shower Bases':
             # Use the dedicated shower base compatibility logic
             logger.debug(
@@ -1494,105 +1595,7 @@ def find_compatible_products(sku):
                         "products": enhanced_skus
                     })
 
-        # ENCLOSURES: Find compatible shower bases for enclosures (reverse of base→enclosure logic)
-        elif product_category == 'Enclosures':
-            logger.debug(f"Using enclosure reverse compatibility logic for SKU: {sku}")
-            
-            # Get enclosure properties (these become the constraints)
-            enc_nominal = product_info.get("Nominal Dimensions", "")
-            enc_door_width = product_info.get("Door Width")
-            enc_return_width = product_info.get("Return Panel Width")
-            enc_brand = product_info.get("Brand")
-            enc_series = product_info.get("Series")
-            
-            logger.info(f"Enclosure: {enc_nominal}, Door: {enc_door_width}, Return: {enc_return_width}")
-            logger.info(f"Enclosure Brand: {enc_brand}, Series: {enc_series}")
-            
-            # Parse enclosure dimensions
-            try:
-                if enc_nominal and 'x' in str(enc_nominal):
-                    dimensions = str(enc_nominal).split('x')
-                    enc_length = float(dimensions[0].strip())
-                    enc_width_actual = float(dimensions[1].strip())
-                else:
-                    enc_length = None
-                    enc_width_actual = None
-            except (ValueError, IndexError):
-                enc_length = None
-                enc_width_actual = None
-            
-            # Find compatible shower bases (mirror the existing logic from base_compatibility.py)
-            if 'Shower Bases' in data:
-                matching_bases = []
-                bases_df = data['Shower Bases']
-                tolerance = 3.0
-                
-                for _, base in bases_df.iterrows():
-                    base_install = str(base.get("Installation", "")).lower()
-                    base_id = str(base.get("Unique ID", "")).strip()
-                    
-                    # Only check corner bases (enclosures require corner installation)
-                    if "corner" not in base_install or not base_id:
-                        continue
-                        
-                    base_series = base.get("Series")
-                    base_brand = base.get("Brand")
-                    base_nominal = base.get("Nominal Dimensions")
-                    base_length = base.get("Length")
-                    base_width_actual = base.get("Width Actual")
-                    
-                    logger.debug(f"  Checking base: {base_id}")
-                    
-                    # Check series compatibility (same as original)
-                    series_match = base_compatibility.series_compatible(enc_series, base_series, enc_brand, base_brand)
-                    if not series_match:
-                        logger.debug(f"    ✗ Series mismatch")
-                        continue
-                    
-                    # Check nominal dimensions match
-                    nominal_match = base_nominal == enc_nominal
-                    
-                    # Check detailed dimension compatibility (reversed from original logic)
-                    dimension_match = False
-                    if (pd.notna(enc_length) and pd.notna(base_length) and 
-                        pd.notna(enc_width_actual) and pd.notna(base_width_actual) and
-                        pd.notna(enc_door_width) and pd.notna(enc_return_width)):
-                        try:
-                            dimension_match = (
-                                float(base_length) >= float(enc_door_width) and
-                                (float(base_length) - float(enc_door_width)) <= tolerance and
-                                float(base_width_actual) >= float(enc_return_width) and
-                                (float(base_width_actual) - float(enc_return_width)) <= tolerance
-                            )
-                        except (ValueError, TypeError):
-                            dimension_match = False
-                    
-                    logger.debug(f"    Nominal: {nominal_match}, Dimension: {dimension_match}")
-                    
-                    # Accept if either match (same as original logic)
-                    if nominal_match or dimension_match:
-                        base_product = {
-                            "sku": base_id,
-                            "name": base.get("Product Name", ""),
-                            "brand": base.get("Brand", ""),
-                            "series": base.get("Series", ""),
-                            "category": "Shower Bases",
-                            "image_url": base.get("Image URL", ""),
-                            "product_page_url": base.get("Product Page URL", ""),
-                            "_ranking": base.get("Ranking", 999),
-                            "is_combo": False
-                        }
-                        matching_bases.append(base_product)
-                        logger.debug(f"    ✓ Added base {base_id}")
-                
-                # Add results if any matches found
-                if matching_bases:
-                    sorted_bases = sorted(matching_bases, key=lambda x: x.get('_ranking', 999))
-                    compatible_products.append({
-                        "category": "Shower Bases",
-                        "products": sorted_bases
-                    })
-                    logger.debug(f"Added {len(sorted_bases)} shower bases")
+
 
         # THIS IS THE ROOT CAUSE FIX: Always get the correct original product information
         # before proceeding with compatibility checks
