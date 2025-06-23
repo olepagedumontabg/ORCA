@@ -93,9 +93,11 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - `/logic/`: Core compatibility algorithms
 - `/tests/`: Test scripts and utilities
 
-## Changelog
+## Recent Changes
 
-- June 23, 2025. Initial setup
+- **June 23, 2025**: Fixed incompatibility reasons display - shower bases and bathtubs now properly show door incompatibility messages
+- **June 23, 2025**: Fixed screens visibility logic - screens are now correctly hidden when door incompatibility reasons exist
+- **June 23, 2025**: Fixed brand/family compatibility restrictions - Olio and Vellamo products now only appear with each other, not with other brands like Swan
 
 ## User Preferences
 

@@ -738,11 +738,7 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
 
-    # Universal compatibility: Dreamline and Swan are compatible with anything
-    if base_brand in ["dreamline", "swan"] or wall_brand in ["dreamline", "swan"]:
-        return True
-
-    # First check for specifically restricted families
+    # FIRST: Check for specifically restricted families - these override all other rules
     # Olio products should ONLY be compatible with other Olio products
     if base_family == "olio" and wall_family != "olio":
         return False
@@ -754,6 +750,10 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
         return False
     if wall_family == "vellamo" and base_family != "vellamo":
         return False
+
+    # Universal compatibility: Dreamline and Swan are compatible with anything (after family restrictions)
+    if base_brand in ["dreamline", "swan"] or wall_brand in ["dreamline", "swan"]:
+        return True
 
     if base_family == "interflo" and wall_family != "interflo":
         return False
