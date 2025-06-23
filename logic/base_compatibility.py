@@ -370,7 +370,8 @@ def find_base_compatibilities(data, base_info):
                         f"    ✓ Added enclosure {enc_id} to matching enclosures")
 
         # ---------- Shower Screens ----------
-        if 'Shower Screens' in data:
+        # Only show screens if there are no door incompatibility reasons
+        if 'Shower Screens' in data and "Shower Doors" not in incompatibility_reasons:
             screens_df = data['Shower Screens']
             logger.debug(f"Processing {len(screens_df)} shower screens for compatibility")
             
@@ -427,6 +428,8 @@ def find_base_compatibilities(data, base_info):
                         continue
                 else:
                     logger.debug(f"    Missing required measurements - skipping")
+        elif "Shower Doors" in incompatibility_reasons:
+            logger.debug(f"Skipping screens due to door incompatibility: {incompatibility_reasons['Shower Doors']}")
 
         # ---------- Walls ----------
         if 'Walls' in data and "Walls" not in incompatibility_reasons:
