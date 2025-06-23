@@ -743,15 +743,15 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
         return True
 
     # First check for specifically restricted families
+    # Olio products should ONLY be compatible with other Olio products
     if base_family == "olio" and wall_family != "olio":
         return False
-
     if wall_family == "olio" and base_family != "olio":
         return False
 
+    # Vellamo products should ONLY be compatible with other Vellamo products  
     if base_family == "vellamo" and wall_family != "vellamo":
         return False
-
     if wall_family == "vellamo" and base_family != "vellamo":
         return False
 
@@ -773,7 +773,16 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     if wall_family in ["utile", "nextile"] and base_family not in ["b3", "finesse", "distinct", "zone", "olympia", "icon", "roka"]:
         return False
 
-    # Different brand checks
+    # Cross-brand compatibility rules
+    # Allow Swan products to work with other brands (unless restricted by family above)
+    if base_brand == "swan":
+        return True
+    
+    # Allow Dreamline products to work with other brands (unless restricted by family above)  
+    if base_brand == "dreamline" or wall_brand == "dreamline":
+        return True
+
+    # Different brand checks - these brands should only work with themselves
     if base_brand == "maax" and wall_brand != "maax":
         return False
 
@@ -784,5 +793,5 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     if base_brand == wall_brand:
         return True
 
-    # Default case - no match
+    # Default case - no match for cross-brand unless explicitly allowed above
     return False
