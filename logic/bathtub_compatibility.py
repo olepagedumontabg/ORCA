@@ -215,8 +215,9 @@ def find_bathtub_compatibilities(data, bathtub_info):
             logger.error(f"Error processing tub door: {e}")
 
     # Find compatible tub screens using the same logic as tub doors
+    # Only show screens if there are no door incompatibility reasons
     compatible_screens = []
-    if not tub_screens_df.empty:
+    if not tub_screens_df.empty and "Tub Doors" not in incompatibility_reasons:
         for _, screen in tub_screens_df.iterrows():
             try:
                 screen_fixed_panel_width = screen.get("Fixed Panel Width")
@@ -369,7 +370,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
         sorted_doors = sorted(compatible_doors, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Tub Doors", "products": sorted_doors})
 
-    if compatible_screens and "Tub Screens" not in incompatibility_reasons:
+    if compatible_screens and "Tub Doors" not in incompatibility_reasons:
         # Sort the screens by ranking
         sorted_screens = sorted(compatible_screens, key=lambda x: x.get('_ranking', 999))
         results.append({"category": "Tub Screens", "products": sorted_screens})
