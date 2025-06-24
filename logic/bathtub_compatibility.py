@@ -8,13 +8,15 @@ logger = logging.getLogger(__name__)
 TOLERANCE_INCHES = 3  # 3 inches tolerance for dimension matching
 
 
-def series_compatible(base_series, compare_series):
+def series_compatible(base_series, compare_series, base_brand=None, compare_brand=None):
     """
     Check if two series are compatible based on business rules.
 
     Args:
         base_series (str): Series of the base product
         compare_series (str): Series of the product to compare with
+        base_brand (str): Brand of the base product (optional)
+        compare_brand (str): Brand of the compare product (optional)
 
     Returns:
         bool: True if the series are compatible, False otherwise
@@ -22,10 +24,16 @@ def series_compatible(base_series, compare_series):
     # Convert to strings and normalize
     base_series = str(base_series).strip() if base_series else ""
     compare_series = str(compare_series).strip() if compare_series else ""
+    base_brand = str(base_brand).strip().lower() if base_brand else ""
+    compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
 
-    # If either is empty, they're not compatible
+    # Universal compatibility: DreamLine and Swan are compatible with any series
+    if compare_brand in ["dreamline", "swan"] or base_brand in ["dreamline", "swan"]:
+        return True
+
+    # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
     if not base_series or not compare_series:
-        return False
+        return True
 
     # Same series are always compatible
     if base_series.lower() == compare_series.lower():
@@ -188,7 +196,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
                 tub_install == "Alcove" and
                 pd.notna(tub_width) and pd.notna(door_min_width) and pd.notna(door_max_width) and
                 door_min_width <= tub_width <= door_max_width and
-                series_compatible(tub_series, door_series)
+                series_compatible(tub_series, door_series, tub_brand, door.get("Brand"))
             ):
                 # Format door product data for the frontend
                 door_data = door.to_dict()
@@ -231,7 +239,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
                     tub_install == "Alcove" and
                     pd.notna(tub_width) and pd.notna(screen_fixed_panel_width) and
                     (tub_width - screen_fixed_panel_width) > 22 and
-                    series_compatible(tub_series, screen_series)
+                    series_compatible(tub_series, screen_series, tub_brand, screen.get("Brand"))
                 ):
                     # Format screen product data for the frontend
                     screen_data = screen.to_dict()
