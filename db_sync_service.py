@@ -160,6 +160,7 @@ def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
 def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> int:
     """
     Recompute compatibilities for products that changed.
+    Creates BIDIRECTIONAL relationships (A→B and B→A).
     
     Args:
         changed_skus: Set of SKUs that were added or updated
@@ -185,8 +186,9 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
             if not product:
                 continue
             
-            # Delete old compatibilities
+            # Delete old compatibilities (both directions)
             session.query(ProductCompatibility).filter_by(base_product_id=product.id).delete()
+            session.query(ProductCompatibility).filter_by(compatible_product_id=product.id).delete()
             
             try:
                 # Compute new compatibilities
@@ -195,7 +197,8 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
                 if not results or not results.get('compatibles'):
                     continue
                 
-                # Store new compatibilities
+                # Store new compatibilities (with deduplication)
+                seen_ids = set()
                 for category_data in results['compatibles']:
                     for compatible_product_data in category_data.get('products', []):
                         compatible_sku = compatible_product_data.get('sku', '').upper()
@@ -203,17 +206,31 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
                             continue
                         
                         compatible_product = session.query(Product).filter_by(sku=compatible_sku).first()
-                        if not compatible_product:
+                        if not compatible_product or compatible_product.id in seen_ids:
                             continue
                         
-                        compatibility_record = ProductCompatibility(
+                        seen_ids.add(compatible_product.id)
+                        
+                        # Create forward relationship (A → B)
+                        forward_compat = ProductCompatibility(
                             base_product_id=product.id,
                             compatible_product_id=compatible_product.id,
                             compatibility_score=100,
                             match_reason=f"Compatible {category_data.get('category', 'product')}",
                             incompatibility_reason=None
                         )
-                        session.add(compatibility_record)
+                        session.add(forward_compat)
+                        compatibility_count += 1
+                        
+                        # Create reverse relationship (B → A) for bidirectional lookup
+                        reverse_compat = ProductCompatibility(
+                            base_product_id=compatible_product.id,
+                            compatible_product_id=product.id,
+                            compatibility_score=100,
+                            match_reason=f"Reverse: Compatible {category_data.get('category', 'product')}",
+                            incompatibility_reason=None
+                        )
+                        session.add(reverse_compat)
                         compatibility_count += 1
                 
                 if idx % 10 == 0:
@@ -224,7 +241,7 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
                 continue
         
         session.commit()
-        logger.info(f"Compatibility recomputation complete: {compatibility_count} records created")
+        logger.info(f"Compatibility recomputation complete: {compatibility_count} records created (bidirectional)")
         return compatibility_count
         
     except Exception as e:
