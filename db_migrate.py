@@ -123,6 +123,21 @@ def compute_compatibilities(limit=None, sku_filter=None):
         int: Number of compatibility records created
     """
     logger.info("Starting compatibility computation...")
+    
+    # CRITICAL: Load data into memory ONCE before processing all products
+    # This prevents reloading Excel files 2,193+ times (6 seconds each!)
+    logger.info("Preloading product data into memory cache...")
+    try:
+        import data_update_service
+        excel_path = os.path.join('data', 'Product Data.xlsx')
+        if not data_update_service.load_data_into_memory(excel_path):
+            logger.error("Failed to preload data into memory")
+            return 0
+        logger.info("Data successfully preloaded - compatibility computation will be FAST!")
+    except Exception as e:
+        logger.error(f"Error preloading data: {str(e)}")
+        return 0
+    
     session = get_session()
     compatibility_count = 0
     
@@ -198,14 +213,22 @@ def get_stats():
     """
     session = get_session()
     try:
+        from sqlalchemy import func
+        
+        total_products = session.query(Product).count()
+        total_compatibilities = session.query(ProductCompatibility).count()
+        products_with_compat = session.query(ProductCompatibility.base_product_id).distinct().count()
+        
         stats = {
-            'total_products': session.query(Product).count(),
-            'total_compatibilities': session.query(ProductCompatibility).count(),
+            'total_products': total_products,
+            'total_compatibilities': total_compatibilities,
             'total_overrides': session.query(CompatibilityOverride).count(),
+            'products_with_compatibilities': products_with_compat,
+            'products_without_compatibilities': total_products - products_with_compat,
+            'avg_compatibilities': total_compatibilities / products_with_compat if products_with_compat > 0 else 0,
             'products_by_category': {}
         }
         
-        from sqlalchemy import func
         category_counts = session.query(
             Product.category,
             func.count(Product.id)
