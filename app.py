@@ -6,6 +6,7 @@ import pandas as pd
 import io
 import traceback
 from logic import compatibility
+import data_loader
 
 # Try to import the data update service
 try:
@@ -343,6 +344,422 @@ def search():
             'message': f'An error occurred: {str(e)}'
         })
 
+
+# ============================================================================
+# REST API ENDPOINTS FOR EXTERNAL ACCESS
+# ============================================================================
+
+@app.route('/api/compatible/<sku>', methods=['GET'])
+def api_get_compatible(sku):
+    """
+    REST API endpoint to get compatible products for a given SKU.
+    
+    Returns JSON with product details and all compatible products.
+    
+    Query Parameters:
+        - category: Filter by category (optional)
+        - limit: Limit results per category (optional, default: 100)
+    
+    Example: GET /api/compatible/FB03060M
+    Example: GET /api/compatible/FB03060M?category=Doors&limit=20
+    """
+    try:
+        sku = sku.strip().upper()
+        category_filter = request.args.get('category', '').strip()
+        limit = request.args.get('limit', type=int, default=100)
+        
+        logger.info(f"API request for compatible products: SKU={sku}")
+        
+        db_compatibles = None
+        if data_loader.check_database_ready():
+            logger.info(f"Attempting to load compatibilities from database for {sku}")
+            db_compatibles = data_loader.load_compatible_products_from_database(sku)
+        
+        if db_compatibles is not None:
+            logger.info(f"Using database-sourced compatibilities for {sku}")
+            product_data = data_loader.load_product_from_database(sku)
+            
+            if not product_data:
+                return jsonify({
+                    'success': False,
+                    'error': 'Product not found',
+                    'sku': sku
+                }), 404
+            
+            compatibles = []
+            for category, products in db_compatibles.items():
+                if category_filter and category.lower() != category_filter.lower():
+                    continue
+                
+                if len(products) > limit:
+                    compatibles.append({
+                        'category': category,
+                        'products': products[:limit],
+                        'truncated': True,
+                        'total_count': len(products)
+                    })
+                else:
+                    compatibles.append({
+                        'category': category,
+                        'products': products
+                    })
+            
+            response = {
+                'success': True,
+                'sku': sku,
+                'product': {
+                    'sku': product_data.get('Unique ID'),
+                    'name': product_data.get('Product Name'),
+                    'brand': product_data.get('Brand'),
+                    'category': product_data.get('Category'),
+                    'series': product_data.get('Series'),
+                    'family': product_data.get('Family'),
+                    'image_url': product_data.get('Image URL'),
+                    'product_page_url': product_data.get('Product Page URL'),
+                },
+                'compatibles': compatibles,
+                'incompatibility_reasons': {},
+                'total_categories': len(compatibles),
+                'data_source': 'database'
+            }
+            
+            return jsonify(response)
+        
+        logger.info(f"Falling back to Excel-based compatibility for {sku}")
+        results = compatibility.find_compatible_products(sku)
+        
+        if not results or not results.get('product'):
+            return jsonify({
+                'success': False,
+                'error': 'Product not found',
+                'sku': sku
+            }), 404
+        
+        incompatibility_reasons = results.get("incompatibility_reasons", {})
+        for cat in results.get("compatibles", []):
+            if cat.get("reason") and not cat.get("products"):
+                incompatibility_reasons[cat["category"]] = cat.get("reason", "")
+        
+        compatibles = results.get('compatibles', [])
+        
+        if category_filter:
+            compatibles = [c for c in compatibles if c.get('category', '').lower() == category_filter.lower()]
+        
+        for cat in compatibles:
+            products = cat.get('products', [])
+            if len(products) > limit:
+                cat['products'] = products[:limit]
+                cat['truncated'] = True
+                cat['total_count'] = len(products)
+        
+        response = {
+            'success': True,
+            'sku': sku,
+            'product': results['product'],
+            'compatibles': compatibles,
+            'incompatibility_reasons': incompatibility_reasons,
+            'total_categories': len(compatibles),
+            'data_source': 'excel'
+        }
+        
+        import pandas as pd
+        import json
+        
+        def deep_clean(obj):
+            if isinstance(obj, (list, tuple)):
+                return [deep_clean(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {k: deep_clean(v) for k, v in obj.items()}
+            elif obj is None:
+                return None
+            elif isinstance(obj, (float, int)) and (pd.isna(obj) if hasattr(pd, 'isna') else False):
+                return None
+            elif hasattr(pd, 'isna') and hasattr(pd, 'api') and hasattr(pd.api, 'types'):
+                if pd.api.types.is_scalar(obj) and pd.isna(obj):
+                    return None
+                else:
+                    return obj
+            else:
+                return obj
+        
+        response = deep_clean(response)
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"API error for compatible/{sku}: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'sku': sku
+        }), 500
+
+
+@app.route('/api/product/<sku>', methods=['GET'])
+def api_get_product(sku):
+    """
+    REST API endpoint to get details about a specific product.
+    
+    Returns JSON with product details only (no compatibility data).
+    
+    Example: GET /api/product/FB03060M
+    """
+    try:
+        sku = sku.strip().upper()
+        
+        logger.info(f"API request for product details: SKU={sku}")
+        
+        if data_loader.check_database_ready():
+            logger.info(f"Attempting to load product from database: {sku}")
+            product_data = data_loader.load_product_from_database(sku)
+            
+            if product_data:
+                import pandas as pd
+                product_clean = {}
+                for k, v in product_data.items():
+                    if pd.isna(v):
+                        product_clean[k] = None
+                    else:
+                        product_clean[k] = v
+                
+                return jsonify({
+                    'success': True,
+                    'sku': sku,
+                    'category': product_clean.get('Category'),
+                    'product': product_clean,
+                    'data_source': 'database'
+                })
+        
+        logger.info(f"Falling back to Excel for product: {sku}")
+        data = compatibility.load_data()
+        
+        for sheet_name, df in data.items():
+            if 'Unique ID' in df.columns:
+                matching_rows = df[df['Unique ID'].astype(str).str.upper() == sku]
+                if not matching_rows.empty:
+                    product_data = matching_rows.iloc[0].to_dict()
+                    
+                    import pandas as pd
+                    product_clean = {}
+                    for k, v in product_data.items():
+                        if pd.isna(v):
+                            product_clean[k] = None
+                        else:
+                            product_clean[k] = v
+                    
+                    return jsonify({
+                        'success': True,
+                        'sku': sku,
+                        'category': sheet_name,
+                        'product': product_clean,
+                        'data_source': 'excel'
+                    })
+        
+        return jsonify({
+            'success': False,
+            'error': 'Product not found',
+            'sku': sku
+        }), 404
+        
+    except Exception as e:
+        logger.error(f"API error for product/{sku}: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'sku': sku
+        }), 500
+
+
+@app.route('/api/products', methods=['GET'])
+def api_list_products():
+    """
+    REST API endpoint to list all products.
+    
+    Query Parameters:
+        - category: Filter by category (optional)
+        - brand: Filter by brand (optional)
+        - limit: Number of results to return (default: 100, max: 1000)
+        - offset: Number of results to skip (default: 0)
+    
+    Example: GET /api/products
+    Example: GET /api/products?category=Shower Bases&brand=Swan&limit=50
+    """
+    try:
+        category_filter = request.args.get('category', '').strip()
+        brand_filter = request.args.get('brand', '').strip().lower()
+        limit = min(request.args.get('limit', type=int, default=100), 1000)
+        offset = request.args.get('offset', type=int, default=0)
+        
+        logger.info(f"API request for products list: category={category_filter}, brand={brand_filter}, limit={limit}, offset={offset}")
+        
+        if data_loader.check_database_ready():
+            logger.info("Loading products from database")
+            db_products, total_count = data_loader.get_all_products_from_database(
+                category=category_filter if category_filter else None,
+                limit=limit,
+                offset=offset
+            )
+            
+            if brand_filter:
+                db_products = [p for p in db_products if brand_filter in str(p.get('Brand', '')).lower()]
+                total_count = len(db_products)
+            
+            import pandas as pd
+            clean_products = []
+            for product in db_products:
+                product_clean = {}
+                for k, v in product.items():
+                    if pd.isna(v):
+                        product_clean[k] = None
+                    else:
+                        product_clean[k] = v
+                clean_products.append(product_clean)
+            
+            return jsonify({
+                'success': True,
+                'products': clean_products,
+                'total_count': total_count,
+                'limit': limit,
+                'offset': offset,
+                'returned_count': len(clean_products),
+                'data_source': 'database'
+            })
+        
+        logger.info("Falling back to Excel for products list")
+        data = compatibility.load_data()
+        all_products = []
+        
+        for sheet_name, df in data.items():
+            if category_filter and sheet_name.lower() != category_filter.lower():
+                continue
+            
+            if 'Unique ID' in df.columns:
+                for _, row in df.iterrows():
+                    product_dict = row.to_dict()
+                    
+                    if brand_filter:
+                        product_brand = str(product_dict.get('Brand', '')).lower()
+                        if brand_filter not in product_brand:
+                            continue
+                    
+                    import pandas as pd
+                    product_clean = {'category': sheet_name}
+                    for k, v in product_dict.items():
+                        if pd.isna(v):
+                            product_clean[k] = None
+                        else:
+                            product_clean[k] = v
+                    
+                    all_products.append(product_clean)
+        
+        total_count = len(all_products)
+        paginated_products = all_products[offset:offset + limit]
+        
+        return jsonify({
+            'success': True,
+            'products': paginated_products,
+            'total_count': total_count,
+            'limit': limit,
+            'offset': offset,
+            'returned_count': len(paginated_products),
+            'data_source': 'excel'
+        })
+        
+    except Exception as e:
+        logger.error(f"API error for products list: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/categories', methods=['GET'])
+def api_list_categories():
+    """
+    REST API endpoint to list all available product categories.
+    
+    Returns JSON with category names and product counts.
+    
+    Example: GET /api/categories
+    """
+    try:
+        logger.info("API request for categories list")
+        
+        data = compatibility.load_data()
+        categories = []
+        
+        for sheet_name, df in data.items():
+            if 'Unique ID' in df.columns:
+                categories.append({
+                    'name': sheet_name,
+                    'product_count': len(df)
+                })
+        
+        return jsonify({
+            'success': True,
+            'categories': categories,
+            'total_categories': len(categories)
+        })
+        
+    except Exception as e:
+        logger.error(f"API error for categories list: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    """
+    Health check endpoint for monitoring.
+    
+    Returns system status and data freshness information.
+    
+    Example: GET /api/health
+    """
+    try:
+        data_source_info = data_loader.get_data_source_info()
+        
+        data = compatibility.load_data()
+        total_products = sum(len(df) for df in data.values())
+        
+        health_status = {
+            'success': True,
+            'status': 'healthy',
+            'total_products': total_products,
+            'categories': len(data),
+            'data_service_available': data_service_available,
+            'data_source': data_source_info
+        }
+        
+        if data_service_available:
+            try:
+                import data_update_service as data_service
+                cached_data, update_time = data_service.get_product_data()
+                if update_time:
+                    health_status['last_data_update'] = update_time.isoformat()
+            except Exception:
+                pass
+        
+        return jsonify(health_status)
+        
+    except Exception as e:
+        logger.error(f"API error for health check: {str(e)}")
+        return jsonify({
+            'success': False,
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# END OF REST API ENDPOINTS
+# ============================================================================
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

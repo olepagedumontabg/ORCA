@@ -18,7 +18,9 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - **Design**: Responsive design with mobile-first approach
 
 ### Data Storage Solutions
-- **Primary Data**: Excel files (`Product Data.xlsx`) containing product catalogs
+- **Hybrid Data Architecture**: Supports both database and Excel file data sources
+- **Primary Data**: PostgreSQL database for fast queries and multi-app access (when populated)
+- **Fallback Data**: Excel files (`Product Data.xlsx`) containing product catalogs
 - **Data Directory**: Local file system storage with backup capabilities
 - **Data Sources**: FTP server integration for automated data updates
 
@@ -27,6 +29,12 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 ### Core Application (`app.py`)
 - Flask application initialization and configuration
 - Route handling for main interface and API endpoints
+- **REST API Endpoints**: 5 endpoints for external application integration
+  - `/api/health`: System health and status
+  - `/api/categories`: List all product categories
+  - `/api/products`: Paginated product listing with filters
+  - `/api/product/<sku>`: Get specific product details
+  - `/api/compatible/<sku>`: Get compatible products for a SKU
 - Integration with data update service
 - Error handling and logging
 
@@ -49,6 +57,20 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - Success/failure alerts for data updates
 - Configurable recipient settings
 
+### Database Layer (New - Hybrid Approach)
+- **Models (`models.py`)**: SQLAlchemy ORM models for products and compatibility
+  - Product model with JSONB attributes
+  - ProductCompatibility for pre-computed matches
+  - CompatibilityOverride for whitelist/blacklist
+- **Migration Script (`db_migrate.py`)**: Database population and management
+  - Import products from Excel to PostgreSQL
+  - Pre-compute compatibility matches
+  - Database statistics and monitoring
+- **Data Loader (`data_loader.py`)**: Intelligent data source selection
+  - Auto-detects database availability
+  - Falls back to Excel if database unavailable
+  - Unified interface for application code
+
 ## Data Flow
 
 1. **Data Ingestion**: FTP service downloads latest Excel files
@@ -68,6 +90,8 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 ### Python Packages
 - Flask 3.1.0+ for web framework
 - Pandas 2.2.3+ for data processing
+- SQLAlchemy 2.0+ for database ORM
+- psycopg2-binary for PostgreSQL connectivity
 - Gunicorn 23.0.0+ for production deployment
 - SendGrid 6.12.0+ for email notifications
 - Schedule 1.2.2+ for automated tasks
@@ -85,6 +109,8 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - `FTP_USER`, `FTP_PASSWORD`: FTP credentials
 - `SENDGRID_API_KEY`: Email service authentication
 - `SESSION_SECRET`: Flask session security
+- `DATABASE_URL`: PostgreSQL database connection string (auto-configured by Replit)
+- `USE_DATABASE`: Control database usage (auto/true/false, default: auto)
 
 ### File Structure
 - `/data/`: Product data and backups
@@ -95,6 +121,13 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ## Recent Changes
 
+- **October 22, 2025**: **Hybrid Data Architecture** - Implemented REST API and database support for multi-app access
+  - Added 5 REST API endpoints for external application integration
+  - Created PostgreSQL database schema (Product, ProductCompatibility, CompatibilityOverride tables)
+  - Built migration tools for Excel-to-database import
+  - Implemented intelligent data loader with automatic database/Excel fallback
+  - Created comprehensive API documentation (`API_DOCUMENTATION.md`)
+  - System now supports both standalone Excel mode and database-backed mode
 - **June 23, 2025**: Fixed incompatibility reasons display - shower bases and bathtubs now properly show door incompatibility messages
 - **June 23, 2025**: Fixed screens visibility logic - screens are now correctly hidden when door incompatibility reasons exist
 - **June 23, 2025**: Fixed brand/family compatibility restrictions - Olio and Vellamo products now only appear with each other, not with other brands like Swan
