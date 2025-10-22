@@ -76,32 +76,44 @@ def process_bathtub_batch(start_idx: int, batch_size: int, preload_cache: bool =
                 seen_ids = set()
                 compat_count = 0
                 
-                for category_data in results['compatibles']:
-                    category = category_data.get('category', 'Unknown')
-                    products = category_data.get('products', [])
-                    
-                    for compatible_product_data in products:
-                        compatible_sku = compatible_product_data.get('sku', '').upper()
-                        if not compatible_sku:
-                            continue
+                # Use no_autoflush to prevent premature flushes during queries
+                with session.no_autoflush:
+                    for category_data in results['compatibles']:
+                        category = category_data.get('category', 'Unknown')
+                        products = category_data.get('products', [])
                         
-                        compatible_product = session.query(Product).filter_by(sku=compatible_sku).first()
-                        if not compatible_product or compatible_product.id in seen_ids:
-                            continue
-                        
-                        seen_ids.add(compatible_product.id)
-                        
-                        # Create compatibility record
-                        compatibility_record = ProductCompatibility(
-                            base_product_id=product.id,
-                            compatible_product_id=compatible_product.id,
-                            compatibility_score=100,
-                            match_reason=f"Compatible {category}",
-                            incompatibility_reason=None
-                        )
-                        session.add(compatibility_record)
-                        compat_count += 1
+                        for compatible_product_data in products:
+                            compatible_sku = compatible_product_data.get('sku', '').upper()
+                            if not compatible_sku:
+                                continue
+                            
+                            compatible_product = session.query(Product).filter_by(sku=compatible_sku).first()
+                            if not compatible_product or compatible_product.id in seen_ids:
+                                continue
+                            
+                            seen_ids.add(compatible_product.id)
+                            
+                            # Check if compatibility already exists
+                            existing = session.query(ProductCompatibility).filter_by(
+                                base_product_id=product.id,
+                                compatible_product_id=compatible_product.id
+                            ).first()
+                            
+                            if existing:
+                                continue
+                            
+                            # Create compatibility record
+                            compatibility_record = ProductCompatibility(
+                                base_product_id=product.id,
+                                compatible_product_id=compatible_product.id,
+                                compatibility_score=100,
+                                match_reason=f"Compatible {category}",
+                                incompatibility_reason=None
+                            )
+                            session.add(compatibility_record)
+                            compat_count += 1
                 
+                # Commit after each product to isolate errors
                 session.commit()
                 stats['compatibilities_created'] += compat_count
                 stats['processed'] += 1
