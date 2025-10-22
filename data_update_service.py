@@ -280,6 +280,22 @@ def update_data():
         logger.info(f"Replacing current file with new file")
         shutil.move(Config.TEMP_FILE, Config.CURRENT_FILE)
         logger.info("Data update process completed successfully")
+        
+        # Sync database with the new Excel file
+        try:
+            import db_sync_service
+            logger.info("Starting database synchronization")
+            sync_result = db_sync_service.full_sync_workflow(str(Config.CURRENT_FILE))
+            if sync_result.get('success'):
+                logger.info(f"Database sync successful: {sync_result['products_added']} added, "
+                          f"{sync_result['products_updated']} updated, "
+                          f"{sync_result['compatibilities_updated']} compatibilities updated")
+            else:
+                logger.error(f"Database sync failed: {sync_result.get('error')}")
+        except Exception as db_error:
+            logger.error(f"Error during database sync: {str(db_error)}")
+            logger.warning("Continuing despite database sync error - Excel data is loaded")
+        
         return True
     except Exception as e:
         logger.error(f"Error replacing current file: {str(e)}")

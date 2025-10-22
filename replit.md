@@ -50,6 +50,7 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - Automated FTP file synchronization
 - Scheduled daily updates at 02:00
 - Data validation and backup management
+- **Automatic database synchronization** after successful FTP download
 - Email notifications for update status
 
 ### Email Notifications (`email_notifications.py`)
@@ -59,7 +60,7 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ### Database Layer (New - Hybrid Approach)
 - **Models (`models.py`)**: SQLAlchemy ORM models for products and compatibility
-  - Product model with JSONB attributes
+  - Product model with JSON attributes
   - ProductCompatibility for pre-computed matches
   - CompatibilityOverride for whitelist/blacklist
 - **Migration Script (`db_migrate.py`)**: Database population and management
@@ -70,6 +71,11 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
   - Auto-detects database availability
   - Falls back to Excel if database unavailable
   - Unified interface for application code
+- **Database Sync Service (`db_sync_service.py`)**: Automated database updates
+  - Syncs database with Excel changes (add/update/delete products)
+  - Recomputes compatibilities for changed products only
+  - Integrates with daily FTP update workflow
+  - Smart incremental updates to minimize processing
 
 ## Data Flow
 
