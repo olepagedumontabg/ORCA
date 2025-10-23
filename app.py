@@ -370,41 +370,32 @@ def api_get_compatible(sku):
         
         logger.info(f"API request for compatible products: SKU={sku}")
         
-        db_compatibles = None
-        if data_loader.check_database_ready():
-            logger.info(f"Attempting to load compatibilities from database for {sku}")
-            db_compatibles = data_loader.load_compatible_products_from_database(sku)
+        # Check if database is available
+        if not data_loader.check_database_ready():
+            logger.error("Database not available")
+            return jsonify({
+                'success': False,
+                'error': 'Database not available',
+                'sku': sku
+            }), 503
         
-        if db_compatibles is not None:
-            logger.info(f"Using database-sourced compatibilities for {sku}")
-            product_data = data_loader.load_product_from_database(sku)
-            
-            if not product_data:
-                return jsonify({
-                    'success': False,
-                    'error': 'Product not found',
-                    'sku': sku
-                }), 404
-            
-            compatibles = []
-            for category, products in db_compatibles.items():
-                if category_filter and category.lower() != category_filter.lower():
-                    continue
-                
-                if len(products) > limit:
-                    compatibles.append({
-                        'category': category,
-                        'products': products[:limit],
-                        'truncated': True,
-                        'total_count': len(products)
-                    })
-                else:
-                    compatibles.append({
-                        'category': category,
-                        'products': products
-                    })
-            
-            response = {
+        # Load product from database
+        product_data = data_loader.load_product_from_database(sku)
+        
+        if not product_data:
+            return jsonify({
+                'success': False,
+                'error': 'Product not found in database',
+                'sku': sku
+            }), 404
+        
+        # Load compatibilities from database
+        db_compatibles = data_loader.load_compatible_products_from_database(sku)
+        
+        if db_compatibles is None:
+            # Product exists but has no compatibilities computed yet
+            logger.info(f"Product {sku} exists but has no compatibilities in database")
+            return jsonify({
                 'success': True,
                 'sku': sku,
                 'product': {
@@ -417,72 +408,50 @@ def api_get_compatible(sku):
                     'image_url': product_data.get('Image URL'),
                     'product_page_url': product_data.get('Product Page URL'),
                 },
-                'compatibles': compatibles,
+                'compatibles': [],
                 'incompatibility_reasons': {},
-                'total_categories': len(compatibles),
-                'data_source': 'database'
-            }
+                'total_categories': 0,
+                'data_source': 'database',
+                'message': 'Product found but compatibility data not yet computed'
+            })
+        
+        # Build compatibles list
+        compatibles = []
+        for category, products in db_compatibles.items():
+            if category_filter and category.lower() != category_filter.lower():
+                continue
             
-            return jsonify(response)
-        
-        logger.info(f"Falling back to Excel-based compatibility for {sku}")
-        results = compatibility.find_compatible_products(sku)
-        
-        if not results or not results.get('product'):
-            return jsonify({
-                'success': False,
-                'error': 'Product not found',
-                'sku': sku
-            }), 404
-        
-        incompatibility_reasons = results.get("incompatibility_reasons", {})
-        for cat in results.get("compatibles", []):
-            if cat.get("reason") and not cat.get("products"):
-                incompatibility_reasons[cat["category"]] = cat.get("reason", "")
-        
-        compatibles = results.get('compatibles', [])
-        
-        if category_filter:
-            compatibles = [c for c in compatibles if c.get('category', '').lower() == category_filter.lower()]
-        
-        for cat in compatibles:
-            products = cat.get('products', [])
             if len(products) > limit:
-                cat['products'] = products[:limit]
-                cat['truncated'] = True
-                cat['total_count'] = len(products)
+                compatibles.append({
+                    'category': category,
+                    'products': products[:limit],
+                    'truncated': True,
+                    'total_count': len(products)
+                })
+            else:
+                compatibles.append({
+                    'category': category,
+                    'products': products
+                })
         
         response = {
             'success': True,
             'sku': sku,
-            'product': results['product'],
+            'product': {
+                'sku': product_data.get('Unique ID'),
+                'name': product_data.get('Product Name'),
+                'brand': product_data.get('Brand'),
+                'category': product_data.get('Category'),
+                'series': product_data.get('Series'),
+                'family': product_data.get('Family'),
+                'image_url': product_data.get('Image URL'),
+                'product_page_url': product_data.get('Product Page URL'),
+            },
             'compatibles': compatibles,
-            'incompatibility_reasons': incompatibility_reasons,
+            'incompatibility_reasons': {},
             'total_categories': len(compatibles),
-            'data_source': 'excel'
+            'data_source': 'database'
         }
-        
-        import pandas as pd
-        import json
-        
-        def deep_clean(obj):
-            if isinstance(obj, (list, tuple)):
-                return [deep_clean(item) for item in obj]
-            elif isinstance(obj, dict):
-                return {k: deep_clean(v) for k, v in obj.items()}
-            elif obj is None:
-                return None
-            elif isinstance(obj, (float, int)) and (pd.isna(obj) if hasattr(pd, 'isna') else False):
-                return None
-            elif hasattr(pd, 'isna') and hasattr(pd, 'api') and hasattr(pd.api, 'types'):
-                if pd.api.types.is_scalar(obj) and pd.isna(obj):
-                    return None
-                else:
-                    return obj
-            else:
-                return obj
-        
-        response = deep_clean(response)
         
         return jsonify(response)
         
