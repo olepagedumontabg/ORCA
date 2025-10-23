@@ -149,6 +149,13 @@ def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
                 'compatibility_score': comp.compatibility_score,
             }
             
+            # Add attributes from JSON field (glass_thickness, door_type, etc.)
+            if comp_product.attributes:
+                if 'Glass Thickness' in comp_product.attributes:
+                    product_data['glass_thickness'] = comp_product.attributes['Glass Thickness']
+                if 'Door Type' in comp_product.attributes:
+                    product_data['door_type'] = comp_product.attributes['Door Type']
+            
             compatible_products_by_category[category].append(product_data)
         
         session.close()
