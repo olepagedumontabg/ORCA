@@ -127,6 +127,12 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ## Recent Changes
 
+- **October 23, 2025**: **API Category Consistency Fix** - Fixed inconsistency between database and Excel data sources
+  - Excel mode was returning "Doors + Return Panels" as one combined category
+  - Database mode was returning "Shower Doors" and "Return Panels" as separate categories
+  - Modified `logic/base_compatibility.py` to separate combo products into individual doors and return panels
+  - Both data sources now return consistent categories ("Shower Doors" and "Return Panels" separately)
+  - Combo products (e.g., "DOOR123|PANEL456") are now split into individual SKUs in Excel responses to match database behavior
 - **October 22, 2025**: **Hybrid Data Architecture** - Implemented REST API and database support for multi-app access
   - Added 5 REST API endpoints for external application integration
   - Created PostgreSQL database schema (Product, ProductCompatibility, CompatibilityOverride tables)
@@ -134,6 +140,7 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
   - Implemented intelligent data loader with automatic database/Excel fallback
   - Created comprehensive API documentation (`API_DOCUMENTATION.md`)
   - System now supports both standalone Excel mode and database-backed mode
+  - Database coverage: 75.6% (1,657 products with 54,796 bidirectional compatibility relationships)
 - **June 23, 2025**: Fixed incompatibility reasons display - shower bases and bathtubs now properly show door incompatibility messages
 - **June 23, 2025**: Fixed screens visibility logic - screens are now correctly hidden when door incompatibility reasons exist
 - **June 23, 2025**: Fixed brand/family compatibility restrictions - Olio and Vellamo products now only appear with each other, not with other brands like Swan
