@@ -18,9 +18,9 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - **Design**: Responsive design with mobile-first approach
 
 ### Data Storage Solutions
-- **Hybrid Data Architecture**: Supports both database and Excel file data sources
-- **Primary Data**: PostgreSQL database for fast queries and multi-app access (when populated)
-- **Fallback Data**: Excel files (`Product Data.xlsx`) containing product catalogs
+- **Database-First Architecture**: PostgreSQL database is the single source of truth for API
+- **Primary Data**: PostgreSQL database for fast queries and multi-app access
+- **Excel Data**: Excel files (`Product Data.xlsx`) used for initial import and web interface fallback
 - **Data Directory**: Local file system storage with backup capabilities
 - **Data Sources**: FTP server integration for automated data updates
 
@@ -68,8 +68,8 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
   - Pre-compute compatibility matches
   - Database statistics and monitoring
 - **Data Loader (`data_loader.py`)**: Intelligent data source selection
-  - Auto-detects database availability
-  - Falls back to Excel if database unavailable
+  - Database-only mode for REST API endpoints
+  - Excel fallback available for web interface
   - Unified interface for application code
 - **Database Sync Service (`db_sync_service.py`)**: Automated database updates
   - Syncs database with Excel changes (add/update/delete products)
@@ -127,6 +127,11 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ## Recent Changes
 
+- **October 23, 2025**: **Database-Only API Mode** - Removed Excel fallback from REST API endpoints
+  - API endpoints now exclusively use PostgreSQL database as single source of truth
+  - Products without computed compatibilities return empty array with informative message
+  - Web interface retains Excel fallback for user convenience
+  - Ensures consistent, reliable data for external applications
 - **October 23, 2025**: **API Category Consistency Fix** - Fixed inconsistency between database and Excel data sources
   - Excel mode was returning "Doors + Return Panels" as one combined category
   - Database mode was returning "Shower Doors" and "Return Panels" as separate categories
