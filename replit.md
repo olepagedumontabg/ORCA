@@ -136,6 +136,10 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ## Recent Changes
 
+- **October 23, 2025**: **Fixed Compatibility Query Bug** - Fixed API not finding compatibility records
+  - Database compatibility records were using empty strings ('') instead of NULL for incompatibility_reason
+  - Updated data_loader.py to handle both NULL and empty string cases
+  - API now correctly returns compatible products from production database
 - **October 23, 2025**: **Database-Only API Mode** - Removed Excel fallback from REST API endpoints
   - API endpoints now exclusively use PostgreSQL database as single source of truth
   - Products without computed compatibilities return empty array with informative message

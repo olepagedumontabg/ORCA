@@ -114,9 +114,14 @@ def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
             session.close()
             return None
         
-        compatibilities = session.query(ProductCompatibility).filter_by(
-            base_product_id=product.id,
-            incompatibility_reason=None
+        from sqlalchemy import or_
+        
+        compatibilities = session.query(ProductCompatibility).filter(
+            ProductCompatibility.base_product_id == product.id,
+            or_(
+                ProductCompatibility.incompatibility_reason == None,
+                ProductCompatibility.incompatibility_reason == ''
+            )
         ).all()
         
         if not compatibilities:
