@@ -125,6 +125,15 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 - `/logic/`: Core compatibility algorithms
 - `/tests/`: Test scripts and utilities
 
+### Production Database Migration
+- **Migration Guide**: See `PRODUCTION_MIGRATION_SIMPLE.md` for step-by-step instructions
+- **Approach**: Use existing `db_migrate.py` and `complete_all_compatibilities.py` scripts with production DATABASE_URL
+- **Process**: 
+  1. Publish app to create production database
+  2. Run `DATABASE_URL='prod-url' python db_migrate.py` to import products
+  3. Run `DATABASE_URL='prod-url' python complete_all_compatibilities.py` to compute compatibilities
+- **Safety**: Always verify DATABASE_URL before running, restore development URL after completion
+
 ## Recent Changes
 
 - **October 23, 2025**: **Database-Only API Mode** - Removed Excel fallback from REST API endpoints
