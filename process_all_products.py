@@ -7,7 +7,7 @@ This script processes every product regardless of current compatibility status.
 import logging
 import time
 from models import get_session, Product, ProductCompatibility
-from logic.compatibility import get_compatible_products
+from logic.compatibility import find_compatible_products
 from data_loader import load_all_data
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -45,7 +45,7 @@ def process_all_products():
         for idx, product in enumerate(products_without_comp, 1):
             try:
                 # Get compatibilities from the compatibility script
-                result = get_compatible_products(product.sku, all_data)
+                result = find_compatible_products(product.sku)
                 
                 if result and isinstance(result, dict):
                     compatibles = result.get('compatibles', [])
