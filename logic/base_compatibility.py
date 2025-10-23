@@ -563,9 +563,58 @@ def find_base_compatibilities(data, base_info):
                         compatible_products.append({"category": "Alcove Doors", "products": sorted_alcove_doors})
                 
                 if corner_doors:
-                    sorted_corner_doors = sorted(corner_doors, key=lambda x: x.get('_ranking', 999))
-                    logger.debug(f"Adding {len(sorted_corner_doors)} corner doors to results")
-                    compatible_products.append({"category": "Doors + Return Panels", "products": sorted_corner_doors})
+                    # Separate combo products into individual doors and return panels
+                    individual_doors = []
+                    individual_panels = []
+                    
+                    for combo in corner_doors:
+                        if combo.get('is_combo'):
+                            # Extract main product (door)
+                            main = combo.get('main_product', {})
+                            if main.get('sku'):
+                                door_product = {
+                                    "sku": main.get('sku'),
+                                    "name": main.get('name'),
+                                    "brand": main.get('brand'),
+                                    "series": main.get('series'),
+                                    "category": "Shower Doors",
+                                    "image_url": main.get('image_url'),
+                                    "product_page_url": main.get('product_page_url'),
+                                    "_ranking": combo.get('_ranking', 999),
+                                    "is_combo": False
+                                }
+                                individual_doors.append(door_product)
+                            
+                            # Extract secondary product (return panel)
+                            secondary = combo.get('secondary_product', {})
+                            if secondary.get('sku'):
+                                panel_product = {
+                                    "sku": secondary.get('sku'),
+                                    "name": secondary.get('name'),
+                                    "brand": secondary.get('brand'),
+                                    "series": secondary.get('series'),
+                                    "category": "Return Panels",
+                                    "image_url": secondary.get('image_url'),
+                                    "product_page_url": secondary.get('product_page_url'),
+                                    "_ranking": combo.get('_ranking', 999),
+                                    "is_combo": False
+                                }
+                                individual_panels.append(panel_product)
+                        else:
+                            # Not a combo, add as-is to doors
+                            individual_doors.append(combo)
+                    
+                    # Add separated doors to compatible products
+                    if individual_doors:
+                        sorted_doors = sorted(individual_doors, key=lambda x: x.get('_ranking', 999))
+                        logger.debug(f"Adding {len(sorted_doors)} individual corner doors to results")
+                        compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
+                    
+                    # Add separated return panels to compatible products
+                    if individual_panels:
+                        sorted_panels = sorted(individual_panels, key=lambda x: x.get('_ranking', 999))
+                        logger.debug(f"Adding {len(sorted_panels)} individual return panels to results")
+                        compatible_products.append({"category": "Return Panels", "products": sorted_panels})
             elif matching_doors:
                 # Regular mode: single category for all doors
                 sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
@@ -617,7 +666,7 @@ def find_base_compatibilities(data, base_info):
         category_order = [
             "Shower Doors",
             "Alcove Doors", 
-            "Doors + Return Panels",
+            "Return Panels",
             "Enclosures",
             "Corner Enclosures",
             "Screens",
