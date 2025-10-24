@@ -96,6 +96,85 @@ def load_product_from_database(sku: str) -> Optional[Dict]:
         return None
 
 
+def find_product_by_multi_sku(child_sku: str, parent_sku: str = None, unique_id: str = None) -> Optional[Dict]:
+    """
+    Find a product by searching multiple SKU formats with priority matching.
+    Searches in order: child_sku -> parent_sku -> unique_id
+    
+    Args:
+        child_sku (str): Child/variant SKU (highest priority)
+        parent_sku (str, optional): Parent SKU (medium priority)
+        unique_id (str, optional): Unique ID (lowest priority)
+        
+    Returns:
+        dict with keys: product_data, matched_sku, match_type
+        or None if no match found
+    """
+    try:
+        session = get_session()
+        
+        # Build list of SKUs to search (in order)
+        sku_search_list = []
+        sku_types = []
+        
+        if child_sku:
+            sku_search_list.append(child_sku.strip().upper())
+            sku_types.append('child_sku')
+        if parent_sku:
+            sku_search_list.append(parent_sku.strip().upper())
+            sku_types.append('parent_sku')
+        if unique_id:
+            sku_search_list.append(unique_id.strip().upper())
+            sku_types.append('unique_id')
+        
+        if not sku_search_list:
+            session.close()
+            return None
+        
+        # Single query to search all SKUs at once
+        products = session.query(Product).filter(Product.sku.in_(sku_search_list)).all()
+        session.close()
+        
+        if not products:
+            return None
+        
+        # Match by priority: check which SKU matched first
+        for i, search_sku in enumerate(sku_search_list):
+            for product in products:
+                if product.sku == search_sku:
+                    # Found match - return with priority info
+                    product_dict = {
+                        'Unique ID': product.sku,
+                        'Product Name': product.product_name,
+                        'Brand': product.brand,
+                        'Category': product.category,
+                        'Series': product.series,
+                        'Family': product.family,
+                        'Length': float(product.length) if product.length else None,
+                        'Width': float(product.width) if product.width else None,
+                        'Height': float(product.height) if product.height else None,
+                        'Nominal Dimensions': product.nominal_dimensions,
+                        'Product Page URL': product.product_page_url,
+                        'Image URL': product.image_url,
+                        'Ranking': product.ranking,
+                    }
+                    
+                    if product.attributes:
+                        product_dict.update(product.attributes)
+                    
+                    return {
+                        'product_data': product_dict,
+                        'matched_sku': product.sku,
+                        'match_type': sku_types[i]
+                    }
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error in multi-SKU lookup: {str(e)}")
+        return None
+
+
 def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
     """
     Load compatible products from the database for a given SKU.

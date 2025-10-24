@@ -124,61 +124,87 @@ curl https://your-app.replit.app/api/product/FB03060M
 
 ### 4. Get Compatible Products
 
-Get all products compatible with a specific SKU.
+Get all products compatible with a specific SKU. Supports multi-SKU lookup with priority matching for applications using different SKU formats.
 
-**Endpoint**: `GET /api/compatible/<sku>`
+**Endpoint**: `GET /api/compatible/<child_sku>`
 
 **Parameters**:
-- `sku` (path parameter): Base product SKU
+- `child_sku` (path parameter): Your application's product SKU (highest priority)
+- `parent_sku` (query parameter, optional): Parent SKU for compatibility lookup (medium priority)
+- `unique_id` (query parameter, optional): Unique product ID (lowest priority)
 - `category` (query parameter, optional): Filter results by category
 - `limit` (query parameter, optional): Limit results per category (default: 100)
+
+**Multi-SKU Lookup Priority**:
+The system searches for a product match in the following order:
+1. **child_sku** (path parameter) - Checked first
+2. **parent_sku** (query parameter) - Checked if child_sku not found
+3. **unique_id** (query parameter) - Checked if parent_sku not found
+
+This allows your application to pass all available SKU formats and get the best match.
 
 **Response**:
 ```json
 {
   "success": true,
-  "sku": "FB03060M",
+  "queried_child_sku": "410000-501-001-000",
+  "queried_parent_sku": "410000",
+  "queried_unique_id": "410000-501-001",
+  "matched_sku": "410000-501-001",
+  "match_type": "unique_id",
   "product": {
-    "brand": "Swan",
+    "brand": "Maax",
     "category": "Shower Bases",
-    "family": "Veritek™",
+    "family": "B3",
     "image_url": "https://...",
-    "installation": "Alcove",
-    "max_door_width": 58.25,
-    "name": "FBF-3060LM/RM",
-    "nominal_dimensions": "60 x 30",
-    "series": null,
-    "sku": "FB03060M"
+    "name": "B3Round 6032 - Tunnel",
+    "sku": "410000-501-001"
   },
   "compatibles": [
+    {
+      "category": "Shower Doors",
+      "products": [
+        {
+          "brand": "DreamLine",
+          "category": "Shower Doors",
+          "sku": "139584",
+          "name": "Capella 78 32 ½-35 ½ x 78",
+          "glass_thickness": "8mm",
+          "door_type": "Pivot",
+          "compatibility_score": 95,
+          "product_page_url": "https://...",
+          "image_url": "https://..."
+        }
+      ]
+    },
     {
       "category": "Walls",
       "products": [
         {
-          "brand": "Swan",
+          "brand": "Maax",
           "category": "Walls",
-          "image_url": "https://...",
-          "name": "NexTile 6030 Shower Wall Kit",
-          "product_page_url": "https://swanstone.com/",
-          "series": null,
-          "sku": "SW005086"
+          "sku": "107479",
+          "name": "Utile 3636 Shower Wall Kit",
+          "compatibility_score": 98
         }
-      ],
-      "total_count": 13,
-      "truncated": true
+      ]
     }
   ],
   "incompatibility_reasons": {},
-  "total_categories": 1
+  "total_categories": 2,
+  "data_source": "database"
 }
 ```
 
 **Examples**:
 ```bash
-# Get all compatible products
+# Multi-SKU lookup (recommended for external applications)
+curl "https://your-app.replit.app/api/compatible/410000-501-001-000?parent_sku=410000&unique_id=410000-501-001"
+
+# Single SKU lookup (backward compatible)
 curl https://your-app.replit.app/api/compatible/FB03060M
 
-# Get compatible doors only
+# Filter compatible doors only
 curl "https://your-app.replit.app/api/compatible/FB03060M?category=Doors"
 
 # Limit results to 5 per category
@@ -186,14 +212,23 @@ curl "https://your-app.replit.app/api/compatible/FB03060M?limit=5"
 ```
 
 **Response Fields**:
+- `queried_child_sku`: The child SKU you provided in the request
+- `queried_parent_sku`: The parent SKU you provided (if any)
+- `queried_unique_id`: The unique ID you provided (if any)
+- `matched_sku`: Which SKU was found in the database
+- `match_type`: Which SKU type matched (`child_sku`, `parent_sku`, `unique_id`, or `variant_parent`)
 - `product`: Base product details
 - `compatibles`: Array of compatible product categories
   - `category`: Product category name
   - `products`: Array of compatible products
-  - `total_count`: Total number of compatible products in this category
+    - `glass_thickness`: Glass thickness for doors (e.g., "8mm")
+    - `door_type`: Door type for doors (e.g., "Pivot", "Sliding")
+    - `compatibility_score`: Numerical score (0-100)
+  - `total_count`: Total number of compatible products in this category (if truncated)
   - `truncated`: True if results were limited
 - `incompatibility_reasons`: Reasons why certain categories have no matches
 - `total_categories`: Total number of categories with compatible products
+- `data_source`: Data source used (`database` or `excel`)
 
 ---
 
@@ -283,7 +318,10 @@ curl "https://your-app.replit.app/api/products?category=Bathtubs&limit=1000"
   "series": "string|null",          // Product series
   "category": "string",             // Product category
   "product_page_url": "string",     // Product webpage
-  "image_url": "string"             // Product image
+  "image_url": "string",            // Product image
+  "compatibility_score": "number",  // Compatibility score (0-100)
+  "glass_thickness": "string",      // Glass thickness (doors only, e.g., "8mm")
+  "door_type": "string"             // Door type (doors only, e.g., "Pivot")
 }
 ```
 

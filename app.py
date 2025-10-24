@@ -354,24 +354,29 @@ def api_get_compatible(sku):
     """
     REST API endpoint to get compatible products for a given SKU.
     
-    Returns JSON with product details and all compatible products.
+    Supports multi-SKU lookup with priority matching:
+    1. Child SKU (path parameter)
+    2. Parent SKU (query parameter)
+    3. Unique ID (query parameter)
     
     Query Parameters:
+        - parent_sku: Parent SKU for compatibility lookup (optional)
+        - unique_id: Unique ID for compatibility lookup (optional)
         - category: Filter by category (optional)
         - limit: Limit results per category (optional, default: 100)
-        - child_sku: Child/variant SKU from calling app (optional, returned in response)
     
+    Example: GET /api/compatible/410000-501-001-000?parent_sku=410000&unique_id=410000-501-001
     Example: GET /api/compatible/FB03060M
     Example: GET /api/compatible/FB03060M?category=Doors&limit=20
-    Example: GET /api/compatible/FB03060M?child_sku=VARIANT-SKU-123
     """
     try:
-        sku = sku.strip().upper()
+        child_sku = sku.strip().upper()
+        parent_sku = request.args.get('parent_sku', '').strip()
+        unique_id = request.args.get('unique_id', '').strip()
         category_filter = request.args.get('category', '').strip()
         limit = request.args.get('limit', type=int, default=100)
-        child_sku = request.args.get('child_sku', '').strip()
         
-        logger.info(f"API request for compatible products: SKU={sku}, child_sku={child_sku if child_sku else 'N/A'}")
+        logger.info(f"API request for compatible products: child_sku={child_sku}, parent_sku={parent_sku if parent_sku else 'N/A'}, unique_id={unique_id if unique_id else 'N/A'}")
         
         # Check if database is available
         if not data_loader.check_database_ready():
@@ -379,39 +384,60 @@ def api_get_compatible(sku):
             return jsonify({
                 'success': False,
                 'error': 'Database not available',
-                'sku': sku
+                'queried_child_sku': child_sku
             }), 503
         
-        # Load product from database
-        product_data = data_loader.load_product_from_database(sku)
-        original_sku = sku
-        parent_sku = None
+        # Use multi-SKU lookup if parent_sku or unique_id provided
+        if parent_sku or unique_id:
+            match_result = data_loader.find_product_by_multi_sku(child_sku, parent_sku, unique_id)
+            if not match_result:
+                return jsonify({
+                    'success': False,
+                    'error': 'Product not found in database',
+                    'queried_child_sku': child_sku,
+                    'queried_parent_sku': parent_sku if parent_sku else None,
+                    'queried_unique_id': unique_id if unique_id else None,
+                    'message': 'No product found matching any of the provided SKUs (child_sku, parent_sku, unique_id)'
+                }), 404
+            
+            product_data = match_result['product_data']
+            matched_sku = match_result['matched_sku']
+            match_type = match_result['match_type']
+            lookup_sku = matched_sku
+        else:
+            # Fallback to single SKU lookup for backward compatibility
+            product_data = data_loader.load_product_from_database(child_sku)
+            matched_sku = None
+            match_type = None
+            lookup_sku = child_sku
+            
+            # If not found, try stripping variant suffix (e.g., FF03232MD.010 -> FF03232MD)
+            if not product_data and '.' in child_sku:
+                variant_parent = child_sku.rsplit('.', 1)[0]
+                logger.info(f"Product {child_sku} not found, trying variant parent SKU: {variant_parent}")
+                product_data = data_loader.load_product_from_database(variant_parent)
+                if product_data:
+                    lookup_sku = variant_parent
+                    matched_sku = variant_parent
+                    match_type = 'variant_parent'
+            
+            if not product_data:
+                return jsonify({
+                    'success': False,
+                    'error': 'Product not found in database',
+                    'queried_child_sku': child_sku,
+                    'message': 'Product not found. If this is a variant SKU (e.g., SKU.010), the parent SKU may not exist in the database.'
+                }), 404
         
-        # If not found, try stripping variant suffix (e.g., FF03232MD.010 -> FF03232MD)
-        if not product_data and '.' in sku:
-            parent_sku = sku.rsplit('.', 1)[0]
-            logger.info(f"Product {sku} not found, trying parent SKU: {parent_sku}")
-            product_data = data_loader.load_product_from_database(parent_sku)
-            if product_data:
-                sku = parent_sku  # Use parent SKU for compatibility lookup
-        
-        if not product_data:
-            return jsonify({
-                'success': False,
-                'error': 'Product not found in database',
-                'sku': original_sku,
-                'message': 'Product not found. If this is a variant SKU (e.g., SKU.010), the parent SKU may not exist in the database.'
-            }), 404
-        
-        # Load compatibilities from database
-        db_compatibles = data_loader.load_compatible_products_from_database(sku)
+        # Load compatibilities from database using the matched SKU
+        db_compatibles = data_loader.load_compatible_products_from_database(lookup_sku)
         
         if db_compatibles is None:
             # Product exists but has no compatibilities computed yet
-            logger.info(f"Product {sku} exists but has no compatibilities in database")
+            logger.info(f"Product {lookup_sku} exists but has no compatibilities in database")
             response = {
                 'success': True,
-                'sku': original_sku,
+                'queried_child_sku': child_sku,
                 'product': {
                     'sku': product_data.get('Unique ID'),
                     'name': product_data.get('Product Name'),
@@ -428,11 +454,13 @@ def api_get_compatible(sku):
                 'data_source': 'database',
                 'message': 'Product found but compatibility data not yet computed'
             }
+            if matched_sku:
+                response['matched_sku'] = matched_sku
+                response['match_type'] = match_type
             if parent_sku:
-                response['parent_sku'] = parent_sku
-                response['note'] = f'Variant SKU detected. Using parent SKU {parent_sku} for compatibility lookup.'
-            if child_sku:
-                response['child_sku'] = child_sku
+                response['queried_parent_sku'] = parent_sku
+            if unique_id:
+                response['queried_unique_id'] = unique_id
             return jsonify(response)
         
         # Build compatibles list
@@ -456,7 +484,7 @@ def api_get_compatible(sku):
         
         response = {
             'success': True,
-            'sku': original_sku,
+            'queried_child_sku': child_sku,
             'product': {
                 'sku': product_data.get('Unique ID'),
                 'name': product_data.get('Product Name'),
@@ -473,24 +501,26 @@ def api_get_compatible(sku):
             'data_source': 'database'
         }
         
-        # If we used a parent SKU, include that info in response
-        if parent_sku:
-            response['parent_sku'] = parent_sku
-            response['note'] = f'Variant SKU detected. Using parent SKU {parent_sku} for compatibility lookup.'
+        # Include SKU matching information
+        if matched_sku:
+            response['matched_sku'] = matched_sku
+            response['match_type'] = match_type
         
-        # If child_sku was provided, include it in response
-        if child_sku:
-            response['child_sku'] = child_sku
+        # Include queried SKUs for reference
+        if parent_sku:
+            response['queried_parent_sku'] = parent_sku
+        if unique_id:
+            response['queried_unique_id'] = unique_id
         
         return jsonify(response)
         
     except Exception as e:
-        logger.error(f"API error for compatible/{sku}: {str(e)}")
+        logger.error(f"API error for compatible/{child_sku}: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e),
-            'sku': sku
+            'queried_child_sku': child_sku
         }), 500
 
 
