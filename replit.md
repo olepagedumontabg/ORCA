@@ -136,6 +136,12 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ## Recent Changes
 
+- **October 24, 2025**: **Added child_sku Parameter** - Enhanced compatibility API to support child/variant SKUs
+  - Added optional `child_sku` query parameter to `/api/compatible/<sku>` endpoint
+  - Parameter allows external apps to pass their product ID while using parent SKU for lookup
+  - Response echoes child_sku back for easier tracking in multi-product systems
+  - Maintains full backward compatibility - works with or without the parameter
+  - Example: `/api/compatible/PARENT-SKU?child_sku=MY-APP-VARIANT-123`
 - **October 23, 2025**: **Fixed Compatibility Query Bug** - Fixed API not finding compatibility records
   - Database compatibility records were using empty strings ('') instead of NULL for incompatibility_reason
   - Updated data_loader.py to handle both NULL and empty string cases
