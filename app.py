@@ -359,16 +359,19 @@ def api_get_compatible(sku):
     Query Parameters:
         - category: Filter by category (optional)
         - limit: Limit results per category (optional, default: 100)
+        - child_sku: Child/variant SKU from calling app (optional, returned in response)
     
     Example: GET /api/compatible/FB03060M
     Example: GET /api/compatible/FB03060M?category=Doors&limit=20
+    Example: GET /api/compatible/FB03060M?child_sku=VARIANT-SKU-123
     """
     try:
         sku = sku.strip().upper()
         category_filter = request.args.get('category', '').strip()
         limit = request.args.get('limit', type=int, default=100)
+        child_sku = request.args.get('child_sku', '').strip()
         
-        logger.info(f"API request for compatible products: SKU={sku}")
+        logger.info(f"API request for compatible products: SKU={sku}, child_sku={child_sku if child_sku else 'N/A'}")
         
         # Check if database is available
         if not data_loader.check_database_ready():
@@ -428,6 +431,8 @@ def api_get_compatible(sku):
             if parent_sku:
                 response['parent_sku'] = parent_sku
                 response['note'] = f'Variant SKU detected. Using parent SKU {parent_sku} for compatibility lookup.'
+            if child_sku:
+                response['child_sku'] = child_sku
             return jsonify(response)
         
         # Build compatibles list
@@ -472,6 +477,10 @@ def api_get_compatible(sku):
         if parent_sku:
             response['parent_sku'] = parent_sku
             response['note'] = f'Variant SKU detected. Using parent SKU {parent_sku} for compatibility lookup.'
+        
+        # If child_sku was provided, include it in response
+        if child_sku:
+            response['child_sku'] = child_sku
         
         return jsonify(response)
         
