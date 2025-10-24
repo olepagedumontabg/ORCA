@@ -381,12 +381,23 @@ def api_get_compatible(sku):
         
         # Load product from database
         product_data = data_loader.load_product_from_database(sku)
+        original_sku = sku
+        parent_sku = None
+        
+        # If not found, try stripping variant suffix (e.g., FF03232MD.010 -> FF03232MD)
+        if not product_data and '.' in sku:
+            parent_sku = sku.rsplit('.', 1)[0]
+            logger.info(f"Product {sku} not found, trying parent SKU: {parent_sku}")
+            product_data = data_loader.load_product_from_database(parent_sku)
+            if product_data:
+                sku = parent_sku  # Use parent SKU for compatibility lookup
         
         if not product_data:
             return jsonify({
                 'success': False,
                 'error': 'Product not found in database',
-                'sku': sku
+                'sku': original_sku,
+                'message': 'Product not found. If this is a variant SKU (e.g., SKU.010), the parent SKU may not exist in the database.'
             }), 404
         
         # Load compatibilities from database
@@ -395,9 +406,9 @@ def api_get_compatible(sku):
         if db_compatibles is None:
             # Product exists but has no compatibilities computed yet
             logger.info(f"Product {sku} exists but has no compatibilities in database")
-            return jsonify({
+            response = {
                 'success': True,
-                'sku': sku,
+                'sku': original_sku,
                 'product': {
                     'sku': product_data.get('Unique ID'),
                     'name': product_data.get('Product Name'),
@@ -413,7 +424,11 @@ def api_get_compatible(sku):
                 'total_categories': 0,
                 'data_source': 'database',
                 'message': 'Product found but compatibility data not yet computed'
-            })
+            }
+            if parent_sku:
+                response['parent_sku'] = parent_sku
+                response['note'] = f'Variant SKU detected. Using parent SKU {parent_sku} for compatibility lookup.'
+            return jsonify(response)
         
         # Build compatibles list
         compatibles = []
@@ -436,7 +451,7 @@ def api_get_compatible(sku):
         
         response = {
             'success': True,
-            'sku': sku,
+            'sku': original_sku,
             'product': {
                 'sku': product_data.get('Unique ID'),
                 'name': product_data.get('Product Name'),
@@ -452,6 +467,11 @@ def api_get_compatible(sku):
             'total_categories': len(compatibles),
             'data_source': 'database'
         }
+        
+        # If we used a parent SKU, include that info in response
+        if parent_sku:
+            response['parent_sku'] = parent_sku
+            response['note'] = f'Variant SKU detected. Using parent SKU {parent_sku} for compatibility lookup.'
         
         return jsonify(response)
         
