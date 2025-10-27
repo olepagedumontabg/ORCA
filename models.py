@@ -3,11 +3,16 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, DECIMAL, TIMESTAMP, Boolean, Index, ForeignKey, UniqueConstraint, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.pool import QueuePool
 import logging
 
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
+
+# Global engine instance for connection pooling
+_engine = None
+_engine_lock = None
 
 
 class Product(Base):
@@ -81,6 +86,8 @@ class ProductCompatibility(Base):
         Index('idx_compatibility_base', 'base_product_id'),
         Index('idx_compatibility_compatible', 'compatible_product_id'),
         Index('idx_compatibility_score', 'compatibility_score'),
+        # Composite index for ordered compatibility lookups (critical for API performance)
+        Index('idx_base_score', 'base_product_id', 'compatibility_score'),
     )
     
     def __repr__(self):
@@ -110,13 +117,41 @@ class CompatibilityOverride(Base):
 
 def get_engine():
     """
-    Create and return a database engine using the DATABASE_URL environment variable.
+    Get or create a singleton database engine with connection pooling.
+    This reuses the same engine across requests for better performance.
     """
-    database_url = os.environ.get('DATABASE_URL')
-    if not database_url:
-        raise ValueError("DATABASE_URL environment variable is not set")
+    global _engine, _engine_lock
     
-    return create_engine(database_url, echo=False, pool_pre_ping=True)
+    if _engine is not None:
+        return _engine
+    
+    # Thread-safe engine creation
+    import threading
+    if _engine_lock is None:
+        _engine_lock = threading.Lock()
+    
+    with _engine_lock:
+        # Double-check pattern
+        if _engine is not None:
+            return _engine
+        
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            raise ValueError("DATABASE_URL environment variable is not set")
+        
+        # Create engine with optimized pooling settings
+        _engine = create_engine(
+            database_url,
+            echo=False,
+            pool_pre_ping=True,
+            poolclass=QueuePool,
+            pool_size=10,           # Maintain 10 connections
+            max_overflow=20,        # Allow up to 30 total connections
+            pool_recycle=3600,      # Recycle connections after 1 hour
+            pool_timeout=30,        # Wait up to 30 seconds for connection
+        )
+        logger.info("Database engine created with connection pooling")
+        return _engine
 
 
 def get_session():

@@ -159,8 +159,8 @@ def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
 
 def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> int:
     """
-    Recompute compatibilities for products that changed.
-    Creates BIDIRECTIONAL relationships (A→B and B→A).
+    Recompute compatibilities for products that changed using bulk operations.
+    Creates BIDIRECTIONAL relationships (A→B and B→A) with optimized batching.
     
     Args:
         changed_skus: Set of SKUs that were added or updated
@@ -177,18 +177,41 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
     compatibility_count = 0
     
     try:
+        # Build SKU to ID mapping for fast lookups
+        all_products = session.query(Product.id, Product.sku).all()
+        sku_to_id = {p.sku: p.id for p in all_products}
+        
+        # Collect IDs of products to update
+        product_ids_to_update = []
+        for sku in changed_skus:
+            product_id = sku_to_id.get(sku)
+            if product_id:
+                product_ids_to_update.append(product_id)
+        
+        if not product_ids_to_update:
+            return 0
+        
+        # Delete old compatibilities in bulk (both directions)
+        logger.info(f"Deleting old compatibilities for {len(product_ids_to_update)} products")
+        session.query(ProductCompatibility).filter(
+            ProductCompatibility.base_product_id.in_(product_ids_to_update)
+        ).delete(synchronize_session=False)
+        session.query(ProductCompatibility).filter(
+            ProductCompatibility.compatible_product_id.in_(product_ids_to_update)
+        ).delete(synchronize_session=False)
+        session.commit()
+        
+        # Prepare batch insert
+        BATCH_SIZE = 500
+        compatibility_batch = []
+        
         for idx, sku in enumerate(changed_skus, 1):
             if idx % 10 == 0:
-                logger.info(f"Progress: {idx}/{len(changed_skus)} products processed")
+                logger.info(f"Progress: {idx}/{len(changed_skus)} products processed, {compatibility_count} compatibilities")
             
-            # Get product from database
-            product = session.query(Product).filter_by(sku=sku).first()
-            if not product:
+            product_id = sku_to_id.get(sku)
+            if not product_id:
                 continue
-            
-            # Delete old compatibilities (both directions)
-            session.query(ProductCompatibility).filter_by(base_product_id=product.id).delete()
-            session.query(ProductCompatibility).filter_by(compatible_product_id=product.id).delete()
             
             try:
                 # Compute new compatibilities
@@ -205,43 +228,60 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
                         if not compatible_sku:
                             continue
                         
-                        compatible_product = session.query(Product).filter_by(sku=compatible_sku).first()
-                        if not compatible_product or compatible_product.id in seen_ids:
+                        compatible_product_id = sku_to_id.get(compatible_sku)
+                        if not compatible_product_id or compatible_product_id in seen_ids:
                             continue
                         
-                        seen_ids.add(compatible_product.id)
+                        seen_ids.add(compatible_product_id)
                         
-                        # Create forward relationship (A → B)
-                        forward_compat = ProductCompatibility(
-                            base_product_id=product.id,
-                            compatible_product_id=compatible_product.id,
-                            compatibility_score=100,
-                            match_reason=f"Compatible {category_data.get('category', 'product')}",
-                            incompatibility_reason=None
-                        )
-                        session.add(forward_compat)
-                        compatibility_count += 1
+                        # Add forward relationship to batch (A → B)
+                        compatibility_batch.append({
+                            'base_product_id': product_id,
+                            'compatible_product_id': compatible_product_id,
+                            'compatibility_score': 100,
+                            'match_reason': f"Compatible {category_data.get('category', 'product')}",
+                            'incompatibility_reason': None
+                        })
                         
-                        # Create reverse relationship (B → A) for bidirectional lookup
-                        reverse_compat = ProductCompatibility(
-                            base_product_id=compatible_product.id,
-                            compatible_product_id=product.id,
-                            compatibility_score=100,
-                            match_reason=f"Reverse: Compatible {category_data.get('category', 'product')}",
-                            incompatibility_reason=None
-                        )
-                        session.add(reverse_compat)
-                        compatibility_count += 1
+                        # Add reverse relationship to batch (B → A)
+                        compatibility_batch.append({
+                            'base_product_id': compatible_product_id,
+                            'compatible_product_id': product_id,
+                            'compatibility_score': 100,
+                            'match_reason': f"Reverse: Compatible {category_data.get('category', 'product')}",
+                            'incompatibility_reason': None
+                        })
                 
-                if idx % 10 == 0:
+                # Bulk insert when batch is full
+                if len(compatibility_batch) >= BATCH_SIZE:
+                    session.bulk_insert_mappings(ProductCompatibility, compatibility_batch)
                     session.commit()
+                    compatibility_count += len(compatibility_batch)
+                    logger.info(f"Inserted batch of {len(compatibility_batch)} compatibilities")
+                    compatibility_batch = []
                     
             except Exception as e:
                 logger.error(f"Error computing compatibilities for {sku}: {str(e)}")
                 continue
         
-        session.commit()
+        # Insert any remaining items in batch
+        if compatibility_batch:
+            session.bulk_insert_mappings(ProductCompatibility, compatibility_batch)
+            session.commit()
+            compatibility_count += len(compatibility_batch)
+            logger.info(f"Inserted final batch of {len(compatibility_batch)} compatibilities")
+        
         logger.info(f"Compatibility recomputation complete: {compatibility_count} records created (bidirectional)")
+        
+        # Clear API cache after successful compatibility update
+        try:
+            import app
+            if hasattr(app, 'clear_api_cache'):
+                app.clear_api_cache()
+                logger.info("API cache cleared after compatibility update")
+        except Exception as cache_error:
+            logger.warning(f"Could not clear API cache: {cache_error}")
+        
         return compatibility_count
         
     except Exception as e:

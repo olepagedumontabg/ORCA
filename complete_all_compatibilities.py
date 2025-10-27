@@ -72,6 +72,15 @@ def main():
         processed = 0
         total_new_compatibilities = 0
         
+        # Build SKU to ID mapping for fast lookups
+        all_products = session.query(Product.id, Product.sku).all()
+        sku_to_id = {p.sku: p.id for p in all_products}
+        logger.info(f"Built SKU mapping for {len(sku_to_id)} products")
+        
+        # Batch size for bulk inserts
+        BATCH_SIZE = 500
+        compatibility_batch = []
+        
         for idx, product in enumerate(products_to_process, 1):
             try:
                 # Get compatibilities
@@ -90,55 +99,55 @@ def main():
                             
                             # Handle compound SKUs
                             for single_sku in [s.strip() for s in comp_sku.split('|')]:
-                                comp_product = session.query(Product).filter_by(sku=single_sku).first()
-                                if not comp_product:
+                                comp_product_id = sku_to_id.get(single_sku)
+                                if not comp_product_id:
                                     continue
                                 
-                                # Insert forward - handle duplicates individually
-                                try:
-                                    # Check first to avoid query cost
-                                    exists = session.query(ProductCompatibility).filter_by(
-                                        base_product_id=product.id,
-                                        compatible_product_id=comp_product.id
-                                    ).first()
-                                    
-                                    if not exists:
-                                        session.add(ProductCompatibility(
-                                            base_product_id=product.id,
-                                            compatible_product_id=comp_product.id,
-                                            compatibility_score=comp_item.get('compatibility_score', 100),
-                                            match_reason=comp_item.get('match_reason', ''),
-                                            incompatibility_reason=comp_item.get('incompatibility_reason', '')
-                                        ))
-                                        session.flush()
-                                        total_new_compatibilities += 1
-                                except IntegrityError:
-                                    # Duplicate - rollback only this one insert
-                                    session.rollback()
+                                # Add forward compatibility to batch
+                                compatibility_batch.append({
+                                    'base_product_id': product.id,
+                                    'compatible_product_id': comp_product_id,
+                                    'compatibility_score': comp_item.get('compatibility_score', 100),
+                                    'match_reason': comp_item.get('match_reason', ''),
+                                    'incompatibility_reason': comp_item.get('incompatibility_reason', '') or None
+                                })
                                 
-                                # Insert reverse - handle duplicates individually  
-                                try:
-                                    reverse_exists = session.query(ProductCompatibility).filter_by(
-                                        base_product_id=comp_product.id,
-                                        compatible_product_id=product.id
-                                    ).first()
-                                    
-                                    if not reverse_exists:
-                                        session.add(ProductCompatibility(
-                                            base_product_id=comp_product.id,
-                                            compatible_product_id=product.id,
-                                            compatibility_score=comp_item.get('compatibility_score', 100),
-                                            match_reason=comp_item.get('match_reason', ''),
-                                            incompatibility_reason=comp_item.get('incompatibility_reason', '')
-                                        ))
-                                        session.flush()
-                                        total_new_compatibilities += 1
-                                except IntegrityError:
-                                    # Duplicate - rollback only this one insert
-                                    session.rollback()
+                                # Add reverse compatibility to batch
+                                compatibility_batch.append({
+                                    'base_product_id': comp_product_id,
+                                    'compatible_product_id': product.id,
+                                    'compatibility_score': comp_item.get('compatibility_score', 100),
+                                    'match_reason': comp_item.get('match_reason', ''),
+                                    'incompatibility_reason': comp_item.get('incompatibility_reason', '') or None
+                                })
                 
-                # Commit all successful inserts for this product
-                session.commit()
+                # Bulk insert when batch is full
+                if len(compatibility_batch) >= BATCH_SIZE:
+                    try:
+                        session.bulk_insert_mappings(ProductCompatibility, compatibility_batch)
+                        session.commit()
+                        total_new_compatibilities += len(compatibility_batch)
+                        logger.info(f"Inserted batch of {len(compatibility_batch)} compatibilities")
+                        compatibility_batch = []
+                    except IntegrityError as e:
+                        # If bulk insert fails due to duplicates, fall back to individual inserts
+                        session.rollback()
+                        for compat_dict in compatibility_batch:
+                            try:
+                                # Check first to avoid query cost
+                                exists = session.query(ProductCompatibility).filter_by(
+                                    base_product_id=compat_dict['base_product_id'],
+                                    compatible_product_id=compat_dict['compatible_product_id']
+                                ).first()
+                                
+                                if not exists:
+                                    session.add(ProductCompatibility(**compat_dict))
+                                    session.flush()
+                                    total_new_compatibilities += 1
+                            except IntegrityError:
+                                # Duplicate - rollback only this one insert
+                                session.rollback()
+                        compatibility_batch = []
                 processed += 1
                 
                 # Progress every 10 products
@@ -157,6 +166,30 @@ def main():
                 session.rollback()
                 continue
         
+        # Insert any remaining items in batch
+        if compatibility_batch:
+            try:
+                session.bulk_insert_mappings(ProductCompatibility, compatibility_batch)
+                session.commit()
+                total_new_compatibilities += len(compatibility_batch)
+                logger.info(f"Inserted final batch of {len(compatibility_batch)} compatibilities")
+            except IntegrityError:
+                # Fall back to individual inserts for final batch
+                session.rollback()
+                for compat_dict in compatibility_batch:
+                    try:
+                        exists = session.query(ProductCompatibility).filter_by(
+                            base_product_id=compat_dict['base_product_id'],
+                            compatible_product_id=compat_dict['compatible_product_id']
+                        ).first()
+                        
+                        if not exists:
+                            session.add(ProductCompatibility(**compat_dict))
+                            session.commit()
+                            total_new_compatibilities += 1
+                    except IntegrityError:
+                        session.rollback()
+        
         elapsed = time.time() - start_time
         logger.info(f"\n{'='*70}")
         logger.info(f"✓ BATCH COMPLETE!")
@@ -165,6 +198,15 @@ def main():
         logger.info(f"  Time: {elapsed/60:.1f} minutes")
         logger.info(f"  Rate: {processed/elapsed:.1f} products/sec")
         logger.info(f"{'='*70}\n")
+        
+        # Clear API cache after successful compatibility computation
+        try:
+            import app
+            if hasattr(app, 'clear_api_cache'):
+                app.clear_api_cache()
+                logger.info("API cache cleared after compatibility batch")
+        except Exception as cache_error:
+            logger.warning(f"Could not clear API cache: {cache_error}")
         
     except Exception as e:
         logger.error(f"Fatal error: {e}")

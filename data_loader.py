@@ -178,6 +178,7 @@ def find_product_by_multi_sku(child_sku: str, parent_sku: str = None, unique_id:
 def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
     """
     Load compatible products from the database for a given SKU.
+    Uses eager loading for optimal performance.
     
     Args:
         sku (str): Base product SKU
@@ -186,6 +187,9 @@ def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
         dict or None: Compatibility data or None if not found/not computed
     """
     try:
+        from sqlalchemy import or_
+        from sqlalchemy.orm import joinedload
+        
         session = get_session()
         
         product = session.query(Product).filter_by(sku=sku.upper()).first()
@@ -193,15 +197,16 @@ def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
             session.close()
             return None
         
-        from sqlalchemy import or_
-        
-        compatibilities = session.query(ProductCompatibility).filter(
+        # Use eager loading to fetch compatibilities and related products in one query
+        compatibilities = session.query(ProductCompatibility).options(
+            joinedload(ProductCompatibility.compatible_product)
+        ).filter(
             ProductCompatibility.base_product_id == product.id,
             or_(
                 ProductCompatibility.incompatibility_reason == None,
                 ProductCompatibility.incompatibility_reason == ''
             )
-        ).all()
+        ).order_by(ProductCompatibility.compatibility_score.desc()).all()
         
         if not compatibilities:
             logger.info(f"No pre-computed compatibilities for {sku}, will use live computation")

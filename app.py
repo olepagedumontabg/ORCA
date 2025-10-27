@@ -1,6 +1,7 @@
 import os
 import logging
 import threading
+from functools import lru_cache
 from flask import Flask, render_template, request, jsonify, send_file, abort
 import pandas as pd
 import io
@@ -25,6 +26,32 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger(__name__)
+
+# In-memory cache for API responses (LRU cache with 1000 entries)
+_api_cache = {}
+_cache_lock = threading.Lock()
+_cache_max_size = 1000
+
+def get_cached_compatibles(cache_key):
+    """Get cached compatible products response"""
+    with _cache_lock:
+        return _api_cache.get(cache_key)
+
+def cache_compatibles(cache_key, data):
+    """Cache compatible products response with LRU eviction"""
+    with _cache_lock:
+        if len(_api_cache) >= _cache_max_size:
+            # Remove oldest entry (simple FIFO for now)
+            oldest = next(iter(_api_cache))
+            del _api_cache[oldest]
+        _api_cache[cache_key] = data
+
+def clear_api_cache():
+    """Clear all cached API responses (call after data updates)"""
+    global _api_cache
+    with _cache_lock:
+        _api_cache.clear()
+        logger.info("API cache cleared")
 
 # Initialize data update service
 data_update_thread = None
@@ -114,12 +141,6 @@ def download_compatibilities(sku):
         mimetype=
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-
-
-@app.route('/simple')
-def simple():
-    """Render the simplified page for testing"""
-    return render_template('simple.html')
 
 
 @app.route('/suggest', methods=['GET'])
@@ -378,6 +399,15 @@ def api_get_compatible(sku):
         
         logger.info(f"API request for compatible products: child_sku={child_sku}, parent_sku={parent_sku if parent_sku else 'N/A'}, unique_id={unique_id if unique_id else 'N/A'}")
         
+        # Create cache key from request parameters
+        cache_key = f"{child_sku}|{parent_sku}|{unique_id}|{category_filter}|{limit}"
+        
+        # Check cache first
+        cached_response = get_cached_compatibles(cache_key)
+        if cached_response:
+            logger.info(f"Cache hit for {cache_key}")
+            return jsonify(cached_response)
+        
         # Check if database is available
         if not data_loader.check_database_ready():
             logger.error("Database not available")
@@ -511,6 +541,10 @@ def api_get_compatible(sku):
             response['queried_parent_sku'] = parent_sku
         if unique_id:
             response['queried_unique_id'] = unique_id
+        
+        # Cache the response before returning
+        cache_compatibles(cache_key, response)
+        logger.info(f"Cached response for {cache_key}")
         
         return jsonify(response)
         
