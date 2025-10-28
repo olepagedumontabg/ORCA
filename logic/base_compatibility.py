@@ -712,6 +712,9 @@ def find_base_compatibilities(data, base_info):
 def series_compatible(base_series, compare_series, base_brand=None, compare_brand=None):
     """
     Check if two series are compatible based on business rules.
+    
+    NOTE: Series rules have been removed - all series are now compatible.
+    This function is kept for backward compatibility but always returns True.
 
     Args:
         base_series (str): Series of the base product
@@ -720,74 +723,31 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
         compare_brand (str): Brand of the compare product (optional)
 
     Returns:
-        bool: True if the series are compatible, False otherwise
+        bool: Always returns True (series restrictions removed)
     """
-    # Convert to strings and normalize
-    base_series = str(base_series).strip() if base_series else ""
-    compare_series = str(compare_series).strip() if compare_series else ""
-    base_brand = str(base_brand).strip().lower() if base_brand else ""
-    compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
-
-    # Universal compatibility: Dreamline and Swan are compatible with any series
-    if compare_brand in ["dreamline", "swan"] or base_brand in ["dreamline", "swan"]:
-        return True
-
-    # If either series is empty, they're compatible (relaxed rule for cross-brand compatibility)
-    if not base_series or not compare_series:
-        return True
-
-    # Same series are always compatible
-    if base_series.lower() == compare_series.lower():
-        return True
-
-    # Galerie compatibility rules
-    if base_series == "Galerie":
-        return compare_series in ["Galerie", "Neptune"]
-    
-    # Entrepreneur compatibility rules
-    if base_series == "Entrepreneur":
-        return compare_series in ["Entrepreneur", "Neptune"]
-    
-    # Neptune compatibility rules
-    if base_series == "Neptune":
-        return compare_series in ["Galerie", "Neptune", "Entrepreneur"]
-    
-    # Special case for Retail compatibility
-    if base_series == "Retail":
-        return compare_series in ["Retail", "MAAX"]
-    
-    # MAAX compatibility rules
-    if base_series == "MAAX":
-        return compare_series in [
-            "Retail", "MAAX", "Collection", "Professional"]
-    
-    # Collection and Professional compatibility
-    if base_series in ["Collection", "Professional"]:
-        return compare_series in ["MAAX", "Collection", "Professional"]
-    
-    # Default case - no other compatibility
-    return False
+    # Series rules removed - all products are compatible regardless of series
+    return True
 
 
 def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     """
-    Check if base brand/family matches wall brand/family based on specific business rules.
+    Check if base family matches wall family based on specific business rules.
+    
+    NOTE: Brand rules have been removed - only family restrictions apply now.
 
     Args:
-        base_brand (str): Brand of the base product
+        base_brand (str): Brand of the base product (not used, kept for compatibility)
         base_family (str): Family of the base product
-        wall_brand (str): Brand of the wall
+        wall_brand (str): Brand of the wall (not used, kept for compatibility)
         wall_family (str): Family of the wall
 
     Returns:
-        bool: True if there's a match according to the business rules, False otherwise
+        bool: True if families are compatible, False otherwise
     """
-    base_brand = str(base_brand).strip().lower() if base_brand else ""
     base_family = str(base_family).strip().lower() if base_family else ""
-    wall_brand = str(wall_brand).strip().lower() if wall_brand else ""
     wall_family = str(wall_family).strip().lower() if wall_family else ""
 
-    # FIRST: Check for specifically restricted families - these override all other rules
+    # Family restriction rules - these are enforced
     # Olio products should ONLY be compatible with other Olio products
     if base_family == "olio" and wall_family != "olio":
         return False
@@ -800,20 +760,15 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     if wall_family == "vellamo" and base_family != "vellamo":
         return False
 
-    # Universal compatibility: Dreamline and Swan are compatible with anything (after family restrictions)
-    if base_brand in ["dreamline", "swan"] or wall_brand in ["dreamline", "swan"]:
-        return True
-
+    # Interflo products should ONLY be compatible with other Interflo products
     if base_family == "interflo" and wall_family != "interflo":
         return False
-
     if wall_family == "interflo" and base_family != "interflo":
         return False
 
-    # Check for special cases for specific families
+    # W&B products should ONLY be compatible with other W&B products
     if base_family == "w&b" and wall_family != "w&b":
         return False
-
     if wall_family == "w&b" and base_family != "w&b":
         return False
 
@@ -822,25 +777,6 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
     if wall_family in ["utile", "nextile"] and base_family not in ["b3", "finesse", "distinct", "zone", "olympia", "icon", "roka"]:
         return False
 
-    # Cross-brand compatibility rules
-    # Allow Swan products to work with other brands (unless restricted by family above)
-    if base_brand == "swan":
-        return True
-    
-    # Allow Dreamline products to work with other brands (unless restricted by family above)  
-    if base_brand == "dreamline" or wall_brand == "dreamline":
-        return True
-
-    # Different brand checks - these brands should only work with themselves
-    if base_brand == "maax" and wall_brand != "maax":
-        return False
-
-    if base_brand == "bootz" and wall_brand != "bootz":
-        return False
-
-    # If we passed all restrictions and brands match, we're compatible
-    if base_brand == wall_brand:
-        return True
-
-    # Default case - no match for cross-brand unless explicitly allowed above
-    return False
+    # If we passed all family restrictions, products are compatible
+    # Brand rules have been removed - all brands can work together now
+    return True

@@ -15,6 +15,9 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
     """
     Check if two series are compatible based on business rules.
     
+    NOTE: Series rules have been removed - all series are now compatible.
+    This function is kept for backward compatibility but always returns True.
+    
     Args:
         base_series (str): Series of the base product
         compare_series (str): Series of the product to compare with
@@ -22,29 +25,10 @@ def series_compatible(base_series, compare_series, base_brand=None, compare_bran
         compare_brand (str): Brand of the compare product (optional)
         
     Returns:
-        bool: True if the series are compatible, False otherwise
+        bool: Always returns True (series restrictions removed)
     """
-    base_series = str(base_series).strip() if base_series else ""
-    compare_series = str(compare_series).strip() if compare_series else ""
-    base_brand = str(base_brand).strip().lower() if base_brand else ""
-    compare_brand = str(compare_brand).strip().lower() if compare_brand else ""
-
-    if not base_series or not compare_series:
-        return False
-    if base_series.lower() == compare_series.lower():
-        return True
-    
-    # Universal compatibility: Dreamline and Swan are compatible with any series
-    if compare_brand in ["dreamline", "swan"] or base_brand in ["dreamline", "swan"]:
-        return True
-    
-    if base_series == "Retail":
-        return compare_series in ["Retail", "MAAX"]
-    if base_series == "MAAX":
-        return compare_series in ["Retail", "MAAX", "Collection", "Professional"]
-    if base_series in ["Collection", "Professional"]:
-        return compare_series in ["MAAX", "Collection", "Professional"]
-    return False
+    # Series rules removed - all products are compatible regardless of series
+    return True
 
 def find_shower_compatibilities(data, shower_info):
     """
