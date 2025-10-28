@@ -140,6 +140,14 @@ The Bathroom Compatibility Finder is a Flask web application that helps users fi
 
 ## Recent Changes
 
+- **October 28, 2025**: **Compatibility Logic Simplification** - Removed brand and series restrictions, kept family rules
+  - **Series Rules Removed**: All products now compatible across different series (Retail, MAAX, Collection, etc.)
+  - **Brand Rules Removed**: Products from different brands can now match (Maax, Neptune, Bootz, etc.)
+  - **Family Rules Kept**: Exclusive family restrictions still enforced (Olio, Vellamo, Interflo, W&B)
+  - **Special Family Rules Kept**: Utile/Nextile walls still match only with specific base families
+  - **Files Updated**: base_compatibility.py, bathtub_compatibility.py, shower_compatibility.py, tubshower_compatibility.py
+  - **Result**: Products now have significantly more compatible matches across brands and series
+  - **Database Status**: Recomputing all compatibilities with new rules (overnight process)
 - **October 27, 2025**: **Performance Optimizations** - Major speed improvements for API and database operations
   - **Connection Pooling**: Singleton database engine with optimized pool settings (10-50ms saved per request)
   - **Response Caching**: In-memory LRU cache for API responses (96% faster for repeated requests - from 1s to 37ms)
