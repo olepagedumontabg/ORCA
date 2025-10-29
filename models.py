@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Text, DECIMAL, TIMESTAMP, Boolean, Index, ForeignKey, UniqueConstraint, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Text, DECIMAL, TIMESTAMP, Boolean, Index, ForeignKey, UniqueConstraint, JSON, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import QueuePool
@@ -87,7 +87,8 @@ class ProductCompatibility(Base):
         Index('idx_compatibility_compatible', 'compatible_product_id'),
         Index('idx_compatibility_score', 'compatibility_score'),
         # Composite index for ordered compatibility lookups (critical for API performance)
-        Index('idx_base_score', 'base_product_id', 'compatibility_score'),
+        # DESC ordering ensures highest scores first without reverse scan
+        Index('idx_base_score', 'base_product_id', desc('compatibility_score')),
     )
     
     def __repr__(self):
