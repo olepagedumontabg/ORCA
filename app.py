@@ -487,6 +487,20 @@ def api_get_compatible(sku):
             excel_results = compatibility.find_compatible_products(lookup_sku)
             
             if excel_results and excel_results.get('product'):
+                # Helper function to clean NaN values for JSON serialization
+                import pandas as pd
+                import math
+                
+                def clean_value(value):
+                    """Convert NaN, None, and other invalid JSON values to None"""
+                    if value is None:
+                        return None
+                    if isinstance(value, float) and (pd.isna(value) or math.isnan(value)):
+                        return None
+                    if pd.isna(value):
+                        return None
+                    return value
+                
                 # Convert Excel results to API format
                 # The web interface returns {product: {...}, compatibles: [...], incompatibility_reasons: {...}}
                 excel_compatibles = excel_results.get('compatibles', [])
@@ -503,13 +517,13 @@ def api_get_compatible(sku):
                     compatibles.append({
                         'category': category,
                         'products': [{
-                            'sku': p.get('sku'),
-                            'name': p.get('name'),
-                            'brand': p.get('brand'),
+                            'sku': clean_value(p.get('sku')),
+                            'name': clean_value(p.get('name')),
+                            'brand': clean_value(p.get('brand')),
                             'category': category,
-                            'series': p.get('series'),
-                            'image_url': p.get('image_url'),
-                            'product_page_url': p.get('product_page_url'),
+                            'series': clean_value(p.get('series')),
+                            'image_url': clean_value(p.get('image_url')),
+                            'product_page_url': clean_value(p.get('product_page_url')),
                             'compatibility_score': p.get('compatibility_score', 500)
                         } for p in limited_products]
                     })
@@ -519,14 +533,14 @@ def api_get_compatible(sku):
                     'success': True,
                     'queried_child_sku': child_sku,
                     'product': {
-                        'sku': base_product.get('sku'),
-                        'name': base_product.get('name'),
-                        'brand': base_product.get('brand'),
-                        'category': base_product.get('category'),
-                        'series': base_product.get('series'),
-                        'family': base_product.get('family'),
-                        'image_url': base_product.get('image_url'),
-                        'product_page_url': base_product.get('product_page_url'),
+                        'sku': clean_value(base_product.get('sku')),
+                        'name': clean_value(base_product.get('name')),
+                        'brand': clean_value(base_product.get('brand')),
+                        'category': clean_value(base_product.get('category')),
+                        'series': clean_value(base_product.get('series')),
+                        'family': clean_value(base_product.get('family')),
+                        'image_url': clean_value(base_product.get('image_url')),
+                        'product_page_url': clean_value(base_product.get('product_page_url')),
                     },
                     'compatibles': compatibles,
                     'incompatibility_reasons': excel_results.get('incompatibility_reasons', {}),
