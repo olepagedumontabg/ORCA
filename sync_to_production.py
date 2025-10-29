@@ -49,14 +49,20 @@ def sync_to_production():
     logger.info(f"Production URL: {prod_db_url[:30]}...")
     logger.info("")
     
-    # Import after confirming URL is set
+    # Get development database URL
+    dev_db_url = os.environ.get('DATABASE_URL')
+    if not dev_db_url:
+        logger.error("DATABASE_URL environment variable not set")
+        sys.exit(1)
+    
+    # Import after confirming URLs are set
     from copy_dev_to_prod import copy_database
     
     try:
         start_time = time.time()
         
         # Run the copy
-        copy_database(prod_db_url)
+        copy_database(dev_db_url, prod_db_url)
         
         elapsed = time.time() - start_time
         
