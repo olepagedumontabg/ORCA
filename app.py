@@ -462,36 +462,119 @@ def api_get_compatible(sku):
         # Load compatibilities from database using the matched SKU
         db_compatibles = data_loader.load_compatible_products_from_database(lookup_sku)
         
+        # Check if database results are incomplete (None or only reverse compatibility)
+        use_excel_fallback = False
         if db_compatibles is None:
-            # Product exists but has no compatibilities computed yet
-            logger.info(f"Product {lookup_sku} exists but has no compatibilities in database")
-            response = {
-                'success': True,
-                'queried_child_sku': child_sku,
-                'product': {
-                    'sku': product_data.get('Unique ID'),
-                    'name': product_data.get('Product Name'),
-                    'brand': product_data.get('Brand'),
-                    'category': product_data.get('Category'),
-                    'series': product_data.get('Series'),
-                    'family': product_data.get('Family'),
-                    'image_url': product_data.get('Image URL'),
-                    'product_page_url': product_data.get('Product Page URL'),
-                },
-                'compatibles': [],
-                'incompatibility_reasons': {},
-                'total_categories': 0,
-                'data_source': 'database',
-                'message': 'Product found but compatibility data not yet computed'
-            }
-            if matched_sku:
-                response['matched_sku'] = matched_sku
-                response['match_type'] = match_type
-            if parent_sku:
-                response['queried_parent_sku'] = parent_sku
-            if unique_id:
-                response['queried_unique_id'] = unique_id
-            return jsonify(response)
+            use_excel_fallback = True
+            logger.info(f"Product {lookup_sku} has no compatibilities in database, using Excel fallback")
+        else:
+            # Count total products across all categories
+            total_products = sum(len(products) for products in db_compatibles.values())
+            if total_products <= 1:
+                # Check if the single product is just a reverse compatibility entry (pointing to itself with score 0)
+                for category, products in db_compatibles.items():
+                    if len(products) == 1:
+                        first_compat = products[0]
+                        # If it's pointing to itself with score 0, it's a reverse-only entry
+                        if first_compat.get('sku') == lookup_sku and first_compat.get('compatibility_score') == 0:
+                            use_excel_fallback = True
+                            logger.info(f"Product {lookup_sku} only has reverse compatibility in database (self-reference), using Excel fallback")
+                            break
+        
+        if use_excel_fallback:
+            # Fall back to Excel-based compatibility logic (same as web interface)
+            logger.info(f"Falling back to Excel data for SKU: {lookup_sku}")
+            excel_results = compatibility.find_compatible_products(lookup_sku)
+            
+            if excel_results and excel_results.get('product'):
+                # Convert Excel results to API format
+                # The web interface returns {product: {...}, compatibles: [...], incompatibility_reasons: {...}}
+                excel_compatibles = excel_results.get('compatibles', [])
+                
+                compatibles = []
+                for item in excel_compatibles:
+                    category = item.get('category')
+                    products_list = item.get('products', [])
+                    
+                    if category_filter and category != category_filter:
+                        continue
+                    
+                    limited_products = products_list[:limit] if limit else products_list
+                    compatibles.append({
+                        'category': category,
+                        'products': [{
+                            'sku': p.get('sku'),
+                            'name': p.get('name'),
+                            'brand': p.get('brand'),
+                            'category': category,
+                            'series': p.get('series'),
+                            'image_url': p.get('image_url'),
+                            'product_page_url': p.get('product_page_url'),
+                            'compatibility_score': p.get('compatibility_score', 500)
+                        } for p in limited_products]
+                    })
+                
+                base_product = excel_results['product']
+                response = {
+                    'success': True,
+                    'queried_child_sku': child_sku,
+                    'product': {
+                        'sku': base_product.get('sku'),
+                        'name': base_product.get('name'),
+                        'brand': base_product.get('brand'),
+                        'category': base_product.get('category'),
+                        'series': base_product.get('series'),
+                        'family': base_product.get('family'),
+                        'image_url': base_product.get('image_url'),
+                        'product_page_url': base_product.get('product_page_url'),
+                    },
+                    'compatibles': compatibles,
+                    'incompatibility_reasons': excel_results.get('incompatibility_reasons', {}),
+                    'total_categories': len(compatibles),
+                    'data_source': 'excel_fallback',
+                    'message': 'Using Excel data (database compatibility not yet computed)'
+                }
+                if matched_sku:
+                    response['matched_sku'] = matched_sku
+                    response['match_type'] = match_type
+                if parent_sku:
+                    response['queried_parent_sku'] = parent_sku
+                if unique_id:
+                    response['queried_unique_id'] = unique_id
+                
+                # Cache the response
+                cache_compatibles(cache_key, response)
+                return jsonify(response)
+            else:
+                # Excel fallback also found nothing
+                logger.warning(f"No compatibility data found in Excel for SKU: {lookup_sku}")
+                response = {
+                    'success': True,
+                    'queried_child_sku': child_sku,
+                    'product': {
+                        'sku': product_data.get('Unique ID'),
+                        'name': product_data.get('Product Name'),
+                        'brand': product_data.get('Brand'),
+                        'category': product_data.get('Category'),
+                        'series': product_data.get('Series'),
+                        'family': product_data.get('Family'),
+                        'image_url': product_data.get('Image URL'),
+                        'product_page_url': product_data.get('Product Page URL'),
+                    },
+                    'compatibles': [],
+                    'incompatibility_reasons': {},
+                    'total_categories': 0,
+                    'data_source': 'none',
+                    'message': 'No compatibility data found in database or Excel'
+                }
+                if matched_sku:
+                    response['matched_sku'] = matched_sku
+                    response['match_type'] = match_type
+                if parent_sku:
+                    response['queried_parent_sku'] = parent_sku
+                if unique_id:
+                    response['queried_unique_id'] = unique_id
+                return jsonify(response)
         
         # Build compatibles list
         compatibles = []
