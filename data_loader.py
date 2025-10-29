@@ -178,7 +178,7 @@ def find_product_by_multi_sku(child_sku: str, parent_sku: str = None, unique_id:
 def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
     """
     Load compatible products from the database for a given SKU.
-    Uses eager loading for optimal performance.
+    Optimized with raw SQL for maximum performance.
     
     Args:
         sku (str): Base product SKU
@@ -187,65 +187,70 @@ def load_compatible_products_from_database(sku: str) -> Optional[Dict]:
         dict or None: Compatibility data or None if not found/not computed
     """
     try:
-        from sqlalchemy import or_
-        from sqlalchemy.orm import joinedload
+        from sqlalchemy import text
+        from models import get_engine
         
-        session = get_session()
+        engine = get_engine()
         
-        product = session.query(Product).filter_by(sku=sku.upper()).first()
-        if not product:
-            session.close()
-            return None
-        
-        # Use eager loading to fetch compatibilities and related products in one query
-        compatibilities = session.query(ProductCompatibility).options(
-            joinedload(ProductCompatibility.compatible_product)
-        ).filter(
-            ProductCompatibility.base_product_id == product.id,
-            or_(
-                ProductCompatibility.incompatibility_reason == None,
-                ProductCompatibility.incompatibility_reason == ''
-            )
-        ).order_by(ProductCompatibility.compatibility_score.desc()).all()
-        
-        if not compatibilities:
-            logger.info(f"No pre-computed compatibilities for {sku}, will use live computation")
-            session.close()
-            return None
-        
-        compatible_products_by_category = {}
-        
-        for comp in compatibilities:
-            comp_product = comp.compatible_product
-            category = comp_product.category
+        with engine.connect() as conn:
+            # Single optimized SQL query with join - uses idx_base_score index
+            result = conn.execute(text("""
+                SELECT 
+                    p.sku, 
+                    p.product_name, 
+                    p.brand, 
+                    p.series, 
+                    p.category,
+                    p.product_page_url,
+                    p.image_url,
+                    p.attributes,
+                    pc.compatibility_score
+                FROM product_compatibility pc
+                JOIN products p ON pc.compatible_product_id = p.id
+                WHERE pc.base_product_id = (
+                    SELECT id FROM products WHERE sku = :sku LIMIT 1
+                )
+                AND (pc.incompatibility_reason IS NULL OR pc.incompatibility_reason = '')
+                ORDER BY pc.compatibility_score DESC
+            """), {"sku": sku.upper()})
             
-            if category not in compatible_products_by_category:
-                compatible_products_by_category[category] = []
+            rows = result.fetchall()
             
-            product_data = {
-                'sku': comp_product.sku,
-                'name': comp_product.product_name,
-                'brand': comp_product.brand,
-                'series': comp_product.series,
-                'category': comp_product.category,
-                'product_page_url': comp_product.product_page_url,
-                'image_url': comp_product.image_url,
-                'compatibility_score': comp.compatibility_score,
-            }
+            if not rows:
+                logger.info(f"No pre-computed compatibilities for {sku}, will use live computation")
+                return None
             
-            # Add attributes from JSON field (glass_thickness, door_type, etc.)
-            if comp_product.attributes:
-                if 'Glass Thickness' in comp_product.attributes:
-                    product_data['glass_thickness'] = comp_product.attributes['Glass Thickness']
-                if 'Door Type' in comp_product.attributes:
-                    product_data['door_type'] = comp_product.attributes['Door Type']
+            compatible_products_by_category = {}
             
-            compatible_products_by_category[category].append(product_data)
-        
-        session.close()
-        
-        logger.info(f"Loaded {len(compatibilities)} compatible products from database for {sku}")
-        return compatible_products_by_category
+            for row in rows:
+                category = row[4]  # p.category
+                
+                if category not in compatible_products_by_category:
+                    compatible_products_by_category[category] = []
+                
+                product_data = {
+                    'sku': row[0],
+                    'name': row[1],
+                    'brand': row[2],
+                    'series': row[3],
+                    'category': category,
+                    'product_page_url': row[5],
+                    'image_url': row[6],
+                    'compatibility_score': row[8],
+                }
+                
+                # Add attributes from JSON field (glass_thickness, door_type, etc.)
+                attributes = row[7]  # p.attributes
+                if attributes:
+                    if 'Glass Thickness' in attributes:
+                        product_data['glass_thickness'] = attributes['Glass Thickness']
+                    if 'Door Type' in attributes:
+                        product_data['door_type'] = attributes['Door Type']
+                
+                compatible_products_by_category[category].append(product_data)
+            
+            logger.info(f"Loaded {len(rows)} compatible products from database for {sku}")
+            return compatible_products_by_category
         
     except Exception as e:
         logger.error(f"Error loading compatibilities from database: {str(e)}")
