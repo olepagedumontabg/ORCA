@@ -57,15 +57,23 @@ def compute_product_compatibilities(product: Product, index: ProductIndex) -> Li
         'Series': product.series,
         'Family': product.family,
         'Category': product.category,
-        'Length': product.length,
-        'Width': product.width,
-        'Height': product.height,
+        'Length': float(product.length) if product.length else None,
+        'Width': float(product.width) if product.width else None,
+        'Height': float(product.height) if product.height else None,
         'Nominal Dimensions': product.nominal_dimensions,
     }
     
-    # Add JSON attributes
+    # Add JSON attributes (convert numpy types to Python native types)
     if product.attributes:
-        product_dict.update(product.attributes)
+        for key, value in product.attributes.items():
+            # Convert numpy types to Python native types
+            if hasattr(value, 'item'):  # numpy scalar
+                product_dict[key] = value.item()
+            elif value is not None and str(type(value)).startswith("<class 'numpy"):
+                import numpy as np
+                product_dict[key] = np.asscalar(value) if hasattr(np, 'asscalar') else value.item()
+            else:
+                product_dict[key] = value
     
     # Build data dict with all products by category
     data = {}
@@ -80,16 +88,24 @@ def compute_product_compatibilities(product: Product, index: ProductIndex) -> Li
                 'Series': p.series,
                 'Family': p.family,
                 'Category': p.category,
-                'Length': p.length,
-                'Width': p.width,
-                'Height': p.height,
+                'Length': float(p.length) if p.length else None,
+                'Width': float(p.width) if p.width else None,
+                'Height': float(p.height) if p.height else None,
                 'Nominal Dimensions': p.nominal_dimensions,
                 'Product Page URL': p.product_page_url,
                 'Image URL': p.image_url,
                 'Ranking': p.ranking,
             }
             if p.attributes:
-                p_dict.update(p.attributes)
+                # Convert numpy types to Python native types
+                for key, value in p.attributes.items():
+                    if hasattr(value, 'item'):  # numpy scalar
+                        p_dict[key] = value.item()
+                    elif value is not None and str(type(value)).startswith("<class 'numpy"):
+                        import numpy as np
+                        p_dict[key] = np.asscalar(value) if hasattr(np, 'asscalar') else value.item()
+                    else:
+                        p_dict[key] = value
             product_dicts.append(p_dict)
         
         import pandas as pd
@@ -137,10 +153,26 @@ def compute_product_compatibilities(product: Product, index: ProductIndex) -> Li
             if sku:
                 comp_db_product = index.get_by_sku(sku)
                 if comp_db_product:
+                    # Convert score to int, handling NaN and numpy types
+                    import math
+                    try:
+                        if hasattr(score, 'item'):
+                            score_val = score.item()
+                        else:
+                            score_val = score
+                        
+                        # Check for NaN
+                        if score_val is None or (isinstance(score_val, float) and math.isnan(score_val)):
+                            score_val = 500
+                        else:
+                            score_val = int(score_val)
+                    except (ValueError, TypeError):
+                        score_val = 500
+                    
                     records.append({
                         'base_product_id': product.id,
                         'compatible_product_id': comp_db_product.id,
-                        'compatibility_score': score,
+                        'compatibility_score': score_val,
                         'match_reason': f"Compatible {comp_db_product.category}",
                         'incompatibility_reason': None
                     })
@@ -204,11 +236,20 @@ def compute_incremental(batch_size: int = 50, verbose: bool = True) -> Tuple[int
                 records = compute_product_compatibilities(product, index)
                 batch_records.extend(records)
             
+            # Deduplicate batch_records based on (base_product_id, compatible_product_id)
+            seen = set()
+            unique_records = []
+            for record in batch_records:
+                key = (record['base_product_id'], record['compatible_product_id'])
+                if key not in seen:
+                    seen.add(key)
+                    unique_records.append(record)
+            
             # Bulk insert batch
-            if batch_records:
-                session.bulk_insert_mappings(ProductCompatibility, batch_records)
+            if unique_records:
+                session.bulk_insert_mappings(ProductCompatibility, unique_records)
                 session.commit()
-                total_compatibilities += len(batch_records)
+                total_compatibilities += len(unique_records)
             
             # Progress update
             if verbose:
