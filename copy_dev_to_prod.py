@@ -68,8 +68,19 @@ def copy_database(dev_url, prod_url):
             product_dicts.append({
                 'id': p.id,
                 'sku': p.sku,
+                'product_name': p.product_name,
+                'brand': p.brand,
+                'series': p.series,
+                'family': p.family,
                 'category': p.category,
+                'length': p.length,
+                'width': p.width,
+                'height': p.height,
+                'nominal_dimensions': p.nominal_dimensions,
                 'attributes': p.attributes,
+                'product_page_url': p.product_page_url,
+                'image_url': p.image_url,
+                'ranking': p.ranking,
                 'created_at': p.created_at,
                 'updated_at': p.updated_at
             })
