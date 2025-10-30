@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Update product image URLs from a CSV file.
+Update product image URLs in both database and Excel file from a CSV file.
 
 CSV Format:
 SKU,Image URL
@@ -14,6 +14,9 @@ Usage:
 import sys
 import csv
 import logging
+import pandas as pd
+import shutil
+from datetime import datetime
 from models import get_session, Product
 from sqlalchemy import update
 
@@ -23,60 +26,80 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+EXCEL_FILE = 'data/Product Data.xlsx'
+
 
 def update_image_urls(csv_file):
     """
-    Update product image URLs from a CSV file.
+    Update product image URLs in both database and Excel file from a CSV file.
     
     Args:
         csv_file: Path to CSV file with columns: SKU, Image URL
     """
     logger.info("=" * 70)
-    logger.info("UPDATE PRODUCT IMAGE URLs")
+    logger.info("UPDATE PRODUCT IMAGE URLs (DATABASE + EXCEL)")
     logger.info("=" * 70)
     logger.info("")
     
-    session = get_session()
-    
-    try:
-        # Read CSV file
-        logger.info(f"Reading CSV file: {csv_file}")
-        with open(csv_file, 'r', encoding='utf-8-sig') as f:
-            reader = csv.DictReader(f)
-            
-            # Verify columns
-            if 'SKU' not in reader.fieldnames or 'Image URL' not in reader.fieldnames:
-                logger.error("CSV must have 'SKU' and 'Image URL' columns")
-                logger.error(f"Found columns: {reader.fieldnames}")
-                return
-            
-            updates = []
-            for row in reader:
-                sku = row['SKU'].strip()
-                image_url = row['Image URL'].strip()
-                
-                if sku and image_url:
-                    updates.append({
-                        'sku': sku,
-                        'image_url': image_url
-                    })
+    # Read CSV file
+    logger.info(f"Reading CSV file: {csv_file}")
+    with open(csv_file, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
         
-        logger.info(f"Found {len(updates)} image URLs to update")
-        logger.info("")
-        
-        if not updates:
-            logger.warning("No valid updates found in CSV")
+        # Verify columns
+        if 'SKU' not in reader.fieldnames or 'Image URL' not in reader.fieldnames:
+            logger.error("CSV must have 'SKU' and 'Image URL' columns")
+            logger.error(f"Found columns: {reader.fieldnames}")
             return
         
-        # Update products
-        updated_count = 0
-        not_found = []
-        
-        for i, update_data in enumerate(updates, 1):
-            sku = update_data['sku']
-            image_url = update_data['image_url']
+        updates = {}
+        for row in reader:
+            sku = row['SKU'].strip()
+            image_url = row['Image URL'].strip()
             
-            # Find product
+            if sku and image_url:
+                updates[sku] = image_url
+    
+    logger.info(f"Found {len(updates)} image URLs to update")
+    logger.info("")
+    
+    if not updates:
+        logger.warning("No valid updates found in CSV")
+        return
+    
+    # Step 1: Update Database
+    logger.info("Step 1: Updating database...")
+    db_updated = update_database(updates)
+    
+    # Step 2: Update Excel File
+    logger.info("")
+    logger.info("Step 2: Updating Excel file...")
+    excel_updated = update_excel_file(updates)
+    
+    # Summary
+    logger.info("")
+    logger.info("=" * 70)
+    logger.info("UPDATE SUMMARY")
+    logger.info("=" * 70)
+    logger.info(f"Database: {db_updated} products updated")
+    logger.info(f"Excel:    {excel_updated} products updated")
+    logger.info("")
+    logger.info("✓ Image URLs updated successfully!")
+    logger.info("")
+    logger.info("Next steps:")
+    logger.info("1. Restart the app to reload the Excel file")
+    logger.info("2. (Optional) Sync to production: python sync_to_production.py")
+    logger.info("=" * 70)
+
+
+def update_database(updates):
+    """Update image URLs in the database."""
+    session = get_session()
+    updated_count = 0
+    not_found = []
+    
+    try:
+        for i, (sku, image_url) in enumerate(updates.items(), 1):
             product = session.query(Product).filter(Product.sku == sku).first()
             
             if product:
@@ -84,31 +107,91 @@ def update_image_urls(csv_file):
                 updated_count += 1
                 
                 if i % 100 == 0:
-                    logger.info(f"Progress: {i}/{len(updates)} products processed")
+                    logger.info(f"  Database progress: {i}/{len(updates)}")
             else:
                 not_found.append(sku)
         
-        # Commit changes
         session.commit()
-        logger.info("")
-        logger.info("=" * 70)
-        logger.info(f"✓ Updated {updated_count} product image URLs")
+        logger.info(f"  ✓ Database: {updated_count} products updated")
         
         if not_found:
-            logger.warning(f"⚠ {len(not_found)} SKUs not found in database:")
-            for sku in not_found[:10]:  # Show first 10
-                logger.warning(f"  - {sku}")
-            if len(not_found) > 10:
-                logger.warning(f"  ... and {len(not_found) - 10} more")
+            logger.warning(f"  ⚠ {len(not_found)} SKUs not found in database")
+            for sku in not_found[:5]:
+                logger.warning(f"    - {sku}")
+            if len(not_found) > 5:
+                logger.warning(f"    ... and {len(not_found) - 5} more")
         
-        logger.info("=" * 70)
+        return updated_count
         
     except Exception as e:
         session.rollback()
-        logger.error(f"Error updating image URLs: {e}")
+        logger.error(f"Error updating database: {e}")
         raise
     finally:
         session.close()
+
+
+def update_excel_file(updates):
+    """Update image URLs in the Excel file."""
+    try:
+        # Backup the original file
+        backup_file = f"{EXCEL_FILE}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        shutil.copy2(EXCEL_FILE, backup_file)
+        logger.info(f"  Created backup: {backup_file}")
+        
+        # Read all sheets into memory first (before opening writer)
+        excel_file = pd.ExcelFile(EXCEL_FILE, engine='openpyxl')
+        sheet_names = excel_file.sheet_names
+        logger.info(f"  Processing {len(sheet_names)} sheets...")
+        
+        total_updated = 0
+        updated_sheets = {}
+        
+        # Load all sheets into memory
+        all_sheets = {}
+        for sheet_name in sheet_names:
+            all_sheets[sheet_name] = pd.read_excel(excel_file, sheet_name=sheet_name)
+        
+        # Close the reader before opening the writer
+        excel_file.close()
+        
+        # Process and write all sheets
+        with pd.ExcelWriter(EXCEL_FILE, engine='xlsxwriter') as writer:
+            for sheet_name in sheet_names:
+                df = all_sheets[sheet_name]
+                
+                # Check if sheet has the required columns
+                if 'Unique ID' not in df.columns or 'Image URL' not in df.columns:
+                    # Write sheet as-is
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    continue
+                
+                # Update image URLs
+                sheet_updated = 0
+                for idx, row in df.iterrows():
+                    sku = str(row['Unique ID']).strip()
+                    if sku in updates:
+                        df.at[idx, 'Image URL'] = updates[sku]
+                        sheet_updated += 1
+                
+                if sheet_updated > 0:
+                    updated_sheets[sheet_name] = sheet_updated
+                    total_updated += sheet_updated
+                
+                # Write updated sheet
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        
+        logger.info(f"  ✓ Excel: {total_updated} products updated across {len(updated_sheets)} sheets")
+        
+        if updated_sheets:
+            for sheet, count in updated_sheets.items():
+                logger.info(f"    - {sheet}: {count} products")
+        
+        return total_updated
+        
+    except Exception as e:
+        logger.error(f"Error updating Excel file: {e}")
+        raise
 
 
 def export_current_urls(output_file='current_image_urls.csv'):

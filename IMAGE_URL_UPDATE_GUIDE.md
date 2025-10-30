@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide shows you how to update product image URLs in the database using a simple CSV file.
+This guide shows you how to update product image URLs in **both the database and Excel file** using a simple CSV file.
 
 ## Files
 
@@ -33,7 +33,7 @@ SKU,Product Name,Image URL
 105821,Brome 6030,https://mynewcdn.com/images/105821.jpg
 ```
 
-### Step 3: Update the Database
+### Step 3: Update Database and Excel File
 
 Run the update script:
 
@@ -42,12 +42,20 @@ python update_image_urls.py current_image_urls.csv
 ```
 
 The script will:
+- ✓ Create a backup of your Excel file
 - ✓ Read your CSV file
-- ✓ Update matching products in the database
+- ✓ Update matching products in the **database**
+- ✓ Update matching products in the **Excel file** (all sheets)
 - ✓ Show progress and results
 - ✓ List any SKUs that weren't found
 
-### Step 4: Sync to Production (if needed)
+### Step 4: Restart the App
+
+After updating, restart the app to reload the Excel file:
+- The workflow will automatically restart, or
+- Manually restart from the Replit interface
+
+### Step 5: Sync to Production (Optional)
 
 After updating the development database, sync to production:
 
