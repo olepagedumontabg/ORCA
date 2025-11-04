@@ -81,6 +81,38 @@ def documentation():
     return render_template('documentation.html')
 
 
+@app.route('/sync-history')
+def sync_history():
+    """Render the sync history page showing all webhook operations"""
+    from models import get_session, SyncStatus
+    from sqlalchemy import desc
+    
+    session = get_session()
+    try:
+        syncs = session.query(SyncStatus).order_by(desc(SyncStatus.started_at)).limit(100).all()
+        
+        sync_list = []
+        for sync in syncs:
+            sync_data = {
+                'id': sync.id,
+                'sync_type': sync.sync_type,
+                'status': sync.status,
+                'started_at': sync.started_at,
+                'completed_at': sync.completed_at,
+                'products_added': sync.products_added or 0,
+                'products_updated': sync.products_updated or 0,
+                'products_deleted': sync.products_deleted or 0,
+                'compatibilities_updated': sync.compatibilities_updated or 0,
+                'error_message': sync.error_message,
+                'metadata': sync.sync_metadata or {}
+            }
+            sync_list.append(sync_data)
+        
+        return render_template('sync_history.html', syncs=sync_list)
+    finally:
+        session.close()
+
+
 @app.route("/download/<sku>")
 def download_compatibilities(sku):
     """

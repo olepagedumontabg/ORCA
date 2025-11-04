@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync History - Bathroom Compatibility Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#001A70',
+                        'text-dark': '#2A314C',
+                        'text-light': '#4B5563'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .status-completed {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+        .status-processing {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+        .status-failed {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+        .status-pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 h-20">
+        <div class="container mx-auto px-4 h-full">
+            <div class="flex items-center justify-between h-full">
+                <a href="/" class="flex items-center">
+                    <img src="{{ url_for('static', filename='images/abg-logo-header.svg') }}" alt="ABG Logo" class="h-6 w-auto">
+                </a>
+                <nav class="flex space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-primary transition">Home</a>
+                    <a href="/sync-history" class="text-primary font-semibold">Sync History</a>
+                    <a href="/documentation" class="text-gray-600 hover:text-primary transition">API Docs</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text-dark mb-2">Sync History</h1>
+            <p class="text-text-light">View all product data synchronization operations from Salsify</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            {% set total_syncs = syncs|length %}
+            {% set completed_syncs = syncs|selectattr('status', 'equalto', 'completed')|list|length %}
+            {% set failed_syncs = syncs|selectattr('status', 'equalto', 'failed')|list|length %}
+            {% set processing_syncs = syncs|selectattr('status', 'equalto', 'processing')|list|length %}
+            
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary">
+                <div class="text-gray-600 text-sm font-medium mb-1">Total Syncs</div>
+                <div class="text-3xl font-bold text-text-dark">{{ total_syncs }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                <div class="text-gray-600 text-sm font-medium mb-1">Completed</div>
+                <div class="text-3xl font-bold text-green-600">{{ completed_syncs }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+                <div class="text-gray-600 text-sm font-medium mb-1">Failed</div>
+                <div class="text-3xl font-bold text-red-600">{{ failed_syncs }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                <div class="text-gray-600 text-sm font-medium mb-1">Processing</div>
+                <div class="text-3xl font-bold text-blue-600">{{ processing_syncs }}</div>
+            </div>
+        </div>
+
+        <!-- Sync History Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                {% if syncs %}
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compatibilities</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for sync in syncs %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                #{{ sync.id }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div class="font-medium">{{ sync.metadata.get('channel_name', 'Unknown') }}</div>
+                                <div class="text-xs text-gray-500">{{ sync.sync_type }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="status-badge status-{{ sync.status }}">
+                                    {{ sync.status|capitalize }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if sync.started_at %}
+                                    {{ sync.started_at.strftime('%Y-%m-%d') }}<br>
+                                    <span class="text-xs text-gray-500">{{ sync.started_at.strftime('%H:%M:%S') }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if sync.completed_at and sync.started_at %}
+                                    {% set duration = (sync.completed_at - sync.started_at).total_seconds() %}
+                                    {% if duration < 60 %}
+                                        {{ "%.0f"|format(duration) }}s
+                                    {% elif duration < 3600 %}
+                                        {{ "%.1f"|format(duration / 60) }}m
+                                    {% else %}
+                                        {{ "%.1f"|format(duration / 3600) }}h
+                                    {% endif %}
+                                {% elif sync.status == 'processing' %}
+                                    <span class="text-blue-600 animate-pulse">Processing...</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex flex-col space-y-1">
+                                    {% if sync.products_added > 0 %}
+                                    <div class="text-green-600">
+                                        <i class="fas fa-plus-circle"></i> {{ sync.products_added }} added
+                                    </div>
+                                    {% endif %}
+                                    {% if sync.products_updated > 0 %}
+                                    <div class="text-blue-600">
+                                        <i class="fas fa-edit"></i> {{ sync.products_updated }} updated
+                                    </div>
+                                    {% endif %}
+                                    {% if sync.products_deleted > 0 %}
+                                    <div class="text-red-600">
+                                        <i class="fas fa-trash-alt"></i> {{ sync.products_deleted }} deleted
+                                    </div>
+                                    {% endif %}
+                                    {% if sync.products_added == 0 and sync.products_updated == 0 and sync.products_deleted == 0 %}
+                                    <div class="text-gray-400">No changes</div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if sync.compatibilities_updated > 0 %}
+                                    <span class="text-primary font-medium">{{ sync.compatibilities_updated }}</span> updated
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if sync.error_message %}
+                                    <button 
+                                        onclick="showError('{{ sync.error_message|replace("'", "\\'") }}')"
+                                        class="text-red-600 hover:text-red-800 font-medium"
+                                    >
+                                        <i class="fas fa-exclamation-circle"></i> View Error
+                                    </button>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-history text-gray-300 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-medium text-gray-600 mb-2">No sync history yet</h3>
+                    <p class="text-gray-500">Webhook sync operations will appear here once Salsify sends data updates</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-600 text-xl mr-3 mt-1"></i>
+                <div>
+                    <h3 class="text-lg font-semibold text-blue-900 mb-2">About Sync History</h3>
+                    <p class="text-blue-800 mb-2">
+                        This page shows all automatic data synchronizations triggered by Salsify webhooks. 
+                        Each time you publish your product feed in Salsify, a webhook is sent to this application, 
+                        and the database is updated automatically.
+                    </p>
+                    <ul class="list-disc list-inside text-blue-800 space-y-1">
+                        <li><strong>Products Added:</strong> New products that didn't exist in the database</li>
+                        <li><strong>Products Updated:</strong> Existing products with changed data</li>
+                        <li><strong>Products Deleted:</strong> Products removed from Salsify</li>
+                        <li><strong>Compatibilities Updated:</strong> Number of compatibility matches recalculated</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
+        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
+            <p>&copy; 2025 American Bath Group. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i> Sync Error
+                </h3>
+                <button onclick="closeError()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="errorContent" class="bg-red-50 border border-red-200 rounded p-4 text-sm font-mono text-red-800 overflow-auto max-h-96">
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="closeError()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showError(message) {
+            document.getElementById('errorContent').textContent = message;
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').classList.add('hidden');
+        }
+
+        // Auto-refresh every 30 seconds if there are processing syncs
+        {% if processing_syncs > 0 %}
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+        {% endif %}
+    </script>
+</body>
+</html>
