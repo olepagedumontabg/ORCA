@@ -102,7 +102,8 @@ def normalize_url(url):
     Returns:
         str: Normalized URL
     """
-    if not url:
+    # Handle None, empty strings, and NaN values from pandas
+    if not url or not isinstance(url, str):
         return ""
     
     # Strip whitespace
