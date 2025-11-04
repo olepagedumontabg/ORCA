@@ -29,7 +29,7 @@ except ImportError:
     DB_AVAILABLE = False
 
 
-def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
+def sync_database_from_excel(excel_path: str = None) -> dict:
     """
     Synchronize database with Excel file data.
     
@@ -37,11 +37,19 @@ def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
         excel_path: Path to Excel file (defaults to data/Product Data.xlsx)
         
     Returns:
-        tuple: (products_added, products_updated, products_deleted)
+        dict: {
+            'products_added': int,
+            'products_updated': int,
+            'products_deleted': int,
+            'added_products': list of {sku, name, category},
+            'updated_products': list of {sku, name, category, changes},
+            'deleted_products': list of {sku, name, category}
+        }
     """
     if not DB_AVAILABLE:
         logger.error("Database not available for sync")
-        return (0, 0, 0)
+        return {'products_added': 0, 'products_updated': 0, 'products_deleted': 0, 
+                'added_products': [], 'updated_products': [], 'deleted_products': []}
     
     if excel_path is None:
         excel_path = os.path.join('data', 'Product Data.xlsx')
@@ -52,6 +60,11 @@ def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
     added = 0
     updated = 0
     deleted = 0
+    
+    # Track detailed changes
+    added_products = []
+    updated_products = []
+    deleted_products = []
     
     try:
         # Load Excel data
@@ -116,21 +129,41 @@ def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
                 existing_product = session.query(Product).filter_by(sku=sku).first()
                 
                 if existing_product:
-                    # Update existing product
+                    # Update existing product and track changes
                     changed = False
+                    changes = {}
                     for key, value in product_data.items():
-                        if key != 'created_at' and getattr(existing_product, key) != value:
-                            setattr(existing_product, key, value)
-                            changed = True
+                        if key != 'created_at':
+                            old_value = getattr(existing_product, key)
+                            if old_value != value:
+                                setattr(existing_product, key, value)
+                                # Track what changed (limit field names to reasonable length)
+                                field_name = key.replace('_', ' ').title()
+                                changes[field_name] = {
+                                    'old': str(old_value) if old_value is not None else 'None',
+                                    'new': str(value) if value is not None else 'None'
+                                }
+                                changed = True
                     
                     if changed:
                         existing_product.updated_at = datetime.utcnow()
                         updated += 1
+                        updated_products.append({
+                            'sku': sku,
+                            'name': product_data.get('product_name', sku),
+                            'category': category,
+                            'changes': changes
+                        })
                 else:
                     # Add new product
                     product = Product(**product_data)
                     session.add(product)
                     added += 1
+                    added_products.append({
+                        'sku': sku,
+                        'name': product_data.get('product_name', sku),
+                        'category': category
+                    })
             
             # Commit after each category
             if (added + updated) % 100 == 0:
@@ -141,13 +174,28 @@ def sync_database_from_excel(excel_path: str = None) -> Tuple[int, int, int]:
         deleted_skus = existing_skus - excel_skus
         if deleted_skus:
             logger.info(f"Removing {len(deleted_skus)} products no longer in Excel")
+            # Get product details before deletion
+            products_to_delete = session.query(Product).filter(Product.sku.in_(deleted_skus)).all()
+            for prod in products_to_delete:
+                deleted_products.append({
+                    'sku': prod.sku,
+                    'name': prod.product_name or prod.sku,
+                    'category': prod.category
+                })
             session.query(Product).filter(Product.sku.in_(deleted_skus)).delete(synchronize_session=False)
             deleted = len(deleted_skus)
         
         session.commit()
         logger.info(f"Database sync complete: {added} added, {updated} updated, {deleted} deleted")
         
-        return (added, updated, deleted)
+        return {
+            'products_added': added,
+            'products_updated': updated,
+            'products_deleted': deleted,
+            'added_products': added_products[:50],  # Limit to first 50 for storage
+            'updated_products': updated_products[:50],
+            'deleted_products': deleted_products[:50]
+        }
         
     except Exception as e:
         session.rollback()
@@ -302,14 +350,17 @@ def full_sync_workflow(excel_path: str = None) -> dict:
         excel_path: Path to Excel file
         
     Returns:
-        dict: Summary of sync operation
+        dict: Summary of sync operation with detailed changes
     """
     logger.info("Starting full database sync workflow")
     start_time = datetime.now()
     
     try:
         # Step 1: Sync database with Excel
-        added, updated, deleted = sync_database_from_excel(excel_path)
+        sync_result = sync_database_from_excel(excel_path)
+        added = sync_result['products_added']
+        updated = sync_result['products_updated']
+        deleted = sync_result['products_deleted']
         
         # Step 2: Recompute compatibilities for changed products
         changed_skus = set()
@@ -335,10 +386,16 @@ def full_sync_workflow(excel_path: str = None) -> dict:
             'products_deleted': deleted,
             'compatibilities_updated': compatibility_count,
             'duration_seconds': duration,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            # Include detailed change information
+            'change_details': {
+                'added_products': sync_result.get('added_products', []),
+                'updated_products': sync_result.get('updated_products', []),
+                'deleted_products': sync_result.get('deleted_products', [])
+            }
         }
         
-        logger.info(f"Full sync complete in {duration:.1f}s: {result}")
+        logger.info(f"Full sync complete in {duration:.1f}s: {added} added, {updated} updated, {deleted} deleted")
         return result
         
     except Exception as e:

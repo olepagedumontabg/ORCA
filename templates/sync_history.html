@@ -108,12 +108,12 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compatibilities</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error/Details</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for sync in syncs %}
-                        <tr class="hover:bg-gray-50 transition">
+                        <tr class="hover:bg-gray-50 transition" id="sync-row-{{ sync.id }}">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 #{{ sync.id }}
                             </td>
@@ -187,11 +187,88 @@
                                     >
                                         <i class="fas fa-exclamation-circle"></i> View Error
                                     </button>
+                                {% elif sync.metadata.get('change_details') and (sync.metadata.change_details.get('updated_products') or sync.metadata.change_details.get('added_products') or sync.metadata.change_details.get('deleted_products')) %}
+                                    <button 
+                                        onclick="toggleDetails({{ sync.id }})"
+                                        class="text-primary hover:text-blue-800 font-medium"
+                                    >
+                                        <i class="fas fa-eye"></i> View Changes
+                                    </button>
                                 {% else %}
                                     <span class="text-gray-400">-</span>
                                 {% endif %}
                             </td>
                         </tr>
+                        <!-- Expandable Details Row -->
+                        {% if sync.metadata.get('change_details') %}
+                        <tr id="details-{{ sync.id }}" class="hidden bg-gray-50">
+                            <td colspan="8" class="px-6 py-4">
+                                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                                    <h4 class="font-semibold text-gray-900 mb-3 text-lg">Change Details for Sync #{{ sync.id }}</h4>
+                                    
+                                    {% set change_details = sync.metadata.change_details %}
+                                    
+                                    <!-- Updated Products -->
+                                    {% if change_details.get('updated_products') %}
+                                    <div class="mb-4">
+                                        <h5 class="font-medium text-blue-600 mb-2"><i class="fas fa-edit"></i> Updated Products ({{ change_details.updated_products|length }})</h5>
+                                        <div class="space-y-3">
+                                            {% for product in change_details.updated_products %}
+                                            <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                                                <div class="font-medium text-gray-900">{{ product.name }}</div>
+                                                <div class="text-xs text-gray-600 mb-2">SKU: {{ product.sku }} | Category: {{ product.category }}</div>
+                                                <div class="text-sm">
+                                                    <strong>Changes:</strong>
+                                                    <div class="mt-1 space-y-1">
+                                                        {% for field, change in product.changes.items() %}
+                                                        <div class="text-xs">
+                                                            <span class="font-medium">{{ field }}:</span>
+                                                            <span class="text-red-600">{{ change.old[:100] }}</span>
+                                                            <span class="text-gray-500">→</span>
+                                                            <span class="text-green-600">{{ change.new[:100] }}</span>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Added Products -->
+                                    {% if change_details.get('added_products') %}
+                                    <div class="mb-4">
+                                        <h5 class="font-medium text-green-600 mb-2"><i class="fas fa-plus-circle"></i> Added Products ({{ change_details.added_products|length }})</h5>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {% for product in change_details.added_products %}
+                                            <div class="bg-green-50 p-2 rounded border border-green-200 text-sm">
+                                                <div class="font-medium">{{ product.name }}</div>
+                                                <div class="text-xs text-gray-600">SKU: {{ product.sku }} | {{ product.category }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Deleted Products -->
+                                    {% if change_details.get('deleted_products') %}
+                                    <div class="mb-4">
+                                        <h5 class="font-medium text-red-600 mb-2"><i class="fas fa-trash-alt"></i> Deleted Products ({{ change_details.deleted_products|length }})</h5>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {% for product in change_details.deleted_products %}
+                                            <div class="bg-red-50 p-2 rounded border border-red-200 text-sm">
+                                                <div class="font-medium">{{ product.name }}</div>
+                                                <div class="text-xs text-gray-600">SKU: {{ product.sku }} | {{ product.category }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -263,6 +340,19 @@
 
         function closeError() {
             document.getElementById('errorModal').classList.add('hidden');
+        }
+
+        function toggleDetails(syncId) {
+            const detailsRow = document.getElementById('details-' + syncId);
+            const button = event.target.closest('button');
+            
+            if (detailsRow.classList.contains('hidden')) {
+                detailsRow.classList.remove('hidden');
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Changes';
+            } else {
+                detailsRow.classList.add('hidden');
+                button.innerHTML = '<i class="fas fa-eye"></i> View Changes';
+            }
         }
 
         // Auto-refresh every 30 seconds if there are processing syncs

@@ -1076,6 +1076,12 @@ def salsify_webhook():
                     sync_record.products_updated = sync_result.get('products_updated', 0)
                     sync_record.products_deleted = sync_result.get('products_deleted', 0)
                     sync_record.compatibilities_updated = sync_result.get('compatibilities_updated', 0)
+                    
+                    # Store detailed change information in metadata
+                    if sync_record.sync_metadata is None:
+                        sync_record.sync_metadata = {}
+                    sync_record.sync_metadata['change_details'] = sync_result.get('change_details', {})
+                    
                     logger.info(f"Webhook sync completed successfully: {sync_result}")
                 else:
                     sync_record.status = 'failed'
