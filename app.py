@@ -1112,9 +1112,17 @@ def salsify_webhook():
                     # Store detailed change information in metadata
                     if sync_record.sync_metadata is None:
                         sync_record.sync_metadata = {}
-                    sync_record.sync_metadata['change_details'] = sync_result.get('change_details', {})
+                    
+                    # Merge change_details into existing metadata
+                    change_details = sync_result.get('change_details', {})
+                    sync_record.sync_metadata['change_details'] = change_details
+                    
+                    # IMPORTANT: Mark the JSON field as modified so SQLAlchemy saves it
+                    from sqlalchemy.orm.attributes import flag_modified
+                    flag_modified(sync_record, 'sync_metadata')
                     
                     logger.info(f"Webhook sync completed successfully: {sync_result}")
+                    logger.info(f"Saved change details: added={len(change_details.get('added_products', []))}, updated={len(change_details.get('updated_products', []))}, deleted={len(change_details.get('deleted_products', []))}")
                 else:
                     sync_record.status = 'failed'
                     sync_record.completed_at = datetime.utcnow()
