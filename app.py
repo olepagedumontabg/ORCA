@@ -187,64 +187,73 @@ def suggest_skus():
             # Return empty results if query is too short
             return jsonify({'suggestions': [], 'displaySuggestions': []})
 
-        # Get all SKUs from the data
-        data = compatibility.load_data()
+        # Try to use database first, fall back to Excel if needed
+        from data_loader import check_database_ready
+        from models import get_session, Product
+        
+        if check_database_ready():
+            # Use database for faster, more current results
+            session = get_session()
+            try:
+                # Search for products matching SKU or product name
+                # Use ILIKE for case-insensitive search
+                products = session.query(Product.sku, Product.product_name).filter(
+                    (Product.sku.ilike(f'%{query}%')) | 
+                    (Product.product_name.ilike(f'%{query}%'))
+                ).limit(10).all()
+                
+                matching_skus = []
+                display_suggestions = []
+                
+                for sku, product_name in products:
+                    matching_skus.append(sku)
+                    if product_name:
+                        display_suggestions.append(f"{sku} - {product_name}")
+                    else:
+                        display_suggestions.append(sku)
+                
+                logger.debug(f"Found {len(matching_skus)} suggestions from database for query '{query}'")
+                
+                return jsonify({
+                    'suggestions': matching_skus,
+                    'displaySuggestions': display_suggestions
+                })
+            finally:
+                session.close()
+        else:
+            # Fallback to Excel data
+            data = compatibility.load_data()
+            sku_product_map = {}
 
-        # Dictionary to store SKU and product name pairs
-        sku_product_map = {}
+            for sheet_name, df in data.items():
+                if 'Unique ID' in df.columns:
+                    product_name_col = 'Product Name' if 'Product Name' in df.columns else None
+                    for _, row in df.iterrows():
+                        sku = str(row['Unique ID'])
+                        product_name = str(row[product_name_col]) if product_name_col else ''
+                        sku_product_map[sku] = product_name
 
-        # Collect SKUs and product names from all sheets
-        for sheet_name, df in data.items():
-            # Look for 'Unique ID' column which contains the SKUs
-            if 'Unique ID' in df.columns:
-                # Check if 'Product Name' column exists
-                product_name_col = 'Product Name' if 'Product Name' in df.columns else None
+            matching_skus_by_id = [sku for sku in sku_product_map.keys() if query in sku]
+            matching_skus_by_name = [sku for sku, name in sku_product_map.items() if name and query in name.upper()]
+            
+            matching_skus = list(dict.fromkeys(matching_skus_by_id + matching_skus_by_name))
+            matching_skus.sort()
+            matching_skus = matching_skus[:10]
 
-                # Iterate through rows to collect SKU and product name pairs
-                for _, row in df.iterrows():
-                    sku = str(row['Unique ID'])
-                    product_name = str(
-                        row[product_name_col]) if product_name_col else ''
-                    sku_product_map[sku] = product_name
+            display_suggestions = []
+            for sku in matching_skus:
+                product_name = sku_product_map.get(sku, '')
+                if product_name:
+                    display_suggestions.append(f"{sku} - {product_name}")
+                else:
+                    display_suggestions.append(sku)
 
-        # Find matches by SKU
-        matching_skus_by_id = [
-            sku for sku in sku_product_map.keys() if query in sku
-        ]
+            logger.debug(f"Found {len(matching_skus)} suggestions from Excel for query '{query}'")
 
-        # Find matches by product name
-        matching_skus_by_name = []
-        for sku, product_name in sku_product_map.items():
-            if product_name and query in product_name.upper():
-                matching_skus_by_name.append(sku)
-
-        # Combine unique matches, prioritizing SKU matches
-        matching_skus = list(
-            dict.fromkeys(matching_skus_by_id + matching_skus_by_name))
-
-        # Sort and limit results
-        matching_skus.sort()
-        matching_skus = matching_skus[:10]  # Limit to top 10 matches
-
-        # Create display suggestions with SKU and product name
-        display_suggestions = []
-        for sku in matching_skus:
-            product_name = sku_product_map.get(sku, '')
-            if product_name:
-                display_suggestions.append(f"{sku} - {product_name}")
-            else:
-                display_suggestions.append(sku)
-
-        # Log the number of suggestions for debugging
-        logger.debug(
-            f"Found {len(matching_skus)} suggestions for query '{query}' (SKU: {len(matching_skus_by_id)}, Name: {len(matching_skus_by_name)})"
-        )
-
-        return jsonify({
-            'suggestions': matching_skus,  # Original SKUs for selection
-            'displaySuggestions':
-            display_suggestions  # Formatted display strings
-        })
+            return jsonify({
+                'suggestions': matching_skus,
+                'displaySuggestions': display_suggestions
+            })
 
     except Exception as e:
         logger.error(f"Error in suggest_skus: {str(e)}")
