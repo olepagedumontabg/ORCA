@@ -128,8 +128,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {% if sync.started_at %}
-                                    {{ sync.started_at.strftime('%Y-%m-%d') }}<br>
-                                    <span class="text-xs text-gray-500">{{ sync.started_at.strftime('%H:%M:%S') }}</span>
+                                    <span class="local-time" data-utc="{{ sync.started_at.isoformat() }}">
+                                        {{ sync.started_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+                                    </span>
                                 {% else %}
                                     -
                                 {% endif %}
@@ -395,6 +396,42 @@
                 button.innerHTML = '<i class="fas fa-eye"></i> Show Details';
             }
         }
+
+        // Convert UTC times to local timezone
+        function convertToLocalTime() {
+            const timeElements = document.querySelectorAll('.local-time');
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            timeElements.forEach(element => {
+                const utcTime = element.getAttribute('data-utc');
+                if (utcTime) {
+                    const date = new Date(utcTime);
+                    
+                    // Format: "2025-11-04 3:34:26 PM EST"
+                    const localDate = date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                    
+                    const localTime = date.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true
+                    });
+                    
+                    const timezone = date.toLocaleTimeString('en-US', {
+                        timeZoneName: 'short'
+                    }).split(' ').pop();
+                    
+                    element.innerHTML = `${localDate}<br><span class="text-xs text-gray-500">${localTime} ${timezone}</span>`;
+                }
+            });
+        }
+        
+        // Run on page load
+        convertToLocalTime();
 
         // Auto-refresh every 30 seconds if there are processing syncs
         {% if processing_syncs > 0 %}
