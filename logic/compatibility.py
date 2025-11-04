@@ -1442,9 +1442,9 @@ def find_compatible_products(sku):
 
         # Additional categories can be added here with their own dedicated modules
 
-        # If no specific compatibility logic matched or no compatible products found,
-        # check if there are explicit compatibility columns in the product info
-        if not compatible_products and product_info is not None:
+        # Check for explicit compatibility override columns in the product info
+        # These should be added/merged with normally matched products
+        if product_info is not None:
             # Check for explicitly listed compatible doors
             if 'Compatible Doors' in product_info and product_info.get(
                     'Compatible Doors') and pd.notna(
@@ -1515,16 +1515,35 @@ def find_compatible_products(sku):
                         })
 
                 if enhanced_skus:
-                    # Sort products by ranking value (lowest ranking first)
-                    enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
-                    logger.debug(
-                        f"Sorted {len(enhanced_skus)} products by ranking for Doors category"
-                    )
-
-                    compatible_products.append({
-                        "category": "Doors",
-                        "products": enhanced_skus
-                    })
+                    # Find existing Doors/Shower Doors category to merge with
+                    doors_category = None
+                    for cat in compatible_products:
+                        if cat["category"] in ["Doors", "Shower Doors"]:
+                            doors_category = cat
+                            break
+                    
+                    if doors_category:
+                        # Merge with existing category, avoiding duplicates
+                        existing_skus = {p["sku"] for p in doors_category["products"]}
+                        for product in enhanced_skus:
+                            if product["sku"] not in existing_skus:
+                                doors_category["products"].append(product)
+                                existing_skus.add(product["sku"])
+                        # Re-sort after merging
+                        doors_category["products"].sort(key=lambda x: x.get('_ranking', 999))
+                        logger.debug(
+                            f"Merged {len(enhanced_skus)} override doors with existing category (total: {len(doors_category['products'])})"
+                        )
+                    else:
+                        # No existing doors category, create new one
+                        enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                        logger.debug(
+                            f"Added {len(enhanced_skus)} override doors as new category"
+                        )
+                        compatible_products.append({
+                            "category": "Shower Doors",
+                            "products": enhanced_skus
+                        })
 
             # Check for explicitly listed compatible walls
             if 'Compatible Walls' in product_info and product_info.get(
@@ -1584,16 +1603,35 @@ def find_compatible_products(sku):
                         })
 
                 if enhanced_skus:
-                    # Sort products by ranking value (lowest ranking first)
-                    enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
-                    logger.debug(
-                        f"Sorted {len(enhanced_skus)} products by ranking for Walls category"
-                    )
-
-                    compatible_products.append({
-                        "category": "Walls",
-                        "products": enhanced_skus
-                    })
+                    # Find existing Walls category to merge with
+                    walls_category = None
+                    for cat in compatible_products:
+                        if cat["category"] == "Walls":
+                            walls_category = cat
+                            break
+                    
+                    if walls_category:
+                        # Merge with existing category, avoiding duplicates
+                        existing_skus = {p["sku"] for p in walls_category["products"]}
+                        for product in enhanced_skus:
+                            if product["sku"] not in existing_skus:
+                                walls_category["products"].append(product)
+                                existing_skus.add(product["sku"])
+                        # Re-sort after merging
+                        walls_category["products"].sort(key=lambda x: x.get('_ranking', 999))
+                        logger.debug(
+                            f"Merged {len(enhanced_skus)} override walls with existing category (total: {len(walls_category['products'])})"
+                        )
+                    else:
+                        # No existing walls category, create new one
+                        enhanced_skus.sort(key=lambda x: x.get('_ranking', 999))
+                        logger.debug(
+                            f"Added {len(enhanced_skus)} override walls as new category"
+                        )
+                        compatible_products.append({
+                            "category": "Walls",
+                            "products": enhanced_skus
+                        })
 
 
 

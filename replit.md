@@ -87,7 +87,20 @@ Preferred communication style: Simple, everyday language.
     - Background processing with threading (non-blocking 202 response)
     - S3 file download with 100MB limit and 5-minute timeout
     - Automatic database sync and compatibility recomputation
+    - Saves downloaded Excel to `data/Product Data.xlsx` and reloads in-memory cache
     - Comprehensive sync status tracking in `sync_status` table
 - **Security**: Secret stored in Replit Secrets, file size/timeout protections
 - **Testing**: Comprehensive test suite in `test_webhook.py`
 - **Documentation**: Full setup guide in `SALSIFY_WEBHOOK_SETUP.md`
+
+### Compatibility Override Columns (November 4, 2025)
+- **Feature**: Support for forced compatibility via Salsify columns
+- **Columns**:
+    - `Compatible Doors` - Force specific door SKUs to appear as compatible
+    - `Compatible Walls` - Force specific wall SKUs to appear as compatible
+- **Behavior**:
+    - Override products are merged with normally matched products (not just fallback)
+    - Duplicates are automatically removed by SKU
+    - Products maintain ranking order after merge
+    - Supports both comma-separated (`SKU1, SKU2`) and pipe-separated (`SKU1|SKU2`) formats
+- **Use Case**: Bypass normal compatibility logic to force specific product pairings
