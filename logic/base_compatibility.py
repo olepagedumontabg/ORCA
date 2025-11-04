@@ -772,7 +772,7 @@ def brand_family_match(base_brand, base_family, wall_brand, wall_family):
 
     # Special family compatibility rules
     # Utile and Nextile walls should only match with specific base families
-    if wall_family in ["utile", "nextile"] and base_family not in ["b3", "finesse", "distinct", "zone", "olympia", "icon", "roka"]:
+    if wall_family in ["utile", "nextile"] and base_family not in ["b3", "finesse", "distinct", "zone", "olympia", "icon", "roka", "stonea"]:
         return False
 
     # If we passed all family restrictions, products are compatible
