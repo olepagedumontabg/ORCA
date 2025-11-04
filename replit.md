@@ -17,9 +17,12 @@ Preferred communication style: Simple, everyday language.
 ### Technical Implementations
 - **Backend**: Flask web application (Python 3.11) utilizing Pandas for Excel data manipulation.
 - **Deployment**: Gunicorn WSGI server with autoscale deployment on Replit.
-- **Data Update Service**: Automated, threaded service for FTP synchronization of product data, including scheduled daily updates and email notifications.
+- **Data Update Service**: 
+    - **Primary**: Salsify webhook integration for real-time automated updates (November 2025)
+    - **Backup**: FTP synchronization service with scheduled daily updates and email notifications
+- **Webhook Integration**: Secure webhook endpoint (`/api/salsify/webhook`) receives Salsify publication notifications, downloads Excel from S3, and triggers database sync with background processing.
 - **Core Logic**: Dedicated modules handle compatibility rules for various product types (shower, bathtub, tub shower, etc.), image URL generation, and compatibility overrides.
-- **REST API**: Provides 5 endpoints for external integration, including health checks, category listings, product details, and compatibility queries.
+- **REST API**: Provides 7 endpoints for external integration, including health checks, category listings, product details, compatibility queries, and Salsify webhook/status endpoints.
 
 ### System Design Choices
 - **Database-First**: PostgreSQL serves as the primary data source, supporting fast queries and multi-application access.
@@ -58,8 +61,8 @@ Preferred communication style: Simple, everyday language.
 
 ## External Dependencies
 
-- **FTP Server**: Salsify.com for product data synchronization.
-- **SendGrid**: Email notification service.
+- **Salsify PIM**: Product Information Management system with webhook integration for automated data synchronization.
+- **SendGrid**: Email notification service (optional).
 - **PostgreSQL**: Relational database.
 - **Python Packages**:
     - Flask
@@ -67,6 +70,24 @@ Preferred communication style: Simple, everyday language.
     - SQLAlchemy
     - psycopg2-binary
     - Gunicorn
-    - SendGrid
+    - Requests (for S3 file downloads)
+    - SendGrid (optional)
     - Schedule
 - **Frontend Libraries**: Alpine.js and Tailwind CSS (via CDN).
+
+## Recent Updates (November 2025)
+
+### Salsify Webhook Integration
+- **Implemented**: Full webhook integration with Salsify PIM system
+- **Endpoints Added**: 
+    - `POST /api/salsify/webhook` - Receives publication notifications
+    - `GET /api/salsify/status` - Monitors sync operations
+- **Features**:
+    - URL-based authentication using `SALSIFY_WEBHOOK_SECRET`
+    - Background processing with threading (non-blocking 202 response)
+    - S3 file download with 100MB limit and 5-minute timeout
+    - Automatic database sync and compatibility recomputation
+    - Comprehensive sync status tracking in `sync_status` table
+- **Security**: Secret stored in Replit Secrets, file size/timeout protections
+- **Testing**: Comprehensive test suite in `test_webhook.py`
+- **Documentation**: Full setup guide in `SALSIFY_WEBHOOK_SETUP.md`
