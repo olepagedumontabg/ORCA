@@ -551,77 +551,75 @@ def find_base_compatibilities(data, base_info):
             supports_both = "alcove" in base_install and "corner" in base_install
             is_corner_only = "corner" in base_install and "alcove" not in base_install
             
-            # Organize doors by type based on base installation type
-            if alcove_doors or corner_doors:
-                # Split mode: separate categories with installation-specific names
-                if alcove_doors:
-                    sorted_alcove_doors = sorted(alcove_doors, key=lambda x: x.get('_ranking', 999))
-                    logger.debug(f"Adding {len(sorted_alcove_doors)} alcove doors to results")
-                    if supports_both:
-                        compatible_products.append({"category": "Alcove Doors", "products": sorted_alcove_doors})
+            # Consolidate ALL doors into one "Shower Doors" category
+            # Previously, doors were split into "Alcove Doors" and separate corner categories
+            all_doors = []
+            all_return_panels = []
+            
+            # Add alcove doors to main doors list
+            if alcove_doors:
+                all_doors.extend(alcove_doors)
+                logger.debug(f"Added {len(alcove_doors)} alcove doors to consolidated list")
+            
+            # Add regular matching doors
+            if matching_doors:
+                all_doors.extend(matching_doors)
+                logger.debug(f"Added {len(matching_doors)} regular doors to consolidated list")
+            
+            # Process corner doors - separate combos into doors and return panels
+            if corner_doors:
+                for combo in corner_doors:
+                    if combo.get('is_combo'):
+                        # Extract main product (door)
+                        main = combo.get('main_product', {})
+                        if main.get('sku'):
+                            door_product = {
+                                "sku": main.get('sku'),
+                                "name": main.get('name'),
+                                "brand": main.get('brand'),
+                                "series": main.get('series'),
+                                "category": "Shower Doors",
+                                "image_url": main.get('image_url'),
+                                "product_page_url": main.get('product_page_url'),
+                                "_ranking": combo.get('_ranking', 999),
+                                "is_combo": False
+                            }
+                            all_doors.append(door_product)
+                        
+                        # Extract secondary product (return panel)
+                        secondary = combo.get('secondary_product', {})
+                        if secondary.get('sku'):
+                            panel_product = {
+                                "sku": secondary.get('sku'),
+                                "name": secondary.get('name'),
+                                "brand": secondary.get('brand'),
+                                "series": secondary.get('series'),
+                                "category": "Return Panels",
+                                "image_url": secondary.get('image_url'),
+                                "product_page_url": secondary.get('product_page_url'),
+                                "_ranking": combo.get('_ranking', 999),
+                                "is_combo": False
+                            }
+                            all_return_panels.append(panel_product)
                     else:
-                        compatible_products.append({"category": "Alcove Doors", "products": sorted_alcove_doors})
+                        # Not a combo, add as-is to doors
+                        all_doors.append(combo)
                 
-                if corner_doors:
-                    # Separate combo products into individual doors and return panels
-                    individual_doors = []
-                    individual_panels = []
-                    
-                    for combo in corner_doors:
-                        if combo.get('is_combo'):
-                            # Extract main product (door)
-                            main = combo.get('main_product', {})
-                            if main.get('sku'):
-                                door_product = {
-                                    "sku": main.get('sku'),
-                                    "name": main.get('name'),
-                                    "brand": main.get('brand'),
-                                    "series": main.get('series'),
-                                    "category": "Shower Doors",
-                                    "image_url": main.get('image_url'),
-                                    "product_page_url": main.get('product_page_url'),
-                                    "_ranking": combo.get('_ranking', 999),
-                                    "is_combo": False
-                                }
-                                individual_doors.append(door_product)
-                            
-                            # Extract secondary product (return panel)
-                            secondary = combo.get('secondary_product', {})
-                            if secondary.get('sku'):
-                                panel_product = {
-                                    "sku": secondary.get('sku'),
-                                    "name": secondary.get('name'),
-                                    "brand": secondary.get('brand'),
-                                    "series": secondary.get('series'),
-                                    "category": "Return Panels",
-                                    "image_url": secondary.get('image_url'),
-                                    "product_page_url": secondary.get('product_page_url'),
-                                    "_ranking": combo.get('_ranking', 999),
-                                    "is_combo": False
-                                }
-                                individual_panels.append(panel_product)
-                        else:
-                            # Not a combo, add as-is to doors
-                            individual_doors.append(combo)
-                    
-                    # Add separated doors to compatible products
-                    if individual_doors:
-                        sorted_doors = sorted(individual_doors, key=lambda x: x.get('_ranking', 999))
-                        logger.debug(f"Adding {len(sorted_doors)} individual corner doors to results")
-                        compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
-                    
-                    # Add separated return panels to compatible products
-                    if individual_panels:
-                        sorted_panels = sorted(individual_panels, key=lambda x: x.get('_ranking', 999))
-                        logger.debug(f"Adding {len(sorted_panels)} individual return panels to results")
-                        compatible_products.append({"category": "Return Panels", "products": sorted_panels})
-            elif matching_doors:
-                # Regular mode: single category for all doors
-                sorted_doors = sorted(matching_doors, key=lambda x: x.get('_ranking', 999))
-                logger.debug(f"Adding {len(sorted_doors)} shower doors to results")
+                logger.debug(f"Added {len(corner_doors)} corner products to consolidated list")
+            
+            # Add all consolidated doors under single "Shower Doors" category
+            if all_doors:
+                sorted_doors = sorted(all_doors, key=lambda x: x.get('_ranking', 999))
+                logger.debug(f"Adding {len(sorted_doors)} total shower doors to results (consolidated)")
                 for door in sorted_doors[:3]:  # Log first few doors
-                    logger.debug(f"  Door: {door.get('sku')} - {door.get('name')} (combo: {door.get('is_combo', False)})")
+                    logger.debug(f"  Door: {door.get('sku')} - {door.get('name')}")
                 compatible_products.append({"category": "Shower Doors", "products": sorted_doors})
+            
+            # Add return panels if any were extracted from combos
+            if all_return_panels:
+                sorted_panels = sorted(all_return_panels, key=lambda x: x.get('_ranking', 999))
+                logger.debug(f"Adding {len(sorted_panels)} return panels to results")
+                compatible_products.append({"category": "Return Panels", "products": sorted_panels})
 
         if matching_screens:
             # Sort the screens by ranking

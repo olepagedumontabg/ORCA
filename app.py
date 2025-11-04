@@ -192,27 +192,50 @@ def suggest_skus():
         from models import get_session, Product
         
         if check_database_ready():
-            # Use database for faster, more current results
+            # Use database with optimized query
             session = get_session()
             try:
-                # Search for products matching SKU or product name
-                # Use ILIKE for case-insensitive search
-                products = session.query(Product.sku, Product.product_name).filter(
-                    (Product.sku.ilike(f'%{query}%')) | 
-                    (Product.product_name.ilike(f'%{query}%'))
+                # Optimize: Search SKU first (exact prefix match is fastest), then name
+                # Use UPPER() for case-insensitive comparison which is faster with index
+                from sqlalchemy import func, or_
+                
+                # Prioritize SKU matches (starts with query)
+                sku_matches = session.query(Product.sku, Product.product_name).filter(
+                    func.upper(Product.sku).like(f'{query}%')
+                ).limit(10).all()
+                
+                # If we have enough SKU matches, return those
+                if len(sku_matches) >= 5:
+                    matching_skus = []
+                    display_suggestions = []
+                    for sku, product_name in sku_matches:
+                        matching_skus.append(sku)
+                        if product_name:
+                            display_suggestions.append(f"{sku} - {product_name}")
+                        else:
+                            display_suggestions.append(sku)
+                    
+                    return jsonify({
+                        'suggestions': matching_skus,
+                        'displaySuggestions': display_suggestions
+                    })
+                
+                # Otherwise, also search in product names
+                all_matches = session.query(Product.sku, Product.product_name).filter(
+                    or_(
+                        func.upper(Product.sku).like(f'%{query}%'),
+                        func.upper(Product.product_name).like(f'%{query}%')
+                    )
                 ).limit(10).all()
                 
                 matching_skus = []
                 display_suggestions = []
-                
-                for sku, product_name in products:
+                for sku, product_name in all_matches:
                     matching_skus.append(sku)
                     if product_name:
                         display_suggestions.append(f"{sku} - {product_name}")
                     else:
                         display_suggestions.append(sku)
-                
-                logger.debug(f"Found {len(matching_skus)} suggestions from database for query '{query}'")
                 
                 return jsonify({
                     'suggestions': matching_skus,
