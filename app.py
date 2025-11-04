@@ -917,6 +917,258 @@ def api_health():
 
 
 # ============================================================================
+# SALSIFY WEBHOOK ENDPOINTS
+# ============================================================================
+
+@app.route('/api/salsify/webhook', methods=['POST'])
+def salsify_webhook():
+    """
+    Salsify webhook endpoint for automated data updates.
+    
+    Salsify sends a POST request when publication completes with:
+    {
+        "channel_id": "...",
+        "channel_name": "...",
+        "user_id": "...",
+        "publication_status": "completed",
+        "product_feed_export_url": "https://s3.amazonaws.com/...",
+        "digital_asset_export_url": "..."
+    }
+    
+    Authentication: ?key=<SALSIFY_WEBHOOK_SECRET>
+    """
+    try:
+        webhook_secret = os.environ.get('SALSIFY_WEBHOOK_SECRET')
+        if not webhook_secret:
+            logger.error("SALSIFY_WEBHOOK_SECRET not configured")
+            return jsonify({
+                'success': False,
+                'error': 'Webhook not configured'
+            }), 500
+        
+        provided_key = request.args.get('key', '')
+        if provided_key != webhook_secret:
+            logger.warning(f"Invalid webhook key provided from IP: {request.remote_addr}")
+            return jsonify({
+                'success': False,
+                'error': 'Unauthorized'
+            }), 401
+        
+        payload = request.get_json()
+        if not payload:
+            return jsonify({
+                'success': False,
+                'error': 'No JSON payload provided'
+            }), 400
+        
+        logger.info(f"Received Salsify webhook: {payload.get('publication_status')}")
+        
+        publication_status = payload.get('publication_status')
+        if publication_status != 'completed':
+            logger.info(f"Ignoring webhook with status: {publication_status}")
+            return jsonify({
+                'success': True,
+                'message': f'Ignored status: {publication_status}'
+            })
+        
+        product_feed_url = payload.get('product_feed_export_url')
+        if not product_feed_url:
+            return jsonify({
+                'success': False,
+                'error': 'No product_feed_export_url in payload'
+            }), 400
+        
+        from models import get_session, SyncStatus
+        session = get_session()
+        
+        sync_record = SyncStatus(
+            sync_type='salsify_webhook',
+            status='pending',
+            sync_metadata={
+                'channel_id': payload.get('channel_id'),
+                'channel_name': payload.get('channel_name'),
+                'product_feed_url': product_feed_url
+            }
+        )
+        session.add(sync_record)
+        session.commit()
+        sync_id = sync_record.id
+        session.close()
+        
+        def process_webhook_sync(sync_id, product_feed_url, payload):
+            """Background task to process Salsify webhook"""
+            import requests
+            import tempfile
+            from datetime import datetime
+            
+            session = get_session()
+            sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
+            
+            try:
+                sync_record.status = 'processing'
+                session.commit()
+                
+                logger.info(f"Downloading Excel from Salsify S3: {product_feed_url}")
+                
+                response = requests.get(product_feed_url, timeout=300, stream=True)
+                response.raise_for_status()
+                
+                content_length = response.headers.get('content-length')
+                if content_length and int(content_length) > 100 * 1024 * 1024:
+                    raise ValueError(f"File too large: {content_length} bytes (max 100MB)")
+                
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+                    downloaded_size = 0
+                    max_size = 100 * 1024 * 1024
+                    
+                    for chunk in response.iter_content(chunk_size=8192):
+                        downloaded_size += len(chunk)
+                        if downloaded_size > max_size:
+                            raise ValueError(f"Download exceeded max size: {max_size} bytes")
+                        tmp_file.write(chunk)
+                    
+                    temp_path = tmp_file.name
+                    logger.info(f"Downloaded Excel file to: {temp_path} ({downloaded_size} bytes)")
+                
+                import db_sync_service
+                sync_result = db_sync_service.full_sync_workflow(temp_path)
+                
+                os.unlink(temp_path)
+                
+                if sync_result.get('success'):
+                    sync_record.status = 'completed'
+                    sync_record.completed_at = datetime.utcnow()
+                    sync_record.products_added = sync_result.get('products_added', 0)
+                    sync_record.products_updated = sync_result.get('products_updated', 0)
+                    sync_record.products_deleted = sync_result.get('products_deleted', 0)
+                    sync_record.compatibilities_updated = sync_result.get('compatibilities_updated', 0)
+                    logger.info(f"Webhook sync completed successfully: {sync_result}")
+                else:
+                    sync_record.status = 'failed'
+                    sync_record.completed_at = datetime.utcnow()
+                    sync_record.error_message = sync_result.get('error', 'Unknown error')
+                    logger.error(f"Webhook sync failed: {sync_result.get('error')}")
+                
+                session.commit()
+                
+            except Exception as e:
+                logger.error(f"Error processing webhook sync: {str(e)}")
+                logger.error(traceback.format_exc())
+                sync_record.status = 'failed'
+                sync_record.completed_at = datetime.utcnow()
+                sync_record.error_message = str(e)
+                session.commit()
+            finally:
+                session.close()
+        
+        webhook_thread = threading.Thread(
+            target=process_webhook_sync,
+            args=(sync_id, product_feed_url, payload),
+            daemon=True
+        )
+        webhook_thread.start()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Webhook received and processing started',
+            'sync_id': sync_id
+        }), 202
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/salsify/status', methods=['GET'])
+def salsify_status():
+    """
+    Get status of Salsify webhook syncs.
+    
+    Query Parameters:
+        - limit: Number of recent syncs to return (default: 10, max: 100)
+        - sync_id: Get specific sync by ID
+    
+    Example: GET /api/salsify/status
+    Example: GET /api/salsify/status?sync_id=123
+    Example: GET /api/salsify/status?limit=5
+    """
+    try:
+        from models import get_session, SyncStatus
+        
+        session = get_session()
+        
+        sync_id = request.args.get('sync_id', type=int)
+        if sync_id:
+            sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
+            session.close()
+            
+            if not sync_record:
+                return jsonify({
+                    'success': False,
+                    'error': 'Sync not found'
+                }), 404
+            
+            return jsonify({
+                'success': True,
+                'sync': {
+                    'id': sync_record.id,
+                    'sync_type': sync_record.sync_type,
+                    'status': sync_record.status,
+                    'started_at': sync_record.started_at.isoformat() if sync_record.started_at else None,
+                    'completed_at': sync_record.completed_at.isoformat() if sync_record.completed_at else None,
+                    'products_added': sync_record.products_added,
+                    'products_updated': sync_record.products_updated,
+                    'products_deleted': sync_record.products_deleted,
+                    'compatibilities_updated': sync_record.compatibilities_updated,
+                    'error_message': sync_record.error_message,
+                    'metadata': sync_record.sync_metadata
+                }
+            })
+        
+        limit = min(request.args.get('limit', type=int, default=10), 100)
+        
+        recent_syncs = session.query(SyncStatus).order_by(
+            SyncStatus.started_at.desc()
+        ).limit(limit).all()
+        
+        syncs_list = []
+        for sync in recent_syncs:
+            syncs_list.append({
+                'id': sync.id,
+                'sync_type': sync.sync_type,
+                'status': sync.status,
+                'started_at': sync.started_at.isoformat() if sync.started_at else None,
+                'completed_at': sync.completed_at.isoformat() if sync.completed_at else None,
+                'products_added': sync.products_added,
+                'products_updated': sync.products_updated,
+                'products_deleted': sync.products_deleted,
+                'compatibilities_updated': sync.compatibilities_updated,
+                'error_message': sync.error_message,
+                'metadata': sync.sync_metadata
+            })
+        
+        session.close()
+        
+        return jsonify({
+            'success': True,
+            'syncs': syncs_list,
+            'total_returned': len(syncs_list)
+        })
+        
+    except Exception as e:
+        logger.error(f"Status endpoint error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
 # END OF REST API ENDPOINTS
 # ============================================================================
 
