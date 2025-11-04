@@ -191,27 +191,53 @@
                                     <button 
                                         onclick="toggleDetails({{ sync.id }})"
                                         class="text-primary hover:text-blue-800 font-medium"
+                                        id="toggle-btn-{{ sync.id }}"
                                     >
-                                        <i class="fas fa-eye"></i> View Changes
+                                        <i class="fas fa-eye-slash"></i> Hide Details
                                     </button>
                                 {% else %}
-                                    <span class="text-gray-400">-</span>
+                                    <span class="text-gray-400">No details</span>
                                 {% endif %}
                             </td>
                         </tr>
-                        <!-- Expandable Details Row -->
+                        <!-- Expandable Details Row (now shown by default) -->
                         {% if sync.metadata.get('change_details') %}
-                        <tr id="details-{{ sync.id }}" class="hidden bg-gray-50">
+                        <tr id="details-{{ sync.id }}" class="bg-gray-50">
                             <td colspan="8" class="px-6 py-4">
-                                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                                    <h4 class="font-semibold text-gray-900 mb-3 text-lg">Change Details for Sync #{{ sync.id }}</h4>
+                                <div class="bg-white rounded-lg shadow-sm p-6 border-2 border-gray-300">
+                                    <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-200">
+                                        <h4 class="font-bold text-gray-900 text-xl">
+                                            <i class="fas fa-list-check text-primary"></i> 
+                                            Change Details for Sync #{{ sync.id }}
+                                        </h4>
+                                        {% set change_details = sync.metadata.change_details %}
+                                        <div class="flex gap-4 text-sm">
+                                            {% if change_details.get('added_products') %}
+                                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+                                                <i class="fas fa-plus-circle"></i> {{ change_details.added_products|length }} Added
+                                            </span>
+                                            {% endif %}
+                                            {% if change_details.get('updated_products') %}
+                                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
+                                                <i class="fas fa-edit"></i> {{ change_details.updated_products|length }} Updated
+                                            </span>
+                                            {% endif %}
+                                            {% if change_details.get('deleted_products') %}
+                                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold">
+                                                <i class="fas fa-trash-alt"></i> {{ change_details.deleted_products|length }} Deleted
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                     
                                     {% set change_details = sync.metadata.change_details %}
                                     
                                     <!-- Updated Products -->
                                     {% if change_details.get('updated_products') %}
-                                    <div class="mb-4">
-                                        <h5 class="font-medium text-blue-600 mb-2"><i class="fas fa-edit"></i> Updated Products ({{ change_details.updated_products|length }})</h5>
+                                    <div class="mb-6">
+                                        <h5 class="font-bold text-blue-700 mb-3 text-lg border-l-4 border-blue-500 pl-3">
+                                            <i class="fas fa-edit"></i> Updated Products
+                                        </h5>
                                         <div class="space-y-3">
                                             {% for product in change_details.updated_products %}
                                             <div class="bg-blue-50 p-3 rounded border border-blue-200">
@@ -238,13 +264,18 @@
                                     
                                     <!-- Added Products -->
                                     {% if change_details.get('added_products') %}
-                                    <div class="mb-4">
-                                        <h5 class="font-medium text-green-600 mb-2"><i class="fas fa-plus-circle"></i> Added Products ({{ change_details.added_products|length }})</h5>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div class="mb-6">
+                                        <h5 class="font-bold text-green-700 mb-3 text-lg border-l-4 border-green-500 pl-3">
+                                            <i class="fas fa-plus-circle"></i> Added Products
+                                        </h5>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                             {% for product in change_details.added_products %}
-                                            <div class="bg-green-50 p-2 rounded border border-green-200 text-sm">
-                                                <div class="font-medium">{{ product.name }}</div>
-                                                <div class="text-xs text-gray-600">SKU: {{ product.sku }} | {{ product.category }}</div>
+                                            <div class="bg-green-50 p-3 rounded-lg border-2 border-green-200 hover:border-green-400 transition">
+                                                <div class="font-semibold text-gray-900 mb-1">{{ product.name }}</div>
+                                                <div class="text-sm text-gray-700">
+                                                    <div><span class="font-medium">SKU:</span> {{ product.sku }}</div>
+                                                    <div><span class="font-medium">Category:</span> {{ product.category }}</div>
+                                                </div>
                                             </div>
                                             {% endfor %}
                                         </div>
@@ -253,13 +284,18 @@
                                     
                                     <!-- Deleted Products -->
                                     {% if change_details.get('deleted_products') %}
-                                    <div class="mb-4">
-                                        <h5 class="font-medium text-red-600 mb-2"><i class="fas fa-trash-alt"></i> Deleted Products ({{ change_details.deleted_products|length }})</h5>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div class="mb-6">
+                                        <h5 class="font-bold text-red-700 mb-3 text-lg border-l-4 border-red-500 pl-3">
+                                            <i class="fas fa-trash-alt"></i> Deleted Products
+                                        </h5>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                             {% for product in change_details.deleted_products %}
-                                            <div class="bg-red-50 p-2 rounded border border-red-200 text-sm">
-                                                <div class="font-medium">{{ product.name }}</div>
-                                                <div class="text-xs text-gray-600">SKU: {{ product.sku }} | {{ product.category }}</div>
+                                            <div class="bg-red-50 p-3 rounded-lg border-2 border-red-200 hover:border-red-400 transition">
+                                                <div class="font-semibold text-gray-900 mb-1">{{ product.name }}</div>
+                                                <div class="text-sm text-gray-700">
+                                                    <div><span class="font-medium">SKU:</span> {{ product.sku }}</div>
+                                                    <div><span class="font-medium">Category:</span> {{ product.category }}</div>
+                                                </div>
                                             </div>
                                             {% endfor %}
                                         </div>
@@ -344,14 +380,14 @@
 
         function toggleDetails(syncId) {
             const detailsRow = document.getElementById('details-' + syncId);
-            const button = event.target.closest('button');
+            const button = document.getElementById('toggle-btn-' + syncId);
             
             if (detailsRow.classList.contains('hidden')) {
                 detailsRow.classList.remove('hidden');
-                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Changes';
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
             } else {
                 detailsRow.classList.add('hidden');
-                button.innerHTML = '<i class="fas fa-eye"></i> View Changes';
+                button.innerHTML = '<i class="fas fa-eye"></i> Show Details';
             }
         }
 
