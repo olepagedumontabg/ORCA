@@ -90,6 +90,7 @@ def sync_history():
     session = get_session()
     try:
         syncs = session.query(SyncStatus).order_by(desc(SyncStatus.started_at)).limit(100).all()
+        logger.info(f"Sync history page: Found {len(syncs)} syncs in database")
         
         sync_list = []
         for sync in syncs:
@@ -107,6 +108,7 @@ def sync_history():
                 'metadata': sync.sync_metadata or {}
             }
             sync_list.append(sync_data)
+            logger.info(f"  Sync #{sync.id}: {sync.status}")
         
         return render_template('sync_history.html', syncs=sync_list)
     finally:
