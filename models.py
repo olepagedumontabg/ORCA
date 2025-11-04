@@ -116,6 +116,35 @@ class CompatibilityOverride(Base):
         return f"<CompatibilityOverride(base='{self.base_sku}', compatible='{self.compatible_sku}', type='{self.override_type}')>"
 
 
+class SyncStatus(Base):
+    """
+    Sync status model for tracking webhook and automated sync operations.
+    """
+    __tablename__ = 'sync_status'
+    
+    id = Column(Integer, primary_key=True)
+    sync_type = Column(String(50), nullable=False)
+    status = Column(String(20), nullable=False)
+    started_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
+    completed_at = Column(TIMESTAMP)
+    
+    products_added = Column(Integer, default=0)
+    products_updated = Column(Integer, default=0)
+    products_deleted = Column(Integer, default=0)
+    compatibilities_updated = Column(Integer, default=0)
+    
+    error_message = Column(Text)
+    sync_metadata = Column(JSON)
+    
+    __table_args__ = (
+        Index('idx_sync_status_type', 'sync_type'),
+        Index('idx_sync_status_started', 'started_at'),
+    )
+    
+    def __repr__(self):
+        return f"<SyncStatus(type='{self.sync_type}', status='{self.status}', started='{self.started_at}')>"
+
+
 def get_engine():
     """
     Get or create a singleton database engine with connection pooling.
