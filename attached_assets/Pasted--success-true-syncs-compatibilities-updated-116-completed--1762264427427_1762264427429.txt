@@ -1,0 +1,57 @@
+{
+  "success": true,
+  "syncs": [
+    {
+      "compatibilities_updated": 116,
+      "completed_at": "2025-11-04T13:41:38.870423",
+      "error_message": null,
+      "id": 3,
+      "metadata": {
+        "channel_id": "s-1d3582b8-d3d1-4f11-af07-1aa826490abd",
+        "channel_name": "ORCA Product Feed",
+        "product_feed_url": "https://salsify-dandelion.s3-external-1.amazonaws.com/1/16157/user_data_export/1/2025/11/04/13%3A29%3A19-fe5f84a6/export.xlsx?response-content-disposition=attachment%3B%20filename%3D%22Salsify_american-bath-group_internal_orca_american_bath_group_2025-11-04T132918.xlsx%22&response-content-type=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARRX37GWVL5YUBHGV%2F20251104%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251104T132920Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2f0e25cb03d9248a1adc21fcba32b6e3b411379e79208cd7138b42c40ce8d393"
+      },
+      "products_added": 0,
+      "products_deleted": 0,
+      "products_updated": 2,
+      "started_at": "2025-11-04T13:29:22.275339",
+      "status": "completed",
+      "sync_type": "salsify_webhook"
+    },
+    {
+      "compatibilities_updated": 0,
+      "completed_at": null,
+      "error_message": null,
+      "id": 2,
+      "metadata": {
+        "channel_id": "s-1d3582b8-d3d1-4f11-af07-1aa826490abd",
+        "channel_name": "ORCA Product Feed",
+        "product_feed_url": "https://salsify-dandelion.s3-external-1.amazonaws.com/1/16157/user_data_export/1/2025/11/04/12%3A36%3A19-9f725098/export.xlsx?response-content-disposition=attachment%3B%20filename%3D%22Salsify_american-bath-group_internal_orca_american_bath_group_2025-11-04T123424.xlsx%22&response-content-type=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARRX37GWVL5YUBHGV%2F20251104%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251104T123619Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=46714d287952ba055ee82cfc35770fa717544c64fce5c104718a5c75a5e0d73d"
+      },
+      "products_added": 0,
+      "products_deleted": 0,
+      "products_updated": 0,
+      "started_at": "2025-11-04T12:41:33.314609",
+      "status": "processing",
+      "sync_type": "salsify_webhook"
+    },
+    {
+      "compatibilities_updated": 0,
+      "completed_at": "2025-11-04T12:39:26.800556",
+      "error_message": "404 Client Error: Not Found for url: https://example.com/test.xlsx",
+      "id": 1,
+      "metadata": {
+        "channel_id": "test-manual-trigger",
+        "channel_name": "Manual Test",
+        "product_feed_url": "https://example.com/test.xlsx"
+      },
+      "products_added": 0,
+      "products_deleted": 0,
+      "products_updated": 0,
+      "started_at": "2025-11-04T12:39:18.293455",
+      "status": "failed",
+      "sync_type": "salsify_webhook"
+    }
+  ],
+  "total_returned": 3
+}
