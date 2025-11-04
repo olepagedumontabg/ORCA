@@ -245,13 +245,18 @@
                                                 <div class="text-xs text-gray-600 mb-2">SKU: {{ product.sku }} | Category: {{ product.category }}</div>
                                                 <div class="text-sm">
                                                     <strong>Changes:</strong>
-                                                    <div class="mt-1 space-y-1">
+                                                    <div class="mt-1 space-y-2">
                                                         {% for field, change in product.changes.items() %}
-                                                        <div class="text-xs">
-                                                            <span class="font-medium">{{ field }}:</span>
-                                                            <span class="text-red-600">{{ change.old[:100] }}</span>
-                                                            <span class="text-gray-500">→</span>
-                                                            <span class="text-green-600">{{ change.new[:100] }}</span>
+                                                        <div class="text-xs bg-white p-2 rounded border border-gray-200">
+                                                            <div class="font-semibold text-gray-700 mb-1">{{ field }}:</div>
+                                                            <div class="flex flex-col space-y-1">
+                                                                <div class="text-red-600 break-all">
+                                                                    <span class="font-medium">Old:</span> {{ change.old }}
+                                                                </div>
+                                                                <div class="text-green-600 break-all">
+                                                                    <span class="font-medium">New:</span> {{ change.new }}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                         {% endfor %}
                                                     </div>

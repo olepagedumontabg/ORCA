@@ -192,9 +192,9 @@ def sync_database_from_excel(excel_path: str = None) -> dict:
             'products_added': added,
             'products_updated': updated,
             'products_deleted': deleted,
-            'added_products': added_products[:50],  # Limit to first 50 for storage
-            'updated_products': updated_products[:50],
-            'deleted_products': deleted_products[:50]
+            'added_products': added_products,  # No limit - show all changes
+            'updated_products': updated_products,
+            'deleted_products': deleted_products
         }
         
     except Exception as e:
