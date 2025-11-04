@@ -1096,8 +1096,22 @@ def salsify_webhook():
                     temp_path = tmp_file.name
                     logger.info(f"Downloaded Excel file to: {temp_path} ({downloaded_size} bytes)")
                 
+                # Save the downloaded Excel to the main data directory
+                import shutil
+                main_excel_path = os.path.join('data', 'Product Data.xlsx')
+                shutil.copy2(temp_path, main_excel_path)
+                logger.info(f"Saved Excel file to: {main_excel_path}")
+                
                 import db_sync_service
                 sync_result = db_sync_service.full_sync_workflow(temp_path)
+                
+                # Reload the in-memory cache with the new data
+                try:
+                    import data_update_service
+                    data_update_service.load_data_into_memory(main_excel_path)
+                    logger.info("Reloaded in-memory cache with updated product data")
+                except Exception as cache_error:
+                    logger.warning(f"Could not reload cache: {cache_error}")
                 
                 os.unlink(temp_path)
                 

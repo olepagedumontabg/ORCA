@@ -24,9 +24,12 @@ def generate_image_url(product_info):
     if product_info is None or not isinstance(product_info, dict):
         return ""
         
-    # First, check if we have an explicit Image URL field
+    # First, check if we have an explicit Image URL field (handle both formats)
+    # Database uses 'image_url', Excel/CSV uses 'Image URL'
     if 'Image URL' in product_info and product_info['Image URL']:
         return normalize_url(product_info['Image URL'])
+    if 'image_url' in product_info and product_info['image_url']:
+        return normalize_url(product_info['image_url'])
     
     # Next, check for any field that might contain an image URL
     for key, value in product_info.items():
