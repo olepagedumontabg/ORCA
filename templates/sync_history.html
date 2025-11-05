@@ -128,7 +128,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {% if sync.started_at %}
-                                    <span class="local-time" data-utc="{{ sync.started_at.isoformat() }}">
+                                    <span class="local-time" data-utc="{{ sync.started_at.strftime('%Y-%m-%dT%H:%M:%SZ') }}">
                                         {{ sync.started_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
                                     </span>
                                 {% else %}
