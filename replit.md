@@ -25,7 +25,7 @@ Preferred communication style: Simple, everyday language.
 - **REST API**: Provides 7 endpoints for external integration, including health checks, category listings, product details, compatibility queries, and Salsify webhook/status endpoints.
 
 ### System Design Choices
-- **Database-First**: PostgreSQL serves as the primary data source, supporting fast queries and multi-application access.
+- **Single Production Database**: One PostgreSQL database (Neon-hosted) used by all environments - development, testing, and production deployment all share the same database via `DATABASE_URL`.
 - **Hybrid Data Approach**: Utilizes both PostgreSQL for core operations and Excel files (`Product Data.xlsx`) for initial imports and web interface fallback.
 - **Optimized Database Layer**:
     - SQLAlchemy ORM with connection pooling for efficient database interactions.
@@ -104,3 +104,10 @@ Preferred communication style: Simple, everyday language.
     - Products maintain ranking order after merge
     - Supports both comma-separated (`SKU1, SKU2`) and pipe-separated (`SKU1|SKU2`) formats
 - **Use Case**: Bypass normal compatibility logic to force specific product pairings
+
+### Database Consolidation (November 5, 2025)
+- **Architecture Change**: Consolidated from separate dev/prod databases to single production database
+- **Simplification**: All environments (development, testing, production) now use the same database
+- **Configuration**: `DATABASE_URL` points to production Neon database
+- **Benefits**: Eliminated sync confusion, single source of truth, simplified debugging
+- **Removed**: Obsolete dev-to-prod sync scripts (`sync_to_production.py`, `copy_dev_to_prod.py`, `lightning_sync.py`)
