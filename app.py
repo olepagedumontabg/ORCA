@@ -675,16 +675,6 @@ def api_get_compatible(sku):
                     'products': products
                 })
         
-        # Load incompatibility reasons from Excel data
-        # (These aren't stored in the database, only in the source Excel file)
-        incompatibility_reasons = {}
-        try:
-            excel_check = compatibility.find_compatible_products(lookup_sku)
-            if excel_check and 'incompatibility_reasons' in excel_check:
-                incompatibility_reasons = excel_check.get('incompatibility_reasons', {})
-        except Exception as e:
-            logger.warning(f"Could not load incompatibility reasons from Excel: {e}")
-        
         response = {
             'success': True,
             'queried_child_sku': child_sku,
@@ -699,7 +689,7 @@ def api_get_compatible(sku):
                 'product_page_url': product_data.get('Product Page URL'),
             },
             'compatibles': compatibles,
-            'incompatibility_reasons': incompatibility_reasons,
+            'incompatibility_reasons': {},
             'total_categories': len(compatibles),
             'data_source': 'database'
         }
