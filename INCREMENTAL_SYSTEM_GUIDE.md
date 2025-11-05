@@ -199,27 +199,18 @@ Some product categories (Doors, Walls, Panels) only provide "reverse compatibili
 - They don't generate their own outbound compatibilities
 - This is expected and handled automatically
 
-## Production Database
+## Database Architecture
 
-To run on production database:
-
-```bash
-# Set production DATABASE_URL temporarily
-export DATABASE_URL='postgresql://user:pass@host/db'
-
-# Run sync and computation
-python add_products.py
-
-# Restore development URL
-unset DATABASE_URL
-```
-
-**Safety:** Always verify DATABASE_URL before running!
+This application uses a **single production database** for all environments:
+- Development, testing, and production all use the same database
+- `DATABASE_URL` points to your production Neon database
+- Salsify webhooks update the database automatically
+- No separate dev/prod sync needed
 
 ## Next Steps
 
-1. ✅ Development database is complete (2,193/2,193 products)
-2. ⏳ Run same process on production database
-3. ✅ Use incremental system for all future product additions
+1. ✅ Database is complete (2,193/2,193 products, 64,596 compatibilities)
+2. ✅ Salsify webhook keeps database updated automatically
+3. ✅ Use incremental system for manual product additions if needed
 
-The incremental system is now your default workflow for adding products!
+The incremental system is your default workflow for adding products manually!
