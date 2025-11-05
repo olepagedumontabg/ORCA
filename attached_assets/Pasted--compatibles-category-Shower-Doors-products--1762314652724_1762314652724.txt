@@ -1,0 +1,127 @@
+{
+  "compatibles": [
+    {
+      "category": "Shower Doors",
+      "products": [
+        {
+          "brand": "Dreamline",
+          "category": "Shower Doors",
+          "compatibility_score": 100,
+          "door_type": "Pivot",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590576/abg-graphics/original-images/dreamline/shower-doors/elegance-ls/jpeg/elegance-ls-shower-door-rs394-23d-30ip-09-.jpg",
+          "name": "Elegance-LS 60 1/4 - 62 1/4 in. x 72 in.   ",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "SHDR-4332300"
+        },
+        {
+          "brand": "Dreamline",
+          "category": "Shower Doors",
+          "compatibility_score": 100,
+          "door_type": "Hinged",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590667/abg-graphics/original-images/dreamline/shower-doors/unidoor-x/jpeg/unidoor-x-shower-door-24hp-22d-30ip-09.jpg",
+          "name": "Unidoor-X 61 1/2 - 62 in. x 72 in.   ",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "D32314572"
+        },
+        {
+          "brand": "Dreamline",
+          "category": "Shower Doors",
+          "compatibility_score": 100,
+          "door_type": "Hinged",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590666/abg-graphics/original-images/dreamline/shower-doors/unidoor-x/jpeg/unidoor-x-shower-door-rs391-6hp-23d-15ip-06.jpg",
+          "name": "Unidoor-X 61 1/2 - 62 in. x 72 in.   ",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "D12530572"
+        }
+      ]
+    },
+    {
+      "category": "Shower Screens",
+      "products": [
+        {
+          "brand": "Dreamline",
+          "category": "Shower Screens",
+          "compatibility_score": 100,
+          "door_type": "Screen",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590968/abg-graphics/original-images/dreamline/shower-screens/linea-ombre/jpeg/linea-shower-door-rs95-30p-pixel-glaze-black-09.jpg",
+          "name": "Linea Ombre 34 in. x 72 in. Single Panel  Fixed Shower Screen",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "D3234720PXB"
+        },
+        {
+          "brand": "Dreamline",
+          "category": "Shower Screens",
+          "compatibility_score": 100,
+          "door_type": "Screen",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590968/abg-graphics/original-images/dreamline/shower-screens/linea-blossom/jpeg/linea-blossom-shower-door-rs212-34d-09.jpg",
+          "name": "Linea Blossom 34 in. x 72 in. Single Panel  Fixed Shower Screen",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "D3234720ZNB"
+        },
+        {
+          "brand": "Dreamline",
+          "category": "Shower Screens",
+          "compatibility_score": 100,
+          "door_type": "Screen",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590968/abg-graphics/original-images/dreamline/shower-screens/linea-maze/jpeg/linea-hexa-shower-door-rs122-34d-09.jpg",
+          "name": "Linea Maze 34 in. x 72 in. Single Panel  Fixed Shower Screen",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "D3234720HX"
+        },
+        {
+          "brand": "Neptune",
+          "category": "Shower Screens",
+          "compatibility_score": 100,
+          "door_type": "Screen",
+          "glass_thickness": "10mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1721745988/abg-graphics/original-images/produits-neptune/images/doors/reka/jpg/neptune-reka-screen-door-ch-deco.jpg",
+          "name": "Reka 34 x 72 - 10mm",
+          "product_page_url": "https://produitsneptune.com/",
+          "series": "Neptune",
+          "sku": "220341"
+        },
+        {
+          "brand": "Dreamline",
+          "category": "Shower Screens",
+          "compatibility_score": 100,
+          "door_type": "Screen",
+          "glass_thickness": "8mm",
+          "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1714590968/abg-graphics/original-images/dreamline/shower-screens/linea-mira/jpeg/linea-mira-shower-door-rs135-34d-01.jpg",
+          "name": "Linea Mira 34 in. x 72 in. Single Panel  Fixed Shower Screen",
+          "product_page_url": "https://dreamline.com/",
+          "series": null,
+          "sku": "D3234721M12"
+        }
+      ]
+    }
+  ],
+  "data_source": "database",
+  "incompatibility_reasons": {
+
+  },
+  "product": {
+    "brand": "Maax",
+    "category": "Shower Bases",
+    "family": "Acolyte",
+    "image_url": "https://res.cloudinary.com/american-bath-group/image/upload/v1747860556/abg-graphics/original-images/maax/professional/shower-bases/acolyte/deco/maax-acolyte-107933-base-6238-center-drain-wall-kit-rs783-mb-deco-w-seat-down-front.jpg",
+    "name": "Acolyte 6238",
+    "product_page_url": "https://maax.com/",
+    "series": "MAAX",
+    "sku": "107933"
+  },
+  "queried_child_sku": "107933",
+  "success": true,
+  "total_categories": 2
+}
