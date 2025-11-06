@@ -1,0 +1,90 @@
+{
+  "success": true,
+  "syncs": [
+    {
+      "compatibilities_updated": 0,
+      "completed_at": null,
+      "error_message": null,
+      "id": 6,
+      "metadata": {
+        "channel_id": "s-1d3582b8-d3d1-4f11-af07-1aa826490abd",
+        "channel_name": "ORCA Product Feed",
+        "product_feed_url": "https://salsify-dandelion.s3-external-1.amazonaws.com/1/16157/user_data_export/1/2025/11/06/01%3A08%3A06-73afd508/export.xlsx?response-content-disposition=attachment%3B%20filename%3D%22Salsify_american-bath-group_internal_orca_american_bath_group_2025-11-06T010801.xlsx%22&response-content-type=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARRX37GWVL5YUBHGV%2F20251106%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251106T010807Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=49c12009ffa228fe6e4fa1ffd4759837ed1ebdd33ed2b19d382b64118a4d47b2"
+      },
+      "products_added": 0,
+      "products_deleted": 0,
+      "products_updated": 0,
+      "started_at": "2025-11-06T01:08:20.395563",
+      "status": "processing",
+      "sync_type": "salsify_webhook"
+    },
+    {
+      "compatibilities_updated": 148,
+      "completed_at": "2025-11-05T01:26:41.481366",
+      "error_message": null,
+      "id": 5,
+      "metadata": {
+        "change_details": {
+          "added_products": [],
+          "deleted_products": [],
+          "updated_products": [
+            {
+              "category": "Shower Bases",
+              "changes": {
+                "Attributes": {
+                  "new": "{'Threshold Width': 3.0, 'Max Door Width': 61.875, 'Installation': 'Alcove', 'Material': 'Acrylic', \"Reason Doors Can't Fit\": 'We are unable to recommend any doors at this time for the following reason : Barrier-free'}",
+                  "old": "{'Threshold Width': 3.0, 'Max Door Width': 61.875, 'Installation': 'Alcove', 'Material': 'Acrylic'}"
+                }
+              },
+              "name": "Acolyte 6238",
+              "sku": "107933"
+            },
+            {
+              "category": "Shower Bases",
+              "changes": {
+                "Product Name": {
+                  "new": "FR-3260RM",
+                  "old": "FR-3260LM"
+                }
+              },
+              "name": "FR-3260RM",
+              "sku": "FR03260M"
+            },
+            {
+              "category": "Shower Bases",
+              "changes": {
+                "Product Name": {
+                  "new": "FR-3260LM",
+                  "old": "FR-3260RM"
+                }
+              },
+              "name": "FR-3260LM",
+              "sku": "FR03260M"
+            },
+            {
+              "category": "Shower Bases",
+              "changes": {
+                "Attributes": {
+                  "new": "{'Threshold Width': 3.0, 'Max Door Width': 61.875, 'Installation': 'Alcove', 'Material': 'Acrylic', \"Reason Doors Can't Fit\": 'We are unable to recommend any doors at this time for the following reason : Barrier-free'}",
+                  "old": "{'Threshold Width': 3.0, 'Max Door Width': 61.875, 'Installation': 'Alcove', 'Material': 'Acrylic'}"
+                }
+              },
+              "name": "Aspire 6238",
+              "sku": "220519"
+            }
+          ]
+        },
+        "channel_id": "s-1d3582b8-d3d1-4f11-af07-1aa826490abd",
+        "channel_name": "ORCA Product Feed",
+        "product_feed_url": "https://salsify-dandelion.s3-external-1.amazonaws.com/1/16157/user_data_export/1/2025/11/05/01%3A07%3A11-078bec14/export.xlsx?response-content-disposition=attachment%3B%20filename%3D%22Salsify_american-bath-group_internal_orca_american_bath_group_2025-11-05T010709.xlsx%22&response-content-type=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARRX37GWVL5YUBHGV%2F20251105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251105T010712Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=8a3e2f6091524e615714a2e841df6f9e3ec8657f577a7d0a7aa1386d779d379b"
+      },
+      "products_added": 0,
+      "products_deleted": 0,
+      "products_updated": 4,
+      "started_at": "2025-11-05T01:07:13.439199",
+      "status": "completed",
+      "sync_type": "salsify_webhook"
+    }
+  ],
+  "total_returned": 2
+}
