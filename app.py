@@ -1063,16 +1063,25 @@ def salsify_webhook():
         
         def process_webhook_sync(sync_id, product_feed_url, payload):
             """Background task to process Salsify webhook"""
-            import requests
-            import tempfile
-            from datetime import datetime
-            
-            session = get_session()
-            sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
-            
+            session = None
             try:
+                # Force early logging to detect thread startup
+                logger.info(f"=== Webhook background thread started for sync #{sync_id} ===")
+                
+                import requests
+                import tempfile
+                from datetime import datetime
+                
+                session = get_session()
+                sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
+                
+                if not sync_record:
+                    logger.error(f"Sync record #{sync_id} not found!")
+                    return
+                
                 sync_record.status = 'processing'
                 session.commit()
+                logger.info(f"Sync #{sync_id} status set to processing")
                 
                 logger.info(f"Downloading Excel from Salsify S3: {product_feed_url}")
                 
@@ -1146,14 +1155,24 @@ def salsify_webhook():
                 session.commit()
                 
             except Exception as e:
-                logger.error(f"Error processing webhook sync: {str(e)}")
-                logger.error(traceback.format_exc())
-                sync_record.status = 'failed'
-                sync_record.completed_at = datetime.utcnow()
-                sync_record.error_message = str(e)
-                session.commit()
+                logger.error(f"!!! Error processing webhook sync #{sync_id}: {str(e)} !!!")
+                logger.error(f"!!! Full traceback:\n{traceback.format_exc()} !!!")
+                try:
+                    if session and sync_record:
+                        sync_record.status = 'failed'
+                        sync_record.completed_at = datetime.utcnow()
+                        sync_record.error_message = str(e)
+                        session.commit()
+                        logger.info(f"Sync #{sync_id} marked as failed in database")
+                except Exception as db_error:
+                    logger.error(f"!!! Could not update sync status: {db_error} !!!")
             finally:
-                session.close()
+                try:
+                    if session:
+                        session.close()
+                        logger.info(f"=== Webhook background thread finished for sync #{sync_id} ===")
+                except Exception as cleanup_error:
+                    logger.error(f"!!! Session cleanup error: {cleanup_error} !!!")
         
         webhook_thread = threading.Thread(
             target=process_webhook_sync,
