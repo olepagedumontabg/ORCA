@@ -1076,84 +1076,84 @@ def salsify_webhook():
                     
                     session = get_session()
                     sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
-                
-                if not sync_record:
-                    logger.error(f"Sync record #{sync_id} not found!")
-                    return
-                
-                sync_record.status = 'processing'
-                session.commit()
-                logger.info(f"Sync #{sync_id} status set to processing")
-                
-                logger.info(f"Downloading Excel from Salsify S3: {product_feed_url}")
-                
-                response = requests.get(product_feed_url, timeout=300, stream=True)
-                response.raise_for_status()
-                
-                content_length = response.headers.get('content-length')
-                if content_length and int(content_length) > 100 * 1024 * 1024:
-                    raise ValueError(f"File too large: {content_length} bytes (max 100MB)")
-                
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
-                    downloaded_size = 0
-                    max_size = 100 * 1024 * 1024
                     
-                    for chunk in response.iter_content(chunk_size=8192):
-                        downloaded_size += len(chunk)
-                        if downloaded_size > max_size:
-                            raise ValueError(f"Download exceeded max size: {max_size} bytes")
-                        tmp_file.write(chunk)
+                    if not sync_record:
+                        logger.error(f"Sync record #{sync_id} not found!")
+                        return
                     
-                    temp_path = tmp_file.name
-                    logger.info(f"Downloaded Excel file to: {temp_path} ({downloaded_size} bytes)")
-                
-                # Save the downloaded Excel to the main data directory
-                import shutil
-                main_excel_path = os.path.join('data', 'Product Data.xlsx')
-                shutil.copy2(temp_path, main_excel_path)
-                logger.info(f"Saved Excel file to: {main_excel_path}")
-                
-                import db_sync_service
-                sync_result = db_sync_service.full_sync_workflow(temp_path)
-                
-                # Reload the in-memory cache with the new data
-                try:
-                    import data_update_service
-                    data_update_service.load_data_into_memory(main_excel_path)
-                    logger.info("Reloaded in-memory cache with updated product data")
-                except Exception as cache_error:
-                    logger.warning(f"Could not reload cache: {cache_error}")
-                
-                os.unlink(temp_path)
-                
-                if sync_result.get('success'):
-                    sync_record.status = 'completed'
-                    sync_record.completed_at = datetime.utcnow()
-                    sync_record.products_added = sync_result.get('products_added', 0)
-                    sync_record.products_updated = sync_result.get('products_updated', 0)
-                    sync_record.products_deleted = sync_result.get('products_deleted', 0)
-                    sync_record.compatibilities_updated = sync_result.get('compatibilities_updated', 0)
+                    sync_record.status = 'processing'
+                    session.commit()
+                    logger.info(f"Sync #{sync_id} status set to processing")
                     
-                    # Store detailed change information in metadata
-                    if sync_record.sync_metadata is None:
-                        sync_record.sync_metadata = {}
+                    logger.info(f"Downloading Excel from Salsify S3: {product_feed_url}")
                     
-                    # Merge change_details into existing metadata
-                    change_details = sync_result.get('change_details', {})
-                    sync_record.sync_metadata['change_details'] = change_details
+                    response = requests.get(product_feed_url, timeout=300, stream=True)
+                    response.raise_for_status()
                     
-                    # IMPORTANT: Mark the JSON field as modified so SQLAlchemy saves it
-                    from sqlalchemy.orm.attributes import flag_modified
-                    flag_modified(sync_record, 'sync_metadata')
+                    content_length = response.headers.get('content-length')
+                    if content_length and int(content_length) > 100 * 1024 * 1024:
+                        raise ValueError(f"File too large: {content_length} bytes (max 100MB)")
                     
-                    logger.info(f"Webhook sync completed successfully: {sync_result}")
-                    logger.info(f"Saved change details: added={len(change_details.get('added_products', []))}, updated={len(change_details.get('updated_products', []))}, deleted={len(change_details.get('deleted_products', []))}")
-                else:
-                    sync_record.status = 'failed'
-                    sync_record.completed_at = datetime.utcnow()
-                    sync_record.error_message = sync_result.get('error', 'Unknown error')
-                    logger.error(f"Webhook sync failed: {sync_result.get('error')}")
-                
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+                        downloaded_size = 0
+                        max_size = 100 * 1024 * 1024
+                        
+                        for chunk in response.iter_content(chunk_size=8192):
+                            downloaded_size += len(chunk)
+                            if downloaded_size > max_size:
+                                raise ValueError(f"Download exceeded max size: {max_size} bytes")
+                            tmp_file.write(chunk)
+                        
+                        temp_path = tmp_file.name
+                        logger.info(f"Downloaded Excel file to: {temp_path} ({downloaded_size} bytes)")
+                    
+                    # Save the downloaded Excel to the main data directory
+                    import shutil
+                    main_excel_path = os.path.join('data', 'Product Data.xlsx')
+                    shutil.copy2(temp_path, main_excel_path)
+                    logger.info(f"Saved Excel file to: {main_excel_path}")
+                    
+                    import db_sync_service
+                    sync_result = db_sync_service.full_sync_workflow(temp_path)
+                    
+                    # Reload the in-memory cache with the new data
+                    try:
+                        import data_update_service
+                        data_update_service.load_data_into_memory(main_excel_path)
+                        logger.info("Reloaded in-memory cache with updated product data")
+                    except Exception as cache_error:
+                        logger.warning(f"Could not reload cache: {cache_error}")
+                    
+                    os.unlink(temp_path)
+                    
+                    if sync_result.get('success'):
+                        sync_record.status = 'completed'
+                        sync_record.completed_at = datetime.utcnow()
+                        sync_record.products_added = sync_result.get('products_added', 0)
+                        sync_record.products_updated = sync_result.get('products_updated', 0)
+                        sync_record.products_deleted = sync_result.get('products_deleted', 0)
+                        sync_record.compatibilities_updated = sync_result.get('compatibilities_updated', 0)
+                        
+                        # Store detailed change information in metadata
+                        if sync_record.sync_metadata is None:
+                            sync_record.sync_metadata = {}
+                        
+                        # Merge change_details into existing metadata
+                        change_details = sync_result.get('change_details', {})
+                        sync_record.sync_metadata['change_details'] = change_details
+                        
+                        # IMPORTANT: Mark the JSON field as modified so SQLAlchemy saves it
+                        from sqlalchemy.orm.attributes import flag_modified
+                        flag_modified(sync_record, 'sync_metadata')
+                        
+                        logger.info(f"Webhook sync completed successfully: {sync_result}")
+                        logger.info(f"Saved change details: added={len(change_details.get('added_products', []))}, updated={len(change_details.get('updated_products', []))}, deleted={len(change_details.get('deleted_products', []))}")
+                    else:
+                        sync_record.status = 'failed'
+                        sync_record.completed_at = datetime.utcnow()
+                        sync_record.error_message = sync_result.get('error', 'Unknown error')
+                        logger.error(f"Webhook sync failed: {sync_result.get('error')}")
+                    
                     session.commit()
                     
                 except Exception as e:
