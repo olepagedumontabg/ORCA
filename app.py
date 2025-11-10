@@ -1179,9 +1179,13 @@ def salsify_webhook():
         webhook_thread = threading.Thread(
             target=process_webhook_sync,
             args=(sync_id, product_feed_url, payload),
-            daemon=True
+            daemon=True  # Daemon threads are fine - they complete quickly (5-10 min)
         )
         webhook_thread.start()
+        
+        # Note: In production deployment (without --reload), daemon threads work fine.
+        # In development with --reload, threads may be killed on worker restart.
+        # Add cleanup via /api/salsify/cleanup endpoint if needed.
         
         return jsonify({
             'success': True,
@@ -1276,6 +1280,66 @@ def salsify_status():
         
     except Exception as e:
         logger.error(f"Status endpoint error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/salsify/cleanup', methods=['POST'])
+def salsify_cleanup():
+    """
+    Cleanup stuck webhook syncs that have been in 'processing' status for too long.
+    
+    This handles cases where background threads were killed due to app restarts.
+    
+    Query Parameters:
+        - hours: Number of hours to consider a sync stuck (default: 2)
+    
+    Example: POST /api/salsify/cleanup
+    Example: POST /api/salsify/cleanup?hours=1
+    """
+    try:
+        from models import get_session, SyncStatus
+        from datetime import datetime, timedelta
+        
+        hours = request.args.get('hours', type=int, default=2)
+        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        
+        session = get_session()
+        
+        # Find stuck syncs
+        stuck_syncs = session.query(SyncStatus).filter(
+            SyncStatus.status == 'processing',
+            SyncStatus.started_at < cutoff_time
+        ).all()
+        
+        cleaned_count = 0
+        cleaned_ids = []
+        
+        for sync in stuck_syncs:
+            sync.status = 'failed'
+            sync.completed_at = datetime.utcnow()
+            sync.error_message = f'Sync stuck in processing for >{hours}h - likely killed by app restart (development mode with --reload)'
+            cleaned_ids.append(sync.id)
+            cleaned_count += 1
+        
+        if cleaned_count > 0:
+            session.commit()
+            logger.info(f"Cleaned up {cleaned_count} stuck syncs: {cleaned_ids}")
+        
+        session.close()
+        
+        return jsonify({
+            'success': True,
+            'cleaned_count': cleaned_count,
+            'cleaned_sync_ids': cleaned_ids,
+            'message': f'Marked {cleaned_count} stuck syncs as failed'
+        })
+        
+    except Exception as e:
+        logger.error(f"Cleanup endpoint error: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
