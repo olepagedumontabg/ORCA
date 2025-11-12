@@ -1037,11 +1037,11 @@ def salsify_webhook():
                 'message': f'Ignored status: {publication_status}'
             })
         
-        product_feed_url = payload.get('product_feed_export_url')
+        product_feed_url = payload.get('product_feed_url') or payload.get('product_feed_export_url')
         if not product_feed_url:
             return jsonify({
                 'success': False,
-                'error': 'No product_feed_export_url in payload'
+                'error': 'No product_feed_url in payload'
             }), 400
         
         from models import get_session, SyncStatus
