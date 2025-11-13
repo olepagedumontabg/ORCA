@@ -983,6 +983,98 @@ def api_health():
 
 
 # ============================================================================
+# COMPATIBILITY COMPUTATION ENDPOINT
+# ============================================================================
+
+@app.route('/api/compute-compatibilities', methods=['POST'])
+def compute_compatibilities():
+    """
+    Manually trigger compatibility computation for products without compatibilities.
+    
+    This endpoint computes compatibilities in the background without blocking.
+    Use this after webhook syncs to finish processing new products.
+    
+    Query params:
+        ?all=true - Recompute ALL compatibilities (slow)
+        (default) - Only compute for products missing compatibilities (fast)
+    
+    Returns immediately with 202 Accepted while processing continues in background.
+    """
+    try:
+        compute_all = request.args.get('all', '').lower() == 'true'
+        
+        from models import get_session
+        session = get_session()
+        
+        if compute_all:
+            # Count all products
+            from sqlalchemy import text
+            total_products = session.execute(text('SELECT COUNT(*) FROM products')).fetchone()[0]
+            session.close()
+            
+            logger.info(f"Starting compatibility computation for ALL {total_products} products")
+            
+            # This will take a long time, run in background
+            def compute_all_compatibilities():
+                with app.app_context():
+                    try:
+                        import incremental_compute
+                        incremental_compute.main()
+                        logger.info("Completed full compatibility computation")
+                    except Exception as e:
+                        logger.error(f"Error computing compatibilities: {e}")
+            
+            import threading
+            thread = threading.Thread(target=compute_all_compatibilities, daemon=True)
+            thread.start()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Computing compatibilities for all {total_products} products in background',
+                'estimated_duration': '10-15 minutes'
+            }), 202
+        else:
+            # Count products without compatibilities
+            from sqlalchemy import text
+            products_without = session.execute(text('''
+                SELECT COUNT(DISTINCT p.id)
+                FROM products p
+                LEFT JOIN product_compatibility pc ON p.id = pc.base_product_id
+                WHERE pc.base_product_id IS NULL
+            ''')).fetchone()[0]
+            session.close()
+            
+            logger.info(f"Starting compatibility computation for {products_without} products without compatibilities")
+            
+            # Run in background
+            def compute_missing_compatibilities():
+                with app.app_context():
+                    try:
+                        import incremental_compute
+                        incremental_compute.main()
+                        logger.info(f"Completed compatibility computation for {products_without} products")
+                    except Exception as e:
+                        logger.error(f"Error computing compatibilities: {e}")
+            
+            import threading
+            thread = threading.Thread(target=compute_missing_compatibilities, daemon=True)
+            thread.start()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Computing compatibilities for {products_without} products without them',
+                'estimated_duration': f'{(products_without * 0.5) // 60} minutes'
+            }), 202
+        
+    except Exception as e:
+        logger.error(f"Error starting compatibility computation: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
 # SALSIFY WEBHOOK ENDPOINTS
 # ============================================================================
 
@@ -1114,7 +1206,9 @@ def salsify_webhook():
                     logger.info(f"Saved Excel file to: {main_excel_path}")
                     
                     import db_sync_service
-                    sync_result = db_sync_service.full_sync_workflow(temp_path)
+                    # Use fast mode: skip compatibility computation to prevent app restarts
+                    # Compatibilities will be computed separately via /api/compute-compatibilities
+                    sync_result = db_sync_service.full_sync_workflow(temp_path, compute_compatibilities=False)
                     
                     # Reload the in-memory cache with the new data
                     try:

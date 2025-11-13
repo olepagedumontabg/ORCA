@@ -340,19 +340,20 @@ def recompute_compatibilities_for_changed_products(changed_skus: Set[str]) -> in
         session.close()
 
 
-def full_sync_workflow(excel_path: str = None) -> dict:
+def full_sync_workflow(excel_path: str = None, compute_compatibilities: bool = True) -> dict:
     """
-    Complete workflow: sync database and recompute compatibilities.
+    Complete workflow: sync database and optionally recompute compatibilities.
     
     This is the main function called by the data update service.
     
     Args:
         excel_path: Path to Excel file
+        compute_compatibilities: If False, skip compatibility computation (faster for webhooks)
         
     Returns:
         dict: Summary of sync operation with detailed changes
     """
-    logger.info("Starting full database sync workflow")
+    logger.info(f"Starting database sync workflow (compute_compatibilities={compute_compatibilities})")
     start_time = datetime.now()
     
     try:
@@ -362,9 +363,11 @@ def full_sync_workflow(excel_path: str = None) -> dict:
         updated = sync_result['products_updated']
         deleted = sync_result['products_deleted']
         
-        # Step 2: Recompute compatibilities for changed products
+        # Step 2: Optionally recompute compatibilities for changed products
         changed_skus = set()
-        if added > 0 or updated > 0:
+        compatibility_count = 0
+        
+        if compute_compatibilities and (added > 0 or updated > 0):
             # Get SKUs of added/updated products
             session = get_session()
             recent_products = session.query(Product.sku).filter(
@@ -373,7 +376,10 @@ def full_sync_workflow(excel_path: str = None) -> dict:
             changed_skus = {p.sku for p in recent_products}
             session.close()
             
+            logger.info(f"Computing compatibilities for {len(changed_skus)} changed products")
             compatibility_count = recompute_compatibilities_for_changed_products(changed_skus)
+        elif not compute_compatibilities and (added > 0 or updated > 0):
+            logger.info(f"Skipping compatibility computation for {added + updated} changed products (fast mode)")
         else:
             compatibility_count = 0
         
