@@ -1445,5 +1445,21 @@ def salsify_cleanup():
 # END OF REST API ENDPOINTS
 # ============================================================================
 
+# ============================================================================
+# START AUTOMATIC COMPATIBILITY WORKER
+# ============================================================================
+
+try:
+    import compatibility_worker
+    compatibility_worker.start_worker()
+    logger.info("=== Automatic compatibility worker started ===")
+except Exception as worker_error:
+    logger.warning(f"Could not start compatibility worker: {worker_error}")
+
+
+# ============================================================================
+# MAIN ENTRY POINT
+# ============================================================================
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
