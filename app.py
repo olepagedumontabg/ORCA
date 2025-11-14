@@ -1141,7 +1141,7 @@ def salsify_webhook():
         
         sync_record = SyncStatus(
             sync_type='salsify_webhook',
-            status='pending',
+            status='queued',  # Changed from 'pending' to 'queued'
             sync_metadata={
                 'channel_id': payload.get('channel_id'),
                 'channel_name': payload.get('channel_name'),
@@ -1153,140 +1153,44 @@ def salsify_webhook():
         sync_id = sync_record.id
         session.close()
         
-        def process_webhook_sync(sync_id, product_feed_url, payload):
-            """Background task to process Salsify webhook"""
-            # CRITICAL: Threads need Flask app context to access logger, db, etc.
-            with app.app_context():
-                session = None
-                try:
-                    # Force early logging to detect thread startup
-                    logger.info(f"=== Webhook background thread started for sync #{sync_id} ===")
-                    
-                    import requests
-                    import tempfile
-                    from datetime import datetime
-                    
-                    session = get_session()
-                    sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
-                    
-                    if not sync_record:
-                        logger.error(f"Sync record #{sync_id} not found!")
-                        return
-                    
-                    sync_record.status = 'processing'
-                    session.commit()
-                    logger.info(f"Sync #{sync_id} status set to processing")
-                    
-                    logger.info(f"Downloading Excel from Salsify S3: {product_feed_url}")
-                    
-                    response = requests.get(product_feed_url, timeout=300, stream=True)
-                    response.raise_for_status()
-                    
-                    content_length = response.headers.get('content-length')
-                    if content_length and int(content_length) > 100 * 1024 * 1024:
-                        raise ValueError(f"File too large: {content_length} bytes (max 100MB)")
-                    
-                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
-                        downloaded_size = 0
-                        max_size = 100 * 1024 * 1024
-                        
-                        for chunk in response.iter_content(chunk_size=8192):
-                            downloaded_size += len(chunk)
-                            if downloaded_size > max_size:
-                                raise ValueError(f"Download exceeded max size: {max_size} bytes")
-                            tmp_file.write(chunk)
-                        
-                        temp_path = tmp_file.name
-                        logger.info(f"Downloaded Excel file to: {temp_path} ({downloaded_size} bytes)")
-                    
-                    # Save the downloaded Excel to the main data directory
-                    import shutil
-                    main_excel_path = os.path.join('data', 'Product Data.xlsx')
-                    shutil.copy2(temp_path, main_excel_path)
-                    logger.info(f"Saved Excel file to: {main_excel_path}")
-                    
-                    import db_sync_service
-                    # Use fast mode: skip compatibility computation to prevent app restarts
-                    # Compatibilities will be computed separately via /api/compute-compatibilities
-                    sync_result = db_sync_service.full_sync_workflow(temp_path, compute_compatibilities=False)
-                    
-                    # Reload the in-memory cache with the new data
-                    try:
-                        import data_update_service
-                        data_update_service.load_data_into_memory(main_excel_path)
-                        logger.info("Reloaded in-memory cache with updated product data")
-                    except Exception as cache_error:
-                        logger.warning(f"Could not reload cache: {cache_error}")
-                    
-                    os.unlink(temp_path)
-                    
-                    if sync_result.get('success'):
-                        sync_record.status = 'completed'
-                        sync_record.completed_at = datetime.utcnow()
-                        sync_record.products_added = sync_result.get('products_added', 0)
-                        sync_record.products_updated = sync_result.get('products_updated', 0)
-                        sync_record.products_deleted = sync_result.get('products_deleted', 0)
-                        sync_record.compatibilities_updated = sync_result.get('compatibilities_updated', 0)
-                        
-                        # Store detailed change information in metadata
-                        if sync_record.sync_metadata is None:
-                            sync_record.sync_metadata = {}
-                        
-                        # Merge change_details into existing metadata
-                        change_details = sync_result.get('change_details', {})
-                        sync_record.sync_metadata['change_details'] = change_details
-                        
-                        # IMPORTANT: Mark the JSON field as modified so SQLAlchemy saves it
-                        from sqlalchemy.orm.attributes import flag_modified
-                        flag_modified(sync_record, 'sync_metadata')
-                        
-                        logger.info(f"Webhook sync completed successfully: {sync_result}")
-                        logger.info(f"Saved change details: added={len(change_details.get('added_products', []))}, updated={len(change_details.get('updated_products', []))}, deleted={len(change_details.get('deleted_products', []))}")
-                    else:
-                        sync_record.status = 'failed'
-                        sync_record.completed_at = datetime.utcnow()
-                        sync_record.error_message = sync_result.get('error', 'Unknown error')
-                        logger.error(f"Webhook sync failed: {sync_result.get('error')}")
-                    
-                    session.commit()
-                    
-                except Exception as e:
-                    logger.error(f"!!! Error processing webhook sync #{sync_id}: {str(e)} !!!")
-                    logger.error(f"!!! Full traceback:\n{traceback.format_exc()} !!!")
-                    try:
-                        if session and sync_record:
-                            sync_record.status = 'failed'
-                            sync_record.completed_at = datetime.utcnow()
-                            sync_record.error_message = str(e)
-                            session.commit()
-                            logger.info(f"Sync #{sync_id} marked as failed in database")
-                    except Exception as db_error:
-                        logger.error(f"!!! Could not update sync status: {db_error} !!!")
-                finally:
-                    try:
-                        if session:
-                            session.close()
-                            logger.info(f"=== Webhook background thread finished for sync #{sync_id} ===")
-                    except Exception as cleanup_error:
-                        logger.error(f"!!! Session cleanup error: {cleanup_error} !!!")
-        
-        webhook_thread = threading.Thread(
-            target=process_webhook_sync,
-            args=(sync_id, product_feed_url, payload),
-            daemon=True  # Daemon threads are fine - they complete quickly (5-10 min)
-        )
-        webhook_thread.start()
-        
-        # Note: In production deployment (without --reload), daemon threads work fine.
-        # In development with --reload, threads may be killed on worker restart.
-        # Add cleanup via /api/salsify/cleanup endpoint if needed.
+        # Save the webhook info to a queue file for the worker to process
+        # This avoids using background threads which get killed by Gunicorn --reload
+        webhook_queue_path = os.path.join('data', 'webhook_queue.json')
+        try:
+            import json
+            queue_data = {
+                'sync_id': sync_id,
+                'product_feed_url': product_feed_url,
+                'payload': payload
+            }
+            with open(webhook_queue_path, 'w') as f:
+                json.dump(queue_data, f)
+            logger.info(f"Queued webhook #{sync_id} for worker processing")
+        except Exception as e:
+            logger.error(f"Failed to queue webhook: {e}")
+            # Mark sync as failed
+            session = get_session()
+            sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
+            if sync_record:
+                sync_record.status = 'failed'
+                sync_record.error_message = f'Failed to queue: {str(e)}'
+                session.commit()
+            session.close()
+            return jsonify({
+                'success': False,
+                'error': f'Failed to queue webhook: {str(e)}'
+            }), 500
         
         return jsonify({
             'success': True,
-            'message': 'Webhook received and processing started',
-            'sync_id': sync_id
+            'message': 'Webhook queued for processing by background worker (1-2 min)',
+            'sync_id': sync_id,
+            'status_url': f'/api/salsify/status?sync_id={sync_id}'
         }), 202
-        
+
+        # NOTE: Background thread processing has been removed to prevent issues with
+        # Gunicorn's --reload killing threads. The compatibility_worker now handles
+        # all webhook processing via the webhook_queue.json file.
     except Exception as e:
         logger.error(f"Webhook error: {str(e)}")
         logger.error(traceback.format_exc())
