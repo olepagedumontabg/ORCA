@@ -51,6 +51,9 @@ class CompatibilityWorker:
         """Main worker loop - processes webhooks and computes compatibilities."""
         logger.info("Compatibility worker loop started")
         
+        # Clean up any syncs stuck in 'processing' from app crash/restart
+        self._cleanup_stuck_syncs()
+        
         # Wait 30 seconds on startup to let app initialize
         time.sleep(30)
         
@@ -89,9 +92,6 @@ class CompatibilityWorker:
                 return
             
             logger.info(f"Processing queued webhook #{sync_id} from URL: {product_feed_url}")
-            
-            # Delete queue file immediately to prevent reprocessing
-            os.remove(queue_file)
             
             # Update sync status to processing
             from models import SyncStatus
@@ -183,8 +183,15 @@ class CompatibilityWorker:
                 sync_record.error_message = sync_result.get('error', 'Unknown error')
                 logger.error(f"Webhook #{sync_id} failed: {sync_result.get('error')}")
             
+            # Commit database changes FIRST
             session.commit()
             session.close()
+            
+            # Only delete queue file AFTER successful database commit
+            # This ensures crash during commit doesn't lose the webhook
+            if os.path.exists(queue_file):
+                os.remove(queue_file)
+                logger.info(f"Removed queue file after database commit (status: {sync_record.status})")
             
         except Exception as e:
             logger.error(f"Error processing queued webhook: {e}")
@@ -198,14 +205,43 @@ class CompatibilityWorker:
                         sync_record.status = 'failed'
                         sync_record.error_message = str(e)
                         sync_record.completed_at = datetime.utcnow()
-                        session.commit()
+                        session.commit()  # Commit FIRST
+                        
+                        # Only delete queue file AFTER successful commit
+                        if os.path.exists(queue_file):
+                            os.remove(queue_file)
+                            logger.info("Removed queue file after exception handling commit")
                 session.close()
             except:
+                # If we can't commit the failure, leave queue file for retry
+                logger.error("Failed to commit error status - queue file retained for retry")
                 pass
+    
+    def _cleanup_stuck_syncs(self):
+        """On startup, fail any syncs stuck in 'processing' status from previous crashes."""
+        try:
+            from models import SyncStatus
+            session = get_session()
             
-            # Remove queue file to prevent infinite retry
-            if os.path.exists(queue_file):
-                os.remove(queue_file)
+            stuck_syncs = session.query(SyncStatus).filter(
+                SyncStatus.status == 'processing'
+            ).all()
+            
+            if stuck_syncs:
+                logger.warning(f"Found {len(stuck_syncs)} syncs stuck in 'processing' - marking as failed")
+                for sync in stuck_syncs:
+                    sync.status = 'failed'
+                    sync.completed_at = datetime.utcnow()
+                    sync.error_message = 'Webhook processing interrupted by app restart. Compatibility worker now starts automatically to prevent this.'
+                    logger.info(f"Marked sync #{sync.id} as failed")
+                
+                session.commit()
+            
+            session.close()
+            logger.info("Startup cleanup complete")
+            
+        except Exception as e:
+            logger.error(f"Error during startup cleanup: {e}")
     
     def _check_and_compute(self):
         """Check for products without compatibilities and compute them."""
@@ -262,11 +298,7 @@ class CompatibilityWorker:
             
             logger.info(f"Completed batch of {len(skus_to_process)} products. Remaining: {products_without - len(skus_to_process)}")
             
-            # If there are more to process, run again immediately
-            if products_without > len(skus_to_process):
-                logger.info("More products to process - continuing immediately")
-                time.sleep(5)  # Short delay between batches
-                self._check_and_compute()
+            # Don't recurse - let the main loop handle next batch to avoid blocking webhook processing
                 
         except Exception as e:
             logger.error(f"Error in compatibility check: {e}")

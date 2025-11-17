@@ -93,6 +93,25 @@ Preferred communication style: Simple, everyday language.
 - **Testing**: Comprehensive test suite in `test_webhook.py`
 - **Documentation**: Full setup guide in `SALSIFY_WEBHOOK_SETUP.md`
 
+### Webhook Reliability Fixes (November 17, 2025)
+- **Problem**: Webhooks getting stuck in "processing" status indefinitely
+- **Root Cause**: Three critical bugs in compatibility worker (`compatibility_worker.py`)
+- **Fixes Implemented**:
+    1. **Queue File Deletion Timing** (lines 189-197, 211-221):
+        - **Before**: Queue file deleted BEFORE database commit → Lost webhooks on crash
+        - **After**: Queue file deleted ONLY AFTER successful commit → Webhooks survive crashes
+        - **Impact**: Eliminates webhook loss during app restarts or commit failures
+    2. **Compatibility Batch Processing** (removed lines 265-269):
+        - **Before**: Recursive batching blocked main loop for >5 minutes
+        - **After**: Non-recursive - processes one batch per 2-minute cycle
+        - **Impact**: Webhooks checked every 2 minutes, meeting 3-5 minute target
+    3. **Startup Cleanup** (new method lines 223-247):
+        - **Before**: Stuck syncs from crashes remained in "processing" forever
+        - **After**: Automatic cleanup on startup fails orphaned syncs
+        - **Impact**: Clean recovery from app crashes/restarts
+- **Result**: Webhooks now reliably process within 3-5 minutes without getting stuck
+- **Worker Status**: Automatic compatibility worker starts on app initialization and stays running
+
 ### Compatibility Override Columns (November 4, 2025)
 - **Feature**: Support for forced compatibility via Salsify columns
 - **Columns**:
