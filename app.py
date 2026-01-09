@@ -450,23 +450,27 @@ def api_get_compatible(sku):
         - parent_sku: Parent SKU for compatibility lookup (optional)
         - unique_id: Unique ID for compatibility lookup (optional)
         - category: Filter by category (optional)
+        - brand: Filter by brand name (optional, case-insensitive)
         - limit: Limit results per category (optional, default: 100)
     
     Example: GET /api/compatible/410000-501-001-000?parent_sku=410000&unique_id=410000-501-001
     Example: GET /api/compatible/FB03060M
     Example: GET /api/compatible/FB03060M?category=Doors&limit=20
+    Example: GET /api/compatible/FB03060M?brand=MAAX
+    Example: GET /api/compatible/FB03060M?brand=Neptune&category=Walls
     """
     try:
         child_sku = sku.strip().upper()
         parent_sku = request.args.get('parent_sku', '').strip()
         unique_id = request.args.get('unique_id', '').strip()
         category_filter = request.args.get('category', '').strip()
+        brand_filter = request.args.get('brand', '').strip()
         limit = request.args.get('limit', type=int, default=100)
         
-        logger.info(f"API request for compatible products: child_sku={child_sku}, parent_sku={parent_sku if parent_sku else 'N/A'}, unique_id={unique_id if unique_id else 'N/A'}")
+        logger.info(f"API request for compatible products: child_sku={child_sku}, parent_sku={parent_sku if parent_sku else 'N/A'}, unique_id={unique_id if unique_id else 'N/A'}, brand={brand_filter if brand_filter else 'N/A'}")
         
         # Create cache key from request parameters
-        cache_key = f"{child_sku}|{parent_sku}|{unique_id}|{category_filter}|{limit}"
+        cache_key = f"{child_sku}|{parent_sku}|{unique_id}|{category_filter}|{brand_filter}|{limit}"
         
         # Check cache first
         cached_response = get_cached_compatibles(cache_key)
@@ -579,6 +583,14 @@ def api_get_compatible(sku):
                     if category_filter and category != category_filter:
                         continue
                     
+                    # Apply brand filter if specified
+                    if brand_filter:
+                        products_list = [p for p in products_list if p.get('brand', '').lower() == brand_filter.lower()]
+                    
+                    # Skip category if no products after filtering
+                    if not products_list:
+                        continue
+                    
                     limited_products = products_list[:limit] if limit else products_list
                     compatibles.append({
                         'category': category,
@@ -660,6 +672,14 @@ def api_get_compatible(sku):
         compatibles = []
         for category, products in db_compatibles.items():
             if category_filter and category.lower() != category_filter.lower():
+                continue
+            
+            # Apply brand filter if specified
+            if brand_filter:
+                products = [p for p in products if p.get('brand', '').lower() == brand_filter.lower()]
+            
+            # Skip category if no products after filtering
+            if not products:
                 continue
             
             if len(products) > limit:

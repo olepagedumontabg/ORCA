@@ -132,7 +132,8 @@ Get all products compatible with a specific SKU. Supports multi-SKU lookup with 
 - `child_sku` (path parameter): Your application's product SKU (highest priority)
 - `parent_sku` (query parameter, optional): Parent SKU for compatibility lookup (medium priority)
 - `unique_id` (query parameter, optional): Unique product ID (lowest priority)
-- `category` (query parameter, optional): Filter results by category
+- `category` (query parameter, optional): Filter results by category (e.g., "Shower Doors", "Walls")
+- `brand` (query parameter, optional): Filter results by brand name (case-insensitive, e.g., "MAAX", "Neptune")
 - `limit` (query parameter, optional): Limit results per category (default: 100)
 
 **Multi-SKU Lookup Priority**:
@@ -205,7 +206,16 @@ curl "https://your-app.replit.app/api/compatible/410000-501-001-000?parent_sku=4
 curl https://your-app.replit.app/api/compatible/FB03060M
 
 # Filter compatible doors only
-curl "https://your-app.replit.app/api/compatible/FB03060M?category=Doors"
+curl "https://your-app.replit.app/api/compatible/FB03060M?category=Shower%20Doors"
+
+# Filter by brand - only show MAAX compatible products
+curl "https://your-app.replit.app/api/compatible/FB03060M?brand=MAAX"
+
+# Combine filters - only MAAX walls
+curl "https://your-app.replit.app/api/compatible/FB03060M?brand=MAAX&category=Walls"
+
+# Filter by brand with limit
+curl "https://your-app.replit.app/api/compatible/FB03060M?brand=Neptune&limit=10"
 
 # Limit results to 5 per category
 curl "https://your-app.replit.app/api/compatible/FB03060M?limit=5"
@@ -444,6 +454,17 @@ For issues or questions about the API:
 ---
 
 ## Changelog
+
+### November 17, 2025
+- Added `brand` filter parameter to `/api/compatible/<sku>` endpoint
+- Allows filtering compatible products by brand name (case-insensitive)
+- Can be combined with existing `category` filter
+
+### November 2025
+- Added Salsify webhook integration endpoints
+- Added `/api/salsify/webhook` for automated data updates
+- Added `/api/salsify/status` for sync monitoring
+- Improved webhook reliability with automatic recovery from crashes
 
 ### October 22, 2025
 - Initial API release
