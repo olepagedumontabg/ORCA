@@ -113,8 +113,13 @@ Preferred communication style: Simple, everyday language.
         - **Before**: Accessing `sync_record.status` after session closed caused "Instance not bound to Session" error
         - **After**: Store status in local variable before closing session
         - **Impact**: Eliminates SQLAlchemy detached instance errors during webhook completion
+    5. **Partial Success Status** (January 2026):
+        - **New status**: `partial_success` for syncs where data was saved but compatibility computing was interrupted
+        - **Explicit tracking**: `sync_metadata['data_import_completed']` flag tracks successful imports even with zero changes
+        - **Impact**: Clearer distinction between partial successes and true failures; improved success rate reporting
 - **Result**: Webhooks now reliably process within 3-5 minutes without getting stuck or throwing session errors
 - **Worker Status**: Automatic compatibility worker starts on app initialization and stays running
+- **Sync History Dashboard**: Shows 5-card summary (Total, Completed, Partial, Failed, Processing) with success rate calculation
 
 ### Compatibility Override Columns (November 4, 2025)
 - **Feature**: Support for forced compatibility via Salsify columns
