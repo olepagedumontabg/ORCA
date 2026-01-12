@@ -176,7 +176,6 @@ class CompatibilityWorker:
                     sync_record.sync_metadata = {}
                 change_details = sync_result.get('change_details', {})
                 sync_record.sync_metadata['change_details'] = change_details
-                sync_record.sync_metadata['data_import_completed'] = True  # Flag for partial success detection
                 flag_modified(sync_record, 'sync_metadata')
 
                 logger.info(f"Webhook #{sync_id} completed: {sync_record.products_added} added, {sync_record.products_updated} updated, {sync_record.products_deleted} deleted")
@@ -186,15 +185,14 @@ class CompatibilityWorker:
                 sync_record.error_message = sync_result.get('error', 'Unknown error')
                 logger.error(f"Webhook #{sync_id} failed: {sync_result.get('error')}")
 
-            # Commit database changes FIRST
-            session.commit()
-            
-            # Store status before closing session to avoid detached instance error
+            # Capture status BEFORE closing session to avoid detached instance error
             final_status = sync_record.status
+            
+            # Commit database changes
+            session.commit()
             session.close()
 
             # Only delete queue file AFTER successful database commit
-            # This ensures crash during commit doesn't lose the webhook
             if os.path.exists(queue_file):
                 os.remove(queue_file)
                 logger.info(f"Removed queue file after database commit (status: {final_status})")
