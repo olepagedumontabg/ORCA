@@ -187,13 +187,16 @@ class CompatibilityWorker:
 
             # Commit database changes FIRST
             session.commit()
+            
+            # Store status BEFORE closing session to avoid detached instance error
+            final_status = sync_record.status
             session.close()
 
             # Only delete queue file AFTER successful database commit
             # This ensures crash during commit doesn't lose the webhook
             if os.path.exists(queue_file):
                 os.remove(queue_file)
-                logger.info(f"Removed queue file after database commit (status: {sync_record.status})")
+                logger.info(f"Removed queue file after database commit (status: {final_status})")
 
         except Exception as e:
             logger.error(f"Error processing queued webhook: {e}")
