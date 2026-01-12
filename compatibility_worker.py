@@ -170,12 +170,13 @@ class CompatibilityWorker:
                 sync_record.products_deleted = sync_result.get('products_deleted', 0)
                 sync_record.compatibilities_updated = 0  # Will be computed separately
 
-                # Store detailed change information
+                # Store detailed change information and data import success flag
                 from sqlalchemy.orm.attributes import flag_modified
                 if sync_record.sync_metadata is None:
                     sync_record.sync_metadata = {}
                 change_details = sync_result.get('change_details', {})
                 sync_record.sync_metadata['change_details'] = change_details
+                sync_record.sync_metadata['data_import_completed'] = True  # Flag for partial success detection
                 flag_modified(sync_record, 'sync_metadata')
 
                 logger.info(f"Webhook #{sync_id} completed: {sync_record.products_added} added, {sync_record.products_updated} updated, {sync_record.products_deleted} deleted")
@@ -187,13 +188,16 @@ class CompatibilityWorker:
 
             # Commit database changes FIRST
             session.commit()
+            
+            # Store status before closing session to avoid detached instance error
+            final_status = sync_record.status
             session.close()
 
             # Only delete queue file AFTER successful database commit
             # This ensures crash during commit doesn't lose the webhook
             if os.path.exists(queue_file):
                 os.remove(queue_file)
-                logger.info(f"Removed queue file after database commit (status: {sync_record.status})")
+                logger.info(f"Removed queue file after database commit (status: {final_status})")
 
         except Exception as e:
             logger.error(f"Error processing queued webhook: {e}")
@@ -220,7 +224,11 @@ class CompatibilityWorker:
                 pass
 
     def _cleanup_stuck_syncs(self):
-        """On startup, fail any syncs stuck in 'processing' status from previous crashes."""
+        """On startup, handle any syncs stuck in 'processing' status from previous crashes.
+        
+        If data was successfully saved (products_added/updated/deleted > 0), mark as 'partial_success'.
+        Otherwise mark as 'failed'.
+        """
         try:
             from models import SyncStatus
             session = get_session()
@@ -230,12 +238,30 @@ class CompatibilityWorker:
             ).all()
 
             if stuck_syncs:
-                logger.warning(f"Found {len(stuck_syncs)} syncs stuck in 'processing' - marking as failed")
+                logger.warning(f"Found {len(stuck_syncs)} syncs stuck in 'processing' - checking data status")
                 for sync in stuck_syncs:
-                    sync.status = 'failed'
-                    sync.completed_at = datetime.utcnow()
-                    sync.error_message = 'Webhook processing interrupted by app restart. Compatibility worker now starts automatically to prevent this.'
-                    logger.info(f"Marked sync #{sync.id} as failed")
+                    # Check if data import was completed before interruption
+                    # Priority: explicit flag > product counts > default to failed
+                    metadata = sync.sync_metadata or {}
+                    data_import_completed = metadata.get('data_import_completed', False)
+                    
+                    # Also check if any products were changed (fallback for older syncs without flag)
+                    had_changes = (sync.products_added or 0) > 0 or \
+                                 (sync.products_updated or 0) > 0 or \
+                                 (sync.products_deleted or 0) > 0
+                    
+                    if data_import_completed or had_changes:
+                        # Data sync succeeded, only compatibility computing was interrupted
+                        sync.status = 'partial_success'
+                        sync.completed_at = datetime.utcnow()
+                        sync.error_message = 'Data import completed successfully. Compatibility computing was interrupted by app restart but will continue automatically.'
+                        logger.info(f"Marked sync #{sync.id} as partial_success - data was saved")
+                    else:
+                        # Truly failed - no data was saved
+                        sync.status = 'failed'
+                        sync.completed_at = datetime.utcnow()
+                        sync.error_message = 'Webhook processing interrupted by app restart before data could be saved.'
+                        logger.info(f"Marked sync #{sync.id} as failed - no data was saved")
 
                 session.commit()
 

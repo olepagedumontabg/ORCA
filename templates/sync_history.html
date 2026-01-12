@@ -43,6 +43,10 @@
             background-color: #FEF3C7;
             color: #92400E;
         }
+        .status-partial_success {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -70,27 +74,38 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
             {% set total_syncs = syncs|length %}
             {% set completed_syncs = syncs|selectattr('status', 'equalto', 'completed')|list|length %}
+            {% set partial_syncs = syncs|selectattr('status', 'equalto', 'partial_success')|list|length %}
             {% set failed_syncs = syncs|selectattr('status', 'equalto', 'failed')|list|length %}
             {% set processing_syncs = syncs|selectattr('status', 'equalto', 'processing')|list|length %}
+            {% set success_rate = ((completed_syncs + partial_syncs) / total_syncs * 100) if total_syncs > 0 else 0 %}
             
             <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary">
                 <div class="text-gray-600 text-sm font-medium mb-1">Total Syncs</div>
                 <div class="text-3xl font-bold text-text-dark">{{ total_syncs }}</div>
+                <div class="text-xs text-gray-500 mt-1">{{ "%.0f"|format(success_rate) }}% success rate</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
                 <div class="text-gray-600 text-sm font-medium mb-1">Completed</div>
                 <div class="text-3xl font-bold text-green-600">{{ completed_syncs }}</div>
+                <div class="text-xs text-gray-500 mt-1">Fully successful</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+                <div class="text-gray-600 text-sm font-medium mb-1">Partial</div>
+                <div class="text-3xl font-bold text-yellow-600">{{ partial_syncs }}</div>
+                <div class="text-xs text-gray-500 mt-1">Data saved, computing interrupted</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
                 <div class="text-gray-600 text-sm font-medium mb-1">Failed</div>
                 <div class="text-3xl font-bold text-red-600">{{ failed_syncs }}</div>
+                <div class="text-xs text-gray-500 mt-1">No data saved</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
                 <div class="text-gray-600 text-sm font-medium mb-1">Processing</div>
                 <div class="text-3xl font-bold text-blue-600">{{ processing_syncs }}</div>
+                <div class="text-xs text-gray-500 mt-1">Currently running</div>
             </div>
         </div>
 
@@ -123,7 +138,11 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="status-badge status-{{ sync.status }}">
-                                    {{ sync.status|capitalize }}
+                                    {% if sync.status == 'partial_success' %}
+                                        Partial
+                                    {% else %}
+                                        {{ sync.status|capitalize }}
+                                    {% endif %}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
