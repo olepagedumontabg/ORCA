@@ -86,12 +86,12 @@ def sync_history():
     """Render the sync history page showing all webhook operations"""
     from models import get_session, SyncStatus
     from sqlalchemy import desc
-    
+
     session = get_session()
     try:
         syncs = session.query(SyncStatus).order_by(desc(SyncStatus.started_at)).limit(100).all()
         logger.info(f"Sync history page: Found {len(syncs)} syncs in database")
-        
+
         sync_list = []
         for sync in syncs:
             sync_data = {
@@ -109,7 +109,7 @@ def sync_history():
             }
             sync_list.append(sync_data)
             logger.info(f"  Sync #{sync.id}: {sync.status}")
-        
+
         return render_template('sync_history.html', syncs=sync_list)
     finally:
         session.close()
@@ -190,7 +190,7 @@ def suggest_skus():
         # Try to use database first, fall back to Excel if needed
         from data_loader import check_database_ready
         from models import get_session, Product
-        
+
         if check_database_ready():
             # Use database with optimized query
             session = get_session()
@@ -198,12 +198,12 @@ def suggest_skus():
                 # Optimize: Search SKU first (exact prefix match is fastest), then name
                 # Use UPPER() for case-insensitive comparison which is faster with index
                 from sqlalchemy import func, or_
-                
+
                 # Prioritize SKU matches (starts with query)
                 sku_matches = session.query(Product.sku, Product.product_name).filter(
                     func.upper(Product.sku).like(f'{query}%')
                 ).limit(10).all()
-                
+
                 # If we have enough SKU matches, return those
                 if len(sku_matches) >= 5:
                     matching_skus = []
@@ -214,12 +214,12 @@ def suggest_skus():
                             display_suggestions.append(f"{sku} - {product_name}")
                         else:
                             display_suggestions.append(sku)
-                    
+
                     return jsonify({
                         'suggestions': matching_skus,
                         'displaySuggestions': display_suggestions
                     })
-                
+
                 # Otherwise, also search in product names
                 all_matches = session.query(Product.sku, Product.product_name).filter(
                     or_(
@@ -227,7 +227,7 @@ def suggest_skus():
                         func.upper(Product.product_name).like(f'%{query}%')
                     )
                 ).limit(10).all()
-                
+
                 matching_skus = []
                 display_suggestions = []
                 for sku, product_name in all_matches:
@@ -236,7 +236,7 @@ def suggest_skus():
                         display_suggestions.append(f"{sku} - {product_name}")
                     else:
                         display_suggestions.append(sku)
-                
+
                 return jsonify({
                     'suggestions': matching_skus,
                     'displaySuggestions': display_suggestions
@@ -258,7 +258,7 @@ def suggest_skus():
 
             matching_skus_by_id = [sku for sku in sku_product_map.keys() if query in sku]
             matching_skus_by_name = [sku for sku, name in sku_product_map.items() if name and query in name.upper()]
-            
+
             matching_skus = list(dict.fromkeys(matching_skus_by_id + matching_skus_by_name))
             matching_skus.sort()
             matching_skus = matching_skus[:10]
@@ -289,7 +289,7 @@ def suggest_skus():
 
 @app.route('/search', methods=['POST'])
 def search():
-    """Handle SKU search request"""
+    """Handle SKU search request using a Database-First approach"""
     try:
         # Check if the request is JSON or form data
         if request.is_json:
@@ -310,14 +310,52 @@ def search():
         # Log the search request
         logger.debug(f"Searching for SKU: {sku}")
 
-        # Call the compatibility function to find matches
-        results = compatibility.find_compatible_products(sku)
+        # --- DATABASE-FIRST LOOKUP IMPROVEMENT ---
+        results = None
+        # First check if the database is available and has data
+        if data_loader.check_database_ready():
+            # Try to load product details from the database
+            db_product = data_loader.load_product_from_database(sku)
+            if db_product:
+                # Load pre-computed compatibilities from the database
+                db_compatibles = data_loader.load_compatible_products_from_database(sku)
+
+                # Only use database results if we actually found compatibility data
+                if db_compatibles:
+                    formatted_compatibles = []
+                    for cat, prods in db_compatibles.items():
+                        formatted_compatibles.append({
+                            "category": cat,
+                            "products": prods
+                        })
+
+                    results = {
+                        "product": {
+                            "sku": sku,
+                            "name": db_product.get("Product Name"),
+                            "category": db_product.get("Category"),
+                            "brand": db_product.get("Brand"),
+                            "series": db_product.get("Series"),
+                            "family": db_product.get("Family"),
+                            "image_url": db_product.get("Image URL"),
+                            "product_page_url": db_product.get("Product Page URL"),
+                            "nominal_dimensions": db_product.get("Nominal Dimensions"),
+                            "installation": db_product.get("Installation")
+                        },
+                        "compatibles": formatted_compatibles,
+                        "incompatibility_reasons": {} # Database format handles this via result filtering
+                    }
+
+        # Fallback to the original live computation logic if database lookup failed or found nothing
+        if not results:
+            logger.info(f"Falling back to live Excel-based compatibility for SKU: {sku}")
+            results = compatibility.find_compatible_products(sku)
 
         # ---------------------------------------------------------------
         # Build the incompatibility_reasons object for the front‑end
         # First, get any incompatibility reasons from the results directly
         incompatibility_reasons = results.get("incompatibility_reasons", {})
-        
+
         # Then, add any incompatibility reasons from compatibles array (for backward compatibility)
         for cat in results.get("compatibles", []):
             if cat.get("reason") and not cat.get("products"):
@@ -440,19 +478,19 @@ def search():
 def api_get_compatible(sku):
     """
     REST API endpoint to get compatible products for a given SKU.
-    
+
     Supports multi-SKU lookup with priority matching:
     1. Child SKU (path parameter)
     2. Parent SKU (query parameter)
     3. Unique ID (query parameter)
-    
+
     Query Parameters:
         - parent_sku: Parent SKU for compatibility lookup (optional)
         - unique_id: Unique ID for compatibility lookup (optional)
         - category: Filter by category (optional)
         - brand: Filter by brand name (optional, case-insensitive)
         - limit: Limit results per category (optional, default: 100)
-    
+
     Example: GET /api/compatible/410000-501-001-000?parent_sku=410000&unique_id=410000-501-001
     Example: GET /api/compatible/FB03060M
     Example: GET /api/compatible/FB03060M?category=Doors&limit=20
@@ -466,18 +504,18 @@ def api_get_compatible(sku):
         category_filter = request.args.get('category', '').strip()
         brand_filter = request.args.get('brand', '').strip()
         limit = request.args.get('limit', type=int, default=100)
-        
+
         logger.info(f"API request for compatible products: child_sku={child_sku}, parent_sku={parent_sku if parent_sku else 'N/A'}, unique_id={unique_id if unique_id else 'N/A'}, brand={brand_filter if brand_filter else 'N/A'}")
-        
+
         # Create cache key from request parameters
         cache_key = f"{child_sku}|{parent_sku}|{unique_id}|{category_filter}|{brand_filter}|{limit}"
-        
+
         # Check cache first
         cached_response = get_cached_compatibles(cache_key)
         if cached_response:
             logger.info(f"Cache hit for {cache_key}")
             return jsonify(cached_response)
-        
+
         # Check if database is available
         if not data_loader.check_database_ready():
             logger.error("Database not available")
@@ -486,7 +524,7 @@ def api_get_compatible(sku):
                 'error': 'Database not available',
                 'queried_child_sku': child_sku
             }), 503
-        
+
         # Use multi-SKU lookup if parent_sku or unique_id provided
         if parent_sku or unique_id:
             match_result = data_loader.find_product_by_multi_sku(child_sku, parent_sku, unique_id)
@@ -499,7 +537,7 @@ def api_get_compatible(sku):
                     'queried_unique_id': unique_id if unique_id else None,
                     'message': 'No product found matching any of the provided SKUs (child_sku, parent_sku, unique_id)'
                 }), 404
-            
+
             product_data = match_result['product_data']
             matched_sku = match_result['matched_sku']
             match_type = match_result['match_type']
@@ -510,7 +548,7 @@ def api_get_compatible(sku):
             matched_sku = None
             match_type = None
             lookup_sku = child_sku
-            
+
             # If not found, try stripping variant suffix (e.g., FF03232MD.010 -> FF03232MD)
             if not product_data and '.' in child_sku:
                 variant_parent = child_sku.rsplit('.', 1)[0]
@@ -520,7 +558,7 @@ def api_get_compatible(sku):
                     lookup_sku = variant_parent
                     matched_sku = variant_parent
                     match_type = 'variant_parent'
-            
+
             if not product_data:
                 return jsonify({
                     'success': False,
@@ -528,10 +566,10 @@ def api_get_compatible(sku):
                     'queried_child_sku': child_sku,
                     'message': 'Product not found. If this is a variant SKU (e.g., SKU.010), the parent SKU may not exist in the database.'
                 }), 404
-        
+
         # Load compatibilities from database using the matched SKU
         db_compatibles = data_loader.load_compatible_products_from_database(lookup_sku)
-        
+
         # Check if database results are incomplete (None or only reverse compatibility)
         use_excel_fallback = False
         if db_compatibles is None:
@@ -550,17 +588,17 @@ def api_get_compatible(sku):
                             use_excel_fallback = True
                             logger.info(f"Product {lookup_sku} only has reverse compatibility in database (self-reference), using Excel fallback")
                             break
-        
+
         if use_excel_fallback:
             # Fall back to Excel-based compatibility logic (same as web interface)
             logger.info(f"Falling back to Excel data for SKU: {lookup_sku}")
             excel_results = compatibility.find_compatible_products(lookup_sku)
-            
+
             if excel_results and excel_results.get('product'):
                 # Helper function to clean NaN values for JSON serialization
                 import pandas as pd
                 import math
-                
+
                 def clean_value(value):
                     """Convert NaN, None, and other invalid JSON values to None"""
                     if value is None:
@@ -570,27 +608,27 @@ def api_get_compatible(sku):
                     if pd.isna(value):
                         return None
                     return value
-                
+
                 # Convert Excel results to API format
                 # The web interface returns {product: {...}, compatibles: [...], incompatibility_reasons: {...}}
                 excel_compatibles = excel_results.get('compatibles', [])
-                
+
                 compatibles = []
                 for item in excel_compatibles:
                     category = item.get('category')
                     products_list = item.get('products', [])
-                    
+
                     if category_filter and category != category_filter:
                         continue
-                    
+
                     # Apply brand filter if specified
                     if brand_filter:
                         products_list = [p for p in products_list if p.get('brand', '').lower() == brand_filter.lower()]
-                    
+
                     # Skip category if no products after filtering
                     if not products_list:
                         continue
-                    
+
                     limited_products = products_list[:limit] if limit else products_list
                     compatibles.append({
                         'category': category,
@@ -605,7 +643,7 @@ def api_get_compatible(sku):
                             'compatibility_score': p.get('compatibility_score', 500)
                         } for p in limited_products]
                     })
-                
+
                 base_product = excel_results['product']
                 response = {
                     'success': True,
@@ -633,7 +671,7 @@ def api_get_compatible(sku):
                     response['queried_parent_sku'] = parent_sku
                 if unique_id:
                     response['queried_unique_id'] = unique_id
-                
+
                 # Cache the response
                 cache_compatibles(cache_key, response)
                 return jsonify(response)
@@ -667,21 +705,21 @@ def api_get_compatible(sku):
                 if unique_id:
                     response['queried_unique_id'] = unique_id
                 return jsonify(response)
-        
+
         # Build compatibles list
         compatibles = []
         for category, products in db_compatibles.items():
             if category_filter and category.lower() != category_filter.lower():
                 continue
-            
+
             # Apply brand filter if specified
             if brand_filter:
                 products = [p for p in products if p.get('brand', '').lower() == brand_filter.lower()]
-            
+
             # Skip category if no products after filtering
             if not products:
                 continue
-            
+
             if len(products) > limit:
                 compatibles.append({
                     'category': category,
@@ -694,7 +732,7 @@ def api_get_compatible(sku):
                     'category': category,
                     'products': products
                 })
-        
+
         response = {
             'success': True,
             'queried_child_sku': child_sku,
@@ -713,24 +751,24 @@ def api_get_compatible(sku):
             'total_categories': len(compatibles),
             'data_source': 'database'
         }
-        
+
         # Include SKU matching information
         if matched_sku:
             response['matched_sku'] = matched_sku
             response['match_type'] = match_type
-        
+
         # Include queried SKUs for reference
         if parent_sku:
             response['queried_parent_sku'] = parent_sku
         if unique_id:
             response['queried_unique_id'] = unique_id
-        
+
         # Cache the response before returning
         cache_compatibles(cache_key, response)
         logger.info(f"Cached response for {cache_key}")
-        
+
         return jsonify(response)
-        
+
     except Exception as e:
         logger.error(f"API error for compatible/{child_sku}: {str(e)}")
         logger.error(traceback.format_exc())
@@ -745,20 +783,20 @@ def api_get_compatible(sku):
 def api_get_product(sku):
     """
     REST API endpoint to get details about a specific product.
-    
+
     Returns JSON with product details only (no compatibility data).
-    
+
     Example: GET /api/product/FB03060M
     """
     try:
         sku = sku.strip().upper()
-        
+
         logger.info(f"API request for product details: SKU={sku}")
-        
+
         if data_loader.check_database_ready():
             logger.info(f"Attempting to load product from database: {sku}")
             product_data = data_loader.load_product_from_database(sku)
-            
+
             if product_data:
                 import pandas as pd
                 product_clean = {}
@@ -767,7 +805,7 @@ def api_get_product(sku):
                         product_clean[k] = None
                     else:
                         product_clean[k] = v
-                
+
                 return jsonify({
                     'success': True,
                     'sku': sku,
@@ -775,16 +813,16 @@ def api_get_product(sku):
                     'product': product_clean,
                     'data_source': 'database'
                 })
-        
+
         logger.info(f"Falling back to Excel for product: {sku}")
         data = compatibility.load_data()
-        
+
         for sheet_name, df in data.items():
             if 'Unique ID' in df.columns:
                 matching_rows = df[df['Unique ID'].astype(str).str.upper() == sku]
                 if not matching_rows.empty:
                     product_data = matching_rows.iloc[0].to_dict()
-                    
+
                     import pandas as pd
                     product_clean = {}
                     for k, v in product_data.items():
@@ -792,7 +830,7 @@ def api_get_product(sku):
                             product_clean[k] = None
                         else:
                             product_clean[k] = v
-                    
+
                     return jsonify({
                         'success': True,
                         'sku': sku,
@@ -800,13 +838,13 @@ def api_get_product(sku):
                         'product': product_clean,
                         'data_source': 'excel'
                     })
-        
+
         return jsonify({
             'success': False,
             'error': 'Product not found',
             'sku': sku
         }), 404
-        
+
     except Exception as e:
         logger.error(f"API error for product/{sku}: {str(e)}")
         logger.error(traceback.format_exc())
@@ -821,13 +859,13 @@ def api_get_product(sku):
 def api_list_products():
     """
     REST API endpoint to list all products.
-    
+
     Query Parameters:
         - category: Filter by category (optional)
         - brand: Filter by brand (optional)
         - limit: Number of results to return (default: 100, max: 1000)
         - offset: Number of results to skip (default: 0)
-    
+
     Example: GET /api/products
     Example: GET /api/products?category=Shower Bases&brand=Swan&limit=50
     """
@@ -836,9 +874,9 @@ def api_list_products():
         brand_filter = request.args.get('brand', '').strip().lower()
         limit = min(request.args.get('limit', type=int, default=100), 1000)
         offset = request.args.get('offset', type=int, default=0)
-        
+
         logger.info(f"API request for products list: category={category_filter}, brand={brand_filter}, limit={limit}, offset={offset}")
-        
+
         if data_loader.check_database_ready():
             logger.info("Loading products from database")
             db_products, total_count = data_loader.get_all_products_from_database(
@@ -846,11 +884,11 @@ def api_list_products():
                 limit=limit,
                 offset=offset
             )
-            
+
             if brand_filter:
                 db_products = [p for p in db_products if brand_filter in str(p.get('Brand', '')).lower()]
                 total_count = len(db_products)
-            
+
             import pandas as pd
             clean_products = []
             for product in db_products:
@@ -861,7 +899,7 @@ def api_list_products():
                     else:
                         product_clean[k] = v
                 clean_products.append(product_clean)
-            
+
             return jsonify({
                 'success': True,
                 'products': clean_products,
@@ -871,24 +909,24 @@ def api_list_products():
                 'returned_count': len(clean_products),
                 'data_source': 'database'
             })
-        
+
         logger.info("Falling back to Excel for products list")
         data = compatibility.load_data()
         all_products = []
-        
+
         for sheet_name, df in data.items():
             if category_filter and sheet_name.lower() != category_filter.lower():
                 continue
-            
+
             if 'Unique ID' in df.columns:
                 for _, row in df.iterrows():
                     product_dict = row.to_dict()
-                    
+
                     if brand_filter:
                         product_brand = str(product_dict.get('Brand', '')).lower()
                         if brand_filter not in product_brand:
                             continue
-                    
+
                     import pandas as pd
                     product_clean = {'category': sheet_name}
                     for k, v in product_dict.items():
@@ -896,12 +934,12 @@ def api_list_products():
                             product_clean[k] = None
                         else:
                             product_clean[k] = v
-                    
+
                     all_products.append(product_clean)
-        
+
         total_count = len(all_products)
         paginated_products = all_products[offset:offset + limit]
-        
+
         return jsonify({
             'success': True,
             'products': paginated_products,
@@ -911,7 +949,7 @@ def api_list_products():
             'returned_count': len(paginated_products),
             'data_source': 'excel'
         })
-        
+
     except Exception as e:
         logger.error(f"API error for products list: {str(e)}")
         logger.error(traceback.format_exc())
@@ -925,30 +963,30 @@ def api_list_products():
 def api_list_categories():
     """
     REST API endpoint to list all available product categories.
-    
+
     Returns JSON with category names and product counts.
-    
+
     Example: GET /api/categories
     """
     try:
         logger.info("API request for categories list")
-        
+
         data = compatibility.load_data()
         categories = []
-        
+
         for sheet_name, df in data.items():
             if 'Unique ID' in df.columns:
                 categories.append({
                     'name': sheet_name,
                     'product_count': len(df)
                 })
-        
+
         return jsonify({
             'success': True,
             'categories': categories,
             'total_categories': len(categories)
         })
-        
+
     except Exception as e:
         logger.error(f"API error for categories list: {str(e)}")
         logger.error(traceback.format_exc())
@@ -962,17 +1000,17 @@ def api_list_categories():
 def api_health():
     """
     Health check endpoint for monitoring.
-    
+
     Returns system status and data freshness information.
-    
+
     Example: GET /api/health
     """
     try:
         data_source_info = data_loader.get_data_source_info()
-        
+
         data = compatibility.load_data()
         total_products = sum(len(df) for df in data.values())
-        
+
         health_status = {
             'success': True,
             'status': 'healthy',
@@ -981,7 +1019,7 @@ def api_health():
             'data_service_available': data_service_available,
             'data_source': data_source_info
         }
-        
+
         if data_service_available:
             try:
                 import data_update_service as data_service
@@ -990,9 +1028,9 @@ def api_health():
                     health_status['last_data_update'] = update_time.isoformat()
             except Exception:
                 pass
-        
+
         return jsonify(health_status)
-        
+
     except Exception as e:
         logger.error(f"API error for health check: {str(e)}")
         return jsonify({
@@ -1010,30 +1048,30 @@ def api_health():
 def compute_compatibilities():
     """
     Manually trigger compatibility computation for products without compatibilities.
-    
+
     This endpoint computes compatibilities in the background without blocking.
     Use this after webhook syncs to finish processing new products.
-    
+
     Query params:
         ?all=true - Recompute ALL compatibilities (slow)
         (default) - Only compute for products missing compatibilities (fast)
-    
+
     Returns immediately with 202 Accepted while processing continues in background.
     """
     try:
         compute_all = request.args.get('all', '').lower() == 'true'
-        
+
         from models import get_session
         session = get_session()
-        
+
         if compute_all:
             # Count all products
             from sqlalchemy import text
             total_products = session.execute(text('SELECT COUNT(*) FROM products')).fetchone()[0]
             session.close()
-            
+
             logger.info(f"Starting compatibility computation for ALL {total_products} products")
-            
+
             # This will take a long time, run in background
             def compute_all_compatibilities():
                 with app.app_context():
@@ -1043,11 +1081,11 @@ def compute_compatibilities():
                         logger.info("Completed full compatibility computation")
                     except Exception as e:
                         logger.error(f"Error computing compatibilities: {e}")
-            
+
             import threading
             thread = threading.Thread(target=compute_all_compatibilities, daemon=True)
             thread.start()
-            
+
             return jsonify({
                 'success': True,
                 'message': f'Computing compatibilities for all {total_products} products in background',
@@ -1063,9 +1101,9 @@ def compute_compatibilities():
                 WHERE pc.base_product_id IS NULL
             ''')).fetchone()[0]
             session.close()
-            
+
             logger.info(f"Starting compatibility computation for {products_without} products without compatibilities")
-            
+
             # Run in background
             def compute_missing_compatibilities():
                 with app.app_context():
@@ -1075,17 +1113,17 @@ def compute_compatibilities():
                         logger.info(f"Completed compatibility computation for {products_without} products")
                     except Exception as e:
                         logger.error(f"Error computing compatibilities: {e}")
-            
+
             import threading
             thread = threading.Thread(target=compute_missing_compatibilities, daemon=True)
             thread.start()
-            
+
             return jsonify({
                 'success': True,
                 'message': f'Computing compatibilities for {products_without} products without them',
                 'estimated_duration': f'{(products_without * 0.5) // 60} minutes'
             }), 202
-        
+
     except Exception as e:
         logger.error(f"Error starting compatibility computation: {str(e)}")
         return jsonify({
@@ -1102,7 +1140,7 @@ def compute_compatibilities():
 def salsify_webhook():
     """
     Salsify webhook endpoint for automated data updates.
-    
+
     Salsify sends a POST request when publication completes with:
     {
         "channel_id": "...",
@@ -1112,7 +1150,7 @@ def salsify_webhook():
         "product_feed_export_url": "https://s3.amazonaws.com/...",
         "digital_asset_export_url": "..."
     }
-    
+
     Authentication: ?key=<SALSIFY_WEBHOOK_SECRET>
     """
     try:
@@ -1123,7 +1161,7 @@ def salsify_webhook():
                 'success': False,
                 'error': 'Webhook not configured'
             }), 500
-        
+
         provided_key = request.args.get('key', '')
         if provided_key != webhook_secret:
             logger.warning(f"Invalid webhook key provided from IP: {request.remote_addr}")
@@ -1131,16 +1169,16 @@ def salsify_webhook():
                 'success': False,
                 'error': 'Unauthorized'
             }), 401
-        
+
         payload = request.get_json()
         if not payload:
             return jsonify({
                 'success': False,
                 'error': 'No JSON payload provided'
             }), 400
-        
+
         logger.info(f"Received Salsify webhook: {payload.get('publication_status')}")
-        
+
         publication_status = payload.get('publication_status')
         if publication_status != 'completed':
             logger.info(f"Ignoring webhook with status: {publication_status}")
@@ -1148,17 +1186,17 @@ def salsify_webhook():
                 'success': True,
                 'message': f'Ignored status: {publication_status}'
             })
-        
+
         product_feed_url = payload.get('product_feed_url') or payload.get('product_feed_export_url')
         if not product_feed_url:
             return jsonify({
                 'success': False,
                 'error': 'No product_feed_url in payload'
             }), 400
-        
+
         from models import get_session, SyncStatus
         session = get_session()
-        
+
         sync_record = SyncStatus(
             sync_type='salsify_webhook',
             status='queued',  # Changed from 'pending' to 'queued'
@@ -1172,7 +1210,7 @@ def salsify_webhook():
         session.commit()
         sync_id = sync_record.id
         session.close()
-        
+
         # Save the webhook info to a queue file for the worker to process
         # This avoids using background threads which get killed by Gunicorn --reload
         webhook_queue_path = os.path.join('data', 'webhook_queue.json')
@@ -1200,7 +1238,7 @@ def salsify_webhook():
                 'success': False,
                 'error': f'Failed to queue webhook: {str(e)}'
             }), 500
-        
+
         return jsonify({
             'success': True,
             'message': 'Webhook queued for processing by background worker (1-2 min)',
@@ -1224,31 +1262,31 @@ def salsify_webhook():
 def salsify_status():
     """
     Get status of Salsify webhook syncs.
-    
+
     Query Parameters:
         - limit: Number of recent syncs to return (default: 10, max: 100)
         - sync_id: Get specific sync by ID
-    
+
     Example: GET /api/salsify/status
     Example: GET /api/salsify/status?sync_id=123
     Example: GET /api/salsify/status?limit=5
     """
     try:
         from models import get_session, SyncStatus
-        
+
         session = get_session()
-        
+
         sync_id = request.args.get('sync_id', type=int)
         if sync_id:
             sync_record = session.query(SyncStatus).filter_by(id=sync_id).first()
             session.close()
-            
+
             if not sync_record:
                 return jsonify({
                     'success': False,
                     'error': 'Sync not found'
                 }), 404
-            
+
             return jsonify({
                 'success': True,
                 'sync': {
@@ -1265,13 +1303,13 @@ def salsify_status():
                     'metadata': sync_record.sync_metadata
                 }
             })
-        
+
         limit = min(request.args.get('limit', type=int, default=10), 100)
-        
+
         recent_syncs = session.query(SyncStatus).order_by(
             SyncStatus.started_at.desc()
         ).limit(limit).all()
-        
+
         syncs_list = []
         for sync in recent_syncs:
             syncs_list.append({
@@ -1287,15 +1325,15 @@ def salsify_status():
                 'error_message': sync.error_message,
                 'metadata': sync.sync_metadata
             })
-        
+
         session.close()
-        
+
         return jsonify({
             'success': True,
             'syncs': syncs_list,
             'total_returned': len(syncs_list)
         })
-        
+
     except Exception as e:
         logger.error(f"Status endpoint error: {str(e)}")
         logger.error(traceback.format_exc())
@@ -1309,53 +1347,53 @@ def salsify_status():
 def salsify_cleanup():
     """
     Cleanup stuck webhook syncs that have been in 'processing' status for too long.
-    
+
     This handles cases where background threads were killed due to app restarts.
-    
+
     Query Parameters:
         - hours: Number of hours to consider a sync stuck (default: 2)
-    
+
     Example: POST /api/salsify/cleanup
     Example: POST /api/salsify/cleanup?hours=1
     """
     try:
         from models import get_session, SyncStatus
         from datetime import datetime, timedelta
-        
+
         hours = request.args.get('hours', type=int, default=2)
         cutoff_time = datetime.utcnow() - timedelta(hours=hours)
-        
+
         session = get_session()
-        
+
         # Find stuck syncs
         stuck_syncs = session.query(SyncStatus).filter(
             SyncStatus.status == 'processing',
             SyncStatus.started_at < cutoff_time
         ).all()
-        
+
         cleaned_count = 0
         cleaned_ids = []
-        
+
         for sync in stuck_syncs:
             sync.status = 'failed'
             sync.completed_at = datetime.utcnow()
             sync.error_message = f'Sync stuck in processing for >{hours}h - likely killed by app restart (development mode with --reload)'
             cleaned_ids.append(sync.id)
             cleaned_count += 1
-        
+
         if cleaned_count > 0:
             session.commit()
             logger.info(f"Cleaned up {cleaned_count} stuck syncs: {cleaned_ids}")
-        
+
         session.close()
-        
+
         return jsonify({
             'success': True,
             'cleaned_count': cleaned_count,
             'cleaned_sync_ids': cleaned_ids,
             'message': f'Marked {cleaned_count} stuck syncs as failed'
         })
-        
+
     except Exception as e:
         logger.error(f"Cleanup endpoint error: {str(e)}")
         logger.error(traceback.format_exc())
