@@ -283,7 +283,7 @@ def update_data():
         
         # Sync database with the new Excel file
         try:
-            import db_sync_service
+            from services import db_sync_service
             logger.info("Starting database synchronization")
             sync_result = db_sync_service.full_sync_workflow(str(Config.CURRENT_FILE))
             if sync_result.get('success'):

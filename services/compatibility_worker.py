@@ -141,12 +141,12 @@ class CompatibilityWorker:
             logger.info(f"Saved Excel file to: {main_excel_path}")
 
             # Sync database (WITHOUT computing compatibilities - too slow)
-            import db_sync_service
+            from services import db_sync_service
             sync_result = db_sync_service.full_sync_workflow(temp_path, compute_compatibilities=False)
 
             # Reload in-memory cache
             try:
-                import data_update_service
+                from services import data_update_service
                 data_update_service.load_data_into_memory(main_excel_path)
                 logger.info("Reloaded in-memory cache with updated product data")
             except Exception as cache_error:
@@ -312,7 +312,7 @@ class CompatibilityWorker:
             # Use ThreadPoolExecutor to compute compatibilities in parallel
             logger.info(f"Computing compatibilities for batch of {len(skus_to_process)} SKUs using {self.max_workers} threads")
 
-            import db_sync_service
+            from services import db_sync_service
 
             def compute_sku(sku):
                 try:

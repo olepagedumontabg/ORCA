@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+from logic.shared_rules import series_compatible, brand_family_match, SHOWER_BASE_UTILE_FAMILIES
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -457,15 +458,13 @@ def find_base_compatibilities(data, base_info):
                     "alcove shower" in wall_type
                     and (base_install in ["alcove", "alcove or corner"])
                     and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
-                    and brand_family_match(base_brand, base_family, wall_brand,
-                                           wall_family))
+                    and brand_family_match(base_family, wall_family, SHOWER_BASE_UTILE_FAMILIES))
 
                 corner_match = (
                     "corner shower" in wall_type
                     and (base_install in ["corner", "alcove or corner"])
                     and series_compatible(base_series, wall_series, base_info.get("Brand"), wall_brand)
-                    and brand_family_match(base_brand, base_family, wall_brand,
-                                           wall_family))
+                    and brand_family_match(base_family, wall_family, SHOWER_BASE_UTILE_FAMILIES))
 
                 if not (alcove_match or corner_match):
                     continue
@@ -707,74 +706,5 @@ def find_base_compatibilities(data, base_info):
         return []
 
 
-def series_compatible(base_series, compare_series, base_brand=None, compare_brand=None):
-    """
-    Check if two series are compatible based on business rules.
-    
-    NOTE: Series rules have been removed - all series are now compatible.
-    This function is kept for backward compatibility but always returns True.
 
-    Args:
-        base_series (str): Series of the base product
-        compare_series (str): Series of the product to compare with
-        base_brand (str): Brand of the base product (optional)
-        compare_brand (str): Brand of the compare product (optional)
-
-    Returns:
-        bool: Always returns True (series restrictions removed)
-    """
-    # Series rules removed - all products are compatible regardless of series
-    return True
-
-
-def brand_family_match(base_brand, base_family, wall_brand, wall_family):
-    """
-    Check if base family matches wall family based on specific business rules.
-    
-    NOTE: Brand rules have been removed - only family restrictions apply now.
-
-    Args:
-        base_brand (str): Brand of the base product (not used, kept for compatibility)
-        base_family (str): Family of the base product
-        wall_brand (str): Brand of the wall (not used, kept for compatibility)
-        wall_family (str): Family of the wall
-
-    Returns:
-        bool: True if families are compatible, False otherwise
-    """
-    base_family = str(base_family).strip().lower() if base_family else ""
-    wall_family = str(wall_family).strip().lower() if wall_family else ""
-
-    # Family restriction rules - these are enforced
-    # Olio products should ONLY be compatible with other Olio products
-    if base_family == "olio" and wall_family != "olio":
-        return False
-    if wall_family == "olio" and base_family != "olio":
-        return False
-
-    # Vellamo products should ONLY be compatible with other Vellamo products  
-    if base_family == "vellamo" and wall_family != "vellamo":
-        return False
-    if wall_family == "vellamo" and base_family != "vellamo":
-        return False
-
-    # Interflo products should ONLY be compatible with other Interflo products
-    if base_family == "interflo" and wall_family != "interflo":
-        return False
-    if wall_family == "interflo" and base_family != "interflo":
-        return False
-
-    # W&B products should ONLY be compatible with other W&B products
-    if base_family == "w&b" and wall_family != "w&b":
-        return False
-    if wall_family == "w&b" and base_family != "w&b":
-        return False
-
-    # Special family compatibility rules
-    # Utile and Nextile walls should only match with specific base families
-    if wall_family in ["utile", "nextile"] and base_family not in ["b3", "finesse", "distinct", "zone", "olympia", "icon", "roka", "stonea"]:
-        return False
-
-    # If we passed all family restrictions, products are compatible
-    # Brand rules have been removed - all brands can work together now
-    return True
+# brand_family_match and series_compatible are now imported from logic.shared_rules

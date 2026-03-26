@@ -7,11 +7,11 @@ import pandas as pd
 import io
 import traceback
 from logic import compatibility
-import data_loader
+from services import data_loader
 
 # Try to import the data update service
 try:
-    import data_update_service
+    from services import data_update_service
     data_service_available = True
 except ImportError:
     data_service_available = False
@@ -58,7 +58,7 @@ data_update_thread = None
 if data_service_available:
     try:
         # Import locally within the conditional
-        import data_update_service as data_service
+        from services import data_update_service as data_service
         logger.info("Initializing data update service")
         data_update_thread = threading.Thread(
             target=data_service.run_data_service, daemon=True)
@@ -188,7 +188,7 @@ def suggest_skus():
             return jsonify({'suggestions': [], 'displaySuggestions': []})
 
         # Try to use database first, fall back to Excel if needed
-        from data_loader import check_database_ready
+        from services.data_loader import check_database_ready
         from models import get_session, Product
 
         if check_database_ready():
@@ -372,89 +372,16 @@ def search():
                 f"Returning product: {product_name} from category: {product_category} for SKU: {sku}"
             )
 
-            # Create a clean response object without any NaN values
-            clean_response = {
+            from services.json_utils import safe_jsonify_data
+
+            clean_response = safe_jsonify_data({
                 'success': True,
                 'sku': sku,
                 'product': results['product'],
                 'compatibles': results['compatibles'],
-                'incompatibility_reasons': incompatibility_reasons      # ← add this
-            }
-
-            # Import pandas and json at the top of the function for better clarity
-            import pandas as pd
-            import json
-
-            # Deep clean function to replace NaN, None and other problematic values
-            def deep_clean(obj):
-                # Handle arrays and pandas objects safely
-                if isinstance(obj, (list, tuple)):
-                    return [deep_clean(item) for item in obj]
-                elif isinstance(obj, dict):
-                    return {k: deep_clean(v) for k, v in obj.items()}
-                # Check for None first to avoid unnecessary pd.isna calls
-                elif obj is None:
-                    return None
-                # Use safer check for NaN values
-                elif isinstance(obj,
-                                (float, int)) and (pd.isna(obj) if hasattr(
-                                    pd, 'isna') else False):
-                    return None
-                # Safely handle pandas objects
-                elif hasattr(pd, 'isna') and hasattr(pd, 'api') and hasattr(
-                        pd.api, 'types'):
-                    # Handle pandas Series or DataFrame
-                    if pd.api.types.is_scalar(obj) and pd.isna(obj):
-                        return None
-                    else:
-                        return obj
-                else:
-                    return obj
-
-            # Apply deep cleaning to the entire response
-            clean_response = deep_clean(clean_response)
-
-            # Serialize to JSON with error handling
-            try:
-                # Create a custom JSON encoder that safely handles all types
-                def custom_json_default(obj):
-                    if pd.isna(obj) if hasattr(pd, 'isna') else False:
-                        return None
-                    elif hasattr(obj, 'isoformat'):  # Handle date/time objects
-                        return obj.isoformat()
-                    elif isinstance(obj, (complex, bytes, bytearray)):
-                        return str(obj)
-                    else:
-                        return str(obj)  # Last resort, convert to string
-
-                # Convert to JSON string and back to ensure all values are JSON-compatible
-                clean_json_str = json.dumps(clean_response,
-                                            default=custom_json_default)
-                return jsonify(json.loads(clean_json_str))
-            except Exception as e:
-                logger.error(f"JSON serialization error: {str(e)}")
-                # Fallback to a simpler response with string conversion
-                safe_response = {
-                    'success':
-                    True,
-                    'sku':
-                    str(sku),
-                    'product': {
-                        k: str(v) if not isinstance(v, (dict, list)) else v
-                        for k, v in results['product'].items()
-                    },
-                    'compatibles': [{
-                        'category':
-                        c.get('category', ''),
-                        'products': [{
-                            k:
-                            str(v) if not isinstance(v, (dict, list)) else v
-                            for k, v in p.items()
-                        } for p in c.get('products', [])]
-                    } for c in results['compatibles']],
-                    'incompatibility_reasons': incompatibility_reasons  # ← add this'
-                }
-                return jsonify(safe_response)
+                'incompatibility_reasons': incompatibility_reasons
+            })
+            return jsonify(clean_response)
         else:
             return jsonify({
                 'success': False,
@@ -595,19 +522,7 @@ def api_get_compatible(sku):
             excel_results = compatibility.find_compatible_products(lookup_sku)
 
             if excel_results and excel_results.get('product'):
-                # Helper function to clean NaN values for JSON serialization
-                import pandas as pd
-                import math
-
-                def clean_value(value):
-                    """Convert NaN, None, and other invalid JSON values to None"""
-                    if value is None:
-                        return None
-                    if isinstance(value, float) and (pd.isna(value) or math.isnan(value)):
-                        return None
-                    if pd.isna(value):
-                        return None
-                    return value
+                from services.json_utils import clean_value
 
                 # Convert Excel results to API format
                 # The web interface returns {product: {...}, compatibles: [...], incompatibility_reasons: {...}}
@@ -1022,7 +937,7 @@ def api_health():
 
         if data_service_available:
             try:
-                import data_update_service as data_service
+                from services import data_update_service as data_service
                 cached_data, update_time = data_service.get_product_data()
                 if update_time:
                     health_status['last_data_update'] = update_time.isoformat()
@@ -1064,25 +979,27 @@ def compute_compatibilities():
         from models import get_session
         session = get_session()
 
+        from sqlalchemy import text
+
         if compute_all:
             # Count all products
-            from sqlalchemy import text
             total_products = session.execute(text('SELECT COUNT(*) FROM products')).fetchone()[0]
             session.close()
 
             logger.info(f"Starting compatibility computation for ALL {total_products} products")
 
-            # This will take a long time, run in background
             def compute_all_compatibilities():
-                with app.app_context():
-                    try:
-                        import incremental_compute
-                        incremental_compute.main()
-                        logger.info("Completed full compatibility computation")
-                    except Exception as e:
-                        logger.error(f"Error computing compatibilities: {e}")
+                try:
+                    from services import db_sync_service
+                    from models import Product
+                    s = get_session()
+                    all_skus = {p.sku for p in s.query(Product.sku).all()}
+                    s.close()
+                    db_sync_service.recompute_compatibilities_for_changed_products(all_skus)
+                    logger.info("Completed full compatibility computation")
+                except Exception as e:
+                    logger.error(f"Error computing compatibilities: {e}")
 
-            import threading
             thread = threading.Thread(target=compute_all_compatibilities, daemon=True)
             thread.start()
 
@@ -1093,7 +1010,6 @@ def compute_compatibilities():
             }), 202
         else:
             # Count products without compatibilities
-            from sqlalchemy import text
             products_without = session.execute(text('''
                 SELECT COUNT(DISTINCT p.id)
                 FROM products p
@@ -1104,17 +1020,23 @@ def compute_compatibilities():
 
             logger.info(f"Starting compatibility computation for {products_without} products without compatibilities")
 
-            # Run in background
             def compute_missing_compatibilities():
-                with app.app_context():
-                    try:
-                        import incremental_compute
-                        incremental_compute.main()
-                        logger.info(f"Completed compatibility computation for {products_without} products")
-                    except Exception as e:
-                        logger.error(f"Error computing compatibilities: {e}")
+                try:
+                    from services import db_sync_service
+                    from models import Product
+                    s = get_session()
+                    missing_skus = {row[0] for row in s.execute(text('''
+                        SELECT p.sku
+                        FROM products p
+                        LEFT JOIN product_compatibility pc ON p.id = pc.base_product_id
+                        WHERE pc.base_product_id IS NULL
+                    ''')).fetchall()}
+                    s.close()
+                    db_sync_service.recompute_compatibilities_for_changed_products(missing_skus)
+                    logger.info(f"Completed compatibility computation for {len(missing_skus)} products")
+                except Exception as e:
+                    logger.error(f"Error computing compatibilities: {e}")
 
-            import threading
             thread = threading.Thread(target=compute_missing_compatibilities, daemon=True)
             thread.start()
 
@@ -1412,7 +1334,7 @@ def salsify_cleanup():
 # ============================================================================
 
 try:
-    import compatibility_worker
+    from services import compatibility_worker
     compatibility_worker.start_worker()
     logger.info("=== Automatic compatibility worker started ===")
 except Exception as worker_error:

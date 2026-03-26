@@ -8,25 +8,9 @@ It enhances the product compatibility finder with additional relationships speci
 import logging
 import pandas as pd
 from logic import image_handler
+from logic.shared_rules import series_compatible
 
 logger = logging.getLogger(__name__)
-
-def series_compatible(base_series, compare_series):
-    """
-    Check if two series are compatible based on business rules.
-    
-    NOTE: Series rules have been removed - all series are now compatible.
-    This function is kept for backward compatibility but always returns True.
-    
-    Args:
-        base_series (str): Series of the base product
-        compare_series (str): Series of the product to compare with
-        
-    Returns:
-        bool: Always returns True (series restrictions removed)
-    """
-    # Series rules removed - all products are compatible regardless of series
-    return True
 
 def find_tubshower_compatibilities(data, tubshower_info):
     """

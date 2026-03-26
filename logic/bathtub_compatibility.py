@@ -1,78 +1,12 @@
 import logging
 import pandas as pd
 from logic import image_handler
+from logic.shared_rules import series_compatible, brand_family_match, BATHTUB_UTILE_FAMILIES
 
 logger = logging.getLogger(__name__)
 
 # Constants
 TOLERANCE_INCHES = 3  # 3 inches tolerance for dimension matching
-
-
-def series_compatible(base_series, compare_series, base_brand=None, compare_brand=None):
-    """
-    Check if two series are compatible based on business rules.
-    
-    NOTE: Series rules have been removed - all series are now compatible.
-    This function is kept for backward compatibility but always returns True.
-
-    Args:
-        base_series (str): Series of the base product
-        compare_series (str): Series of the product to compare with
-        base_brand (str): Brand of the base product (optional)
-        compare_brand (str): Brand of the compare product (optional)
-
-    Returns:
-        bool: Always returns True (series restrictions removed)
-    """
-    # Series rules removed - all products are compatible regardless of series
-    return True
-
-
-def bathtub_brand_family_match(base_brand, base_family, wall_brand, wall_family):
-    """
-    Check if bathtub family matches wall family based on specific business rules.
-    
-    NOTE: Brand rules have been removed - only family restrictions apply now.
-
-    Args:
-        base_brand (str): Brand of the bathtub (not used, kept for compatibility)
-        base_family (str): Family of the bathtub
-        wall_brand (str): Brand of the wall (not used, kept for compatibility)
-        wall_family (str): Family of the wall
-
-    Returns:
-        bool: True if families are compatible, False otherwise
-    """
-    base_family = str(base_family).strip().lower() if base_family else ""
-    wall_family = str(wall_family).strip().lower() if wall_family else ""
-
-    # Family restriction rules - these are enforced
-    # Olio products should ONLY be compatible with other Olio products
-    if base_family == "olio" and wall_family != "olio":
-        return False
-    if wall_family == "olio" and base_family != "olio":
-        return False
-
-    # Vellamo products should ONLY be compatible with other Vellamo products
-    if base_family == "vellamo" and wall_family != "vellamo":
-        return False
-    if wall_family == "vellamo" and base_family != "vellamo":
-        return False
-
-    # Interflo products should ONLY be compatible with other Interflo products
-    if base_family == "interflo" and wall_family != "interflo":
-        return False
-    if wall_family == "interflo" and base_family != "interflo":
-        return False
-
-    # Special family compatibility rules
-    # Utile and Nextile walls should only match with specific bathtub families
-    if wall_family in ["utile", "nextile"] and base_family not in ["nomad", "mackenzie", "exhibit", "new town", "rubix", "bosca", "cocoon", "corinthia"]:
-        return False
-
-    # If we passed all family restrictions, products are compatible
-    # Brand rules have been removed - all brands can work together now
-    return True
 
 
 def find_bathtub_compatibilities(data, bathtub_info):
@@ -249,7 +183,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
         (walls_df["Cut to Size"] != "Yes") &
         (walls_df["Nominal Dimensions"] == tub_nominal) &
         (walls_df["Series"].apply(lambda x: series_compatible(tub_series, x))) &
-        (walls_df.apply(lambda x: bathtub_brand_family_match(tub_brand, tub_family, x["Brand"], x["Family"]), axis=1))
+        (walls_df.apply(lambda x: brand_family_match(tub_family, x["Family"], BATHTUB_UTILE_FAMILIES), axis=1))
     ]
 
     for _, wall in nominal_walls.iterrows():
@@ -276,7 +210,7 @@ def find_bathtub_compatibilities(data, bathtub_info):
         (walls_df["Type"].str.lower().str.contains("tub", na=False)) &
         (walls_df["Cut to Size"] == "Yes") &
         (walls_df["Series"].apply(lambda x: series_compatible(tub_series, x))) &
-        (walls_df.apply(lambda x: bathtub_brand_family_match(tub_brand, tub_family, x["Brand"], x["Family"]), axis=1)) &
+        (walls_df.apply(lambda x: brand_family_match(tub_family, x["Family"], BATHTUB_UTILE_FAMILIES), axis=1)) &
         pd.notna(walls_df["Length"]) & pd.notna(walls_df["Width"]) &
         (walls_df["Length"] >= tub_length) & (walls_df["Width"] >= tub_width_actual)
     ].copy()
