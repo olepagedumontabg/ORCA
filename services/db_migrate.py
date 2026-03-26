@@ -128,7 +128,7 @@ def compute_compatibilities(limit=None, sku_filter=None):
     # This prevents reloading Excel files 2,193+ times (6 seconds each!)
     logger.info("Preloading product data into memory cache...")
     try:
-        import data_update_service
+        from services import data_update_service
         excel_path = os.path.join('data', 'Product Data.xlsx')
         if not data_update_service.load_data_into_memory(excel_path):
             logger.error("Failed to preload data into memory")

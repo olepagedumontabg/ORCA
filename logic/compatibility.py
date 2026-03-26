@@ -12,13 +12,14 @@ from logic import tubshower_compatibility
 from logic import image_handler
 from logic import blacklist_helper
 from logic import whitelist_helper
+from logic.shared_rules import series_compatible, brand_family_match, SHOWER_BASE_UTILE_FAMILIES, BATHTUB_UTILE_FAMILIES
 
 # Global flag to indicate whether the data update service is available
 data_service_available = False
 
 # Try to import the data update service
 try:
-    import data_update_service
+    from services import data_update_service
     data_service_available = True
 except ImportError:
     pass  # Keep the data_service_available flag as False
@@ -75,7 +76,7 @@ def find_tub_screen_compatibilities(data, screen_info):
                             logger.debug(f"    Width difference: {bathtub_width_num} - {screen_width_num} = {width_difference}")
                             
                             # Check compatibility: Max Door Width - Fixed Panel Width > 22
-                            from logic.bathtub_compatibility import series_compatible
+
                             bathtub_compatible = (
                                 width_difference > 22 and
                                 series_compatible(bathtub_series, screen_series)
@@ -179,7 +180,7 @@ def find_shower_screen_compatibilities(data, screen_info):
                             
                             # Check compatibility: Max Door Width - Fixed Panel Width > 22
                             # Compatible with both Alcove and Corner bases
-                            from logic.base_compatibility import series_compatible
+
                             base_compatible = (
                                 width_difference > 22 and
                                 series_compatible(base_series, screen_series) and
@@ -298,7 +299,7 @@ def load_data():
     if data_service_available:
         try:
             # Import locally in case it wasn't available at module load time
-            import data_update_service as data_service
+            from services import data_update_service as data_service
             cached_data, update_time = data_service.get_product_data()
             if cached_data:
                 logger.info(
@@ -384,7 +385,7 @@ def load_data():
         if data and data_service_available:
             try:
                 # Import locally in case it wasn't available at module load time
-                import data_update_service as data_service
+                from services import data_update_service as data_service
                 # Update the global cache with a copy of the data
                 with data_service.data_lock:
                     data_service.product_data_cache = data.copy()
@@ -639,7 +640,7 @@ def find_compatible_products(sku):
                     logger.debug(f"  Checking base: {base_id}")
                     
                     # Check series compatibility (same as original)
-                    series_match = base_compatibility.series_compatible(enc_series, base_series, enc_brand, base_brand)
+                    series_match = series_compatible(enc_series, base_series, enc_brand, base_brand)
                     if not series_match:
                         logger.debug(f"    ✗ Series mismatch")
                         continue
@@ -924,7 +925,7 @@ def find_compatible_products(sku):
                             and pd.notna(door_min_width)
                             and pd.notna(door_max_width)
                             and door_min_width <= tub_width <= door_max_width
-                            and bathtub_compatibility.series_compatible(
+                            and series_compatible(
                                 tub_series, door_series)):
 
                         # Format tub data for the frontend
@@ -999,7 +1000,7 @@ def find_compatible_products(sku):
                         and pd.notna(door_min_width)
                         and pd.notna(door_max_width)
                         and door_min_width <= base_width <= door_max_width
-                        and base_compatibility.series_compatible(
+                        and series_compatible(
                             base_series, door_series, base_brand, door_brand))
 
                     # Match criteria for corner installation with return panel
@@ -1008,7 +1009,7 @@ def find_compatible_products(sku):
                         and pd.notna(base_width) and pd.notna(door_min_width)
                         and pd.notna(door_max_width)
                         and door_min_width <= base_width <= door_max_width
-                        and base_compatibility.series_compatible(
+                        and series_compatible(
                             base_series, door_series, base_brand, door_brand))
 
                     if alcove_match or corner_match:
@@ -1087,7 +1088,7 @@ def find_compatible_products(sku):
                             and pd.notna(door_max_height) and
                             door_min_width <= shower_width <= door_max_width
                             and door_max_height <= shower_height
-                            and shower_compatibility.series_compatible(
+                            and series_compatible(
                                 shower_series, door_series)):
                         # Format shower data for the frontend
                         shower_data = shower.to_dict()
@@ -1163,7 +1164,7 @@ def find_compatible_products(sku):
                             and pd.notna(door_max_height) and
                             door_min_width <= tubshower_width <= door_max_width
                             and door_max_height <= tubshower_height
-                            and tubshower_compatibility.series_compatible(
+                            and tubseries_compatible(
                                 tubshower_series, door_series)):
                         # Format tub shower data for the frontend
                         tubshower_data = tubshower.to_dict()
@@ -1258,11 +1259,11 @@ def find_compatible_products(sku):
                     tub_id = str(tub.get("Unique ID", "")).strip()
 
                     # Check brand/family compatibility
-                    brand_match = bathtub_compatibility.bathtub_brand_family_match(
-                        tub_brand, tub_family, wall_brand, wall_family)
+                    brand_match = brand_family_match(
+                        tub_family, wall_family, BATHTUB_UTILE_FAMILIES)
 
                     # Check series compatibility
-                    series_match = bathtub_compatibility.series_compatible(
+                    series_match = series_compatible(
                         tub_series, wall_series)
 
                     # Skip if no brand or series match
@@ -1359,11 +1360,11 @@ def find_compatible_products(sku):
                         continue
 
                     # Check brand family compatibility
-                    brand_match = base_compatibility.brand_family_match(
-                        base_brand, base_family, wall_brand, wall_family)
+                    brand_match = brand_family_match(
+                        base_family, wall_family, SHOWER_BASE_UTILE_FAMILIES)
 
                     # Check series compatibility
-                    series_match = base_compatibility.series_compatible(
+                    series_match = series_compatible(
                         base_series, wall_series, base_brand, wall_brand)
 
                     # Skip if no brand or series match
