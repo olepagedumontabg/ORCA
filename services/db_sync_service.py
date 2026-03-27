@@ -1,13 +1,10 @@
 """
 Database Sync Service for Bathroom Compatibility Finder
 
-This service integrates with the existing FTP data update service to:
-1. Update the database when new Excel files are downloaded
-2. Recompute compatibilities for changed products
-3. Maintain sync between Excel files and database
+This service syncs Excel data into the database and recomputes compatibilities.
 
 Usage:
-  - Called automatically by data_update_service.py after successful FTP download
+  - Called automatically by the Salsify webhook worker after a successful sync
   - Can be run manually: python3 db_sync_service.py --sync
 """
 

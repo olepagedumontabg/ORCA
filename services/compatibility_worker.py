@@ -144,14 +144,6 @@ class CompatibilityWorker:
             from services import db_sync_service
             sync_result = db_sync_service.full_sync_workflow(temp_path, compute_compatibilities=False)
 
-            # Reload in-memory cache
-            try:
-                from services import data_update_service
-                data_update_service.load_data_into_memory(main_excel_path)
-                logger.info("Reloaded in-memory cache with updated product data")
-            except Exception as cache_error:
-                logger.warning(f"Could not reload cache: {cache_error}")
-
             # Clean up temp file
             try:
                 os.unlink(temp_path)
