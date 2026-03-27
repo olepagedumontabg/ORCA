@@ -1,0 +1,136 @@
+using Microsoft.AspNetCore.Mvc;
+using ORCA.Api.Services;
+
+namespace ORCA.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ProductsController : ControllerBase
+{
+    private readonly IProductService _productService;
+    private readonly ICompatibilityService _compatibilityService;
+
+    public ProductsController(IProductService productService, ICompatibilityService compatibilityService)
+    {
+        _productService = productService;
+        _compatibilityService = compatibilityService;
+    }
+
+    /// <summary>
+    /// GET /api/products?page=1&amp;pageSize=50&amp;category=Shower+Bases
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] string? category = null)
+    {
+        var (products, totalCount) = await _productService.GetAllAsync(page, pageSize, category);
+
+        return Ok(new
+        {
+            success = true,
+            products,
+            total = totalCount,
+            page,
+            pageSize
+        });
+    }
+
+    /// <summary>
+    /// GET /api/products/{id}
+    /// </summary>
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var product = await _productService.GetByIdAsync(id);
+        if (product == null)
+            return NotFound(new { success = false, error = $"Product not found: {id}" });
+
+        return Ok(new
+        {
+            success = true,
+            product = new
+            {
+                product.Id,
+                product.Sku,
+                name = product.ProductName,
+                product.Brand,
+                product.Series,
+                product.Family,
+                product.Category,
+                product.ImageUrl,
+                product.ProductPageUrl,
+                product.NominalDimensions
+            }
+        });
+    }
+
+    /// <summary>
+    /// GET /api/products/sku/{sku}
+    /// </summary>
+    [HttpGet("sku/{sku}")]
+    public async Task<IActionResult> GetBySku(string sku)
+    {
+        var product = await _productService.GetBySkuAsync(sku);
+        if (product == null)
+            return NotFound(new { success = false, error = $"Product not found: {sku}" });
+
+        return Ok(new
+        {
+            success = true,
+            product = new
+            {
+                product.Id,
+                product.Sku,
+                name = product.ProductName,
+                product.Brand,
+                product.Series,
+                product.Family,
+                product.Category,
+                product.ImageUrl,
+                product.ProductPageUrl,
+                product.NominalDimensions
+            }
+        });
+    }
+
+    /// <summary>
+    /// GET /api/products/{id}/compatible?category=Walls&amp;brand=MAAX&amp;limit=50
+    /// </summary>
+    [HttpGet("{id:int}/compatible")]
+    public async Task<IActionResult> GetCompatibleById(
+        int id,
+        [FromQuery] string? category = null,
+        [FromQuery] string? brand = null,
+        [FromQuery] int limit = 100)
+    {
+        var product = await _productService.GetByIdAsync(id);
+        if (product == null)
+            return NotFound(new { success = false, error = $"Product not found: {id}" });
+
+        var result = await _compatibilityService.GetCompatibleProductsAsync(
+            product.Sku, category, brand, limit);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /api/products/sku/{sku}/compatible?category=Walls&amp;brand=MAAX&amp;limit=50
+    /// </summary>
+    [HttpGet("sku/{sku}/compatible")]
+    public async Task<IActionResult> GetCompatibleBySku(
+        string sku,
+        [FromQuery] string? category = null,
+        [FromQuery] string? brand = null,
+        [FromQuery] int limit = 100)
+    {
+        var result = await _compatibilityService.GetCompatibleProductsAsync(
+            sku, category, brand, limit);
+
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
+    }
+}
