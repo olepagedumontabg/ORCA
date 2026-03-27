@@ -804,15 +804,13 @@ function compatibilityApp() {
                 }
             })
             .then(response => {
-                // Check if the response is ok before trying to parse as JSON
-                if (!response.ok) {
-                    throw new Error(`Server responded with status: ${response.status}`);
-                }
                 // Verify that we're getting JSON - check the content type
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error(`Expected JSON response but got ${contentType}`);
                 }
+                // Parse JSON for all responses including errors (404, 503, etc.)
+                // so structured data.error messages from ORCA.API are surfaced to the user
                 return response.json();
             })
             .then(data => {
