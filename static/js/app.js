@@ -796,12 +796,10 @@ function compatibilityApp() {
             this.hasSearched = true;
             this.currentSku = sku;
             
-            // Send the search request using JSON format
-            fetch('/search', {
-                method: 'POST',
-                body: JSON.stringify({ sku: sku }),
+            // Send the search request via ORCA.API
+            fetch(`/api/compatible/${encodeURIComponent(sku)}`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
@@ -862,7 +860,7 @@ function compatibilityApp() {
                     console.log("Full API response data:", data);
                     console.log("Compatibles array:", data.compatibles);
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
-                    this.currentSku = data.sku;
+                    this.currentSku = data.queried_child_sku || sku;
                     this.errorMessage = '';
                     
                     // Extract filter options from results
@@ -877,7 +875,7 @@ function compatibilityApp() {
                     // Display error message
                     this.productDetails = null;
                     this.compatibleProducts = [];
-                    this.errorMessage = data.message || 'An error occurred during the search';
+                    this.errorMessage = data.error || data.message || 'An error occurred during the search';
                 }
             })
             .catch(error => {
