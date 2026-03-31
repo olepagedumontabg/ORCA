@@ -2,7 +2,13 @@ modules = ["nodejs-20", "postgresql-16", "python-3.11", "python3", "dotnet-8.0"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["file", "glibcLocales", "openssl", "postgresql", "dotnetCorePackages.sdk_8_0_2xx"]
+packages = [
+  "file",
+  "glibcLocales",
+  "openssl",
+  "postgresql",
+  "dotnetCorePackages.sdk_8_0_2xx",
+]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -32,3 +38,8 @@ waitForPort = 5000
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[env]
+DOTNET_ROOT = "$HOME/.dotnet"
+PATH = "$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"
+DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "1"
