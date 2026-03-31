@@ -4,7 +4,6 @@ using ORCA.Api.Services;
 namespace ORCA.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -19,7 +18,7 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// GET /api/products?page=1&amp;pageSize=50&amp;category=Shower+Bases
     /// </summary>
-    [HttpGet]
+    [HttpGet("api/products")]
     public async Task<IActionResult> GetAll(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -40,65 +39,35 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// GET /api/products/{id}
     /// </summary>
-    [HttpGet("{id:int}")]
+    [HttpGet("api/products/{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var product = await _productService.GetByIdAsync(id);
         if (product == null)
             return NotFound(new { success = false, error = $"Product not found: {id}" });
 
-        return Ok(new
-        {
-            success = true,
-            product = new
-            {
-                product.Id,
-                product.Sku,
-                name = product.ProductName,
-                product.Brand,
-                product.Series,
-                product.Family,
-                product.Category,
-                product.ImageUrl,
-                product.ProductPageUrl,
-                product.NominalDimensions
-            }
-        });
+        return Ok(new { success = true, product = MapProduct(product) });
     }
 
     /// <summary>
-    /// GET /api/products/sku/{sku}
+    /// GET /api/product/{sku} — matches Python API route
+    /// GET /api/products/sku/{sku} — original C# route
     /// </summary>
-    [HttpGet("sku/{sku}")]
+    [HttpGet("api/product/{sku}")]
+    [HttpGet("api/products/sku/{sku}")]
     public async Task<IActionResult> GetBySku(string sku)
     {
         var product = await _productService.GetBySkuAsync(sku);
         if (product == null)
             return NotFound(new { success = false, error = $"Product not found: {sku}" });
 
-        return Ok(new
-        {
-            success = true,
-            product = new
-            {
-                product.Id,
-                product.Sku,
-                name = product.ProductName,
-                product.Brand,
-                product.Series,
-                product.Family,
-                product.Category,
-                product.ImageUrl,
-                product.ProductPageUrl,
-                product.NominalDimensions
-            }
-        });
+        return Ok(new { success = true, product = MapProduct(product) });
     }
 
     /// <summary>
     /// GET /api/products/{id}/compatible?category=Walls&amp;brand=MAAX&amp;limit=50
     /// </summary>
-    [HttpGet("{id:int}/compatible")]
+    [HttpGet("api/products/{id:int}/compatible")]
     public async Task<IActionResult> GetCompatibleById(
         int id,
         [FromQuery] string? category = null,
@@ -118,7 +87,7 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// GET /api/products/sku/{sku}/compatible?category=Walls&amp;brand=MAAX&amp;limit=50
     /// </summary>
-    [HttpGet("sku/{sku}/compatible")]
+    [HttpGet("api/products/sku/{sku}/compatible")]
     public async Task<IActionResult> GetCompatibleBySku(
         string sku,
         [FromQuery] string? category = null,
@@ -133,4 +102,22 @@ public class ProductsController : ControllerBase
 
         return Ok(result);
     }
+
+    private static object MapProduct(ORCA.Api.Domain.Entities.Product product) => new
+    {
+        product.Id,
+        product.Sku,
+        name = product.ProductName,
+        product.Brand,
+        product.Series,
+        product.Family,
+        product.Category,
+        product.ImageUrl,
+        product.ProductPageUrl,
+        product.NominalDimensions,
+        product.Length,
+        product.Width,
+        product.Height,
+        product.Ranking
+    };
 }

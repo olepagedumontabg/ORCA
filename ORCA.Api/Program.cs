@@ -5,7 +5,6 @@ using ORCA.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------- Database ----------
-// Read DATABASE_URL from environment (standard for Replit/Neon PostgreSQL)
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -18,7 +17,12 @@ string connectionString;
 if (databaseUrl.StartsWith("postgresql://") || databaseUrl.StartsWith("postgres://"))
 {
     var uri = new Uri(databaseUrl);
-    connectionString = $"Host={uri.Host};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+    var userInfo = uri.UserInfo.Split(':');
+    var host = uri.Host;
+    var db = uri.AbsolutePath.TrimStart('/');
+    var user = userInfo[0];
+    var pass = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    connectionString = $"Host={host};Database={db};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
 }
 else
 {
@@ -26,11 +30,17 @@ else
 }
 
 builder.Services.AddDbContext<OrcaDbContext>(options =>
-    options.UseNpgsql(databaseUrl, npgsql =>
+    options.UseNpgsql(connectionString, npgsql =>
     {
         npgsql.EnableRetryOnFailure(3);
         npgsql.CommandTimeout(30);
     }));
+
+// ---------- HttpClient ----------
+builder.Services.AddHttpClient<ISalsifyService, SalsifyService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(10); // Excel files can be large
+});
 
 // ---------- Services ----------
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -58,7 +68,6 @@ builder.Services.AddCors(options =>
 });
 
 // ---------- Kestrel ----------
-// Replit sets PORT env var; default to 5000
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
