@@ -53,15 +53,18 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-            <div class="flex items-center">
-                <img src="{{ url_for('static', filename='images/logo-header.png') }}" alt="Logo" class="h-12">
-                <h1 class="ml-4 text-2xl font-bold text-gray-900">Compatibility Finder Documentation</h1>
+    <header class="bg-white shadow-sm border-b border-gray-200 h-20">
+        <div class="container mx-auto px-4 h-full">
+            <div class="flex items-center justify-between h-full">
+                <a href="/" class="flex items-center">
+                    <img src="{{ url_for('static', filename='images/abg-logo-header.svg') }}" alt="ABG Logo" class="h-6 w-auto">
+                </a>
+                <nav class="flex space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-primary transition">Home</a>
+                    <a href="/sync-history" class="text-gray-600 hover:text-primary transition">Sync History</a>
+                    <a href="/documentation" class="text-primary font-semibold">API Docs</a>
+                </nav>
             </div>
-            <nav>
-                <a href="/" class="text-primary hover:text-indigo-900 text-sm font-medium">Return to App</a>
-            </nav>
         </div>
     </header>
     
