@@ -1,8 +1,8 @@
-modules = ["python-3.11", "python3", "postgresql-16"]
+modules = ["nodejs-20", "postgresql-16", "python-3.11", "python3", "dotnet-8.0"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["file", "glibcLocales", "openssl", "postgresql"]
+packages = ["file", "glibcLocales", "openssl", "postgresql", "dotnetCorePackages.sdk_8_0_2xx"]
 
 [deployment]
 deploymentTarget = "autoscale"
