@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, jsonify, send_file, abort
 import pandas as pd
 import io
 import traceback
+from flasgger import Swagger
 from logic import compatibility
 from services import data_loader
 
@@ -19,6 +20,43 @@ except ImportError:
 # Configure app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+
+# Swagger / OpenAPI documentation
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": "apispec",
+            "route": "/apispec.json",
+            "rule_filter": lambda rule: rule.rule.startswith("/api/"),
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/api/docs",
+}
+swagger_template = {
+    "info": {
+        "title": "Bathroom Compatibility Finder API",
+        "description": (
+            "REST API for finding compatible bathroom products "
+            "(shower bases, bathtubs, doors, walls). "
+            "Consumed by the ORCA ASP.NET front-end."
+        ),
+        "version": "1.0.0",
+        "contact": {"name": "American Bath Group"},
+    },
+    "basePath": "/",
+    "schemes": ["https", "http"],
+    "tags": [
+        {"name": "Compatibility", "description": "Product compatibility queries"},
+        {"name": "Products", "description": "Product catalogue"},
+        {"name": "Sync", "description": "Salsify data sync management"},
+        {"name": "System", "description": "Health and diagnostics"},
+    ],
+}
+Swagger(app, config=swagger_config, template=swagger_template)
 
 # Configure logging
 logging.basicConfig(
@@ -404,25 +442,69 @@ def search():
 @app.route('/api/compatible/<sku>', methods=['GET'])
 def api_get_compatible(sku):
     """
-    REST API endpoint to get compatible products for a given SKU.
-
-    Supports multi-SKU lookup with priority matching:
-    1. Child SKU (path parameter)
-    2. Parent SKU (query parameter)
-    3. Unique ID (query parameter)
-
-    Query Parameters:
-        - parent_sku: Parent SKU for compatibility lookup (optional)
-        - unique_id: Unique ID for compatibility lookup (optional)
-        - category: Filter by category (optional)
-        - brand: Filter by brand name (optional, case-insensitive)
-        - limit: Limit results per category (optional, default: 100)
-
-    Example: GET /api/compatible/410000-501-001-000?parent_sku=410000&unique_id=410000-501-001
-    Example: GET /api/compatible/FB03060M
-    Example: GET /api/compatible/FB03060M?category=Doors&limit=20
-    Example: GET /api/compatible/FB03060M?brand=MAAX
-    Example: GET /api/compatible/FB03060M?brand=Neptune&category=Walls
+    Get compatible products for a SKU.
+    Returns all products compatible with the given SKU, grouped by category.
+    Supports multi-SKU lookup via optional parent_sku and unique_id parameters.
+    ---
+    tags:
+      - Compatibility
+    parameters:
+      - name: sku
+        in: path
+        required: true
+        type: string
+        description: Child SKU of the product to look up (e.g. FB03060M)
+      - name: parent_sku
+        in: query
+        required: false
+        type: string
+        description: Parent SKU for fallback lookup
+      - name: unique_id
+        in: query
+        required: false
+        type: string
+        description: Unique ID for fallback lookup
+      - name: category
+        in: query
+        required: false
+        type: string
+        description: Filter results to a specific category (e.g. Shower Doors)
+      - name: brand
+        in: query
+        required: false
+        type: string
+        description: Filter results to a specific brand (case-insensitive)
+      - name: limit
+        in: query
+        required: false
+        type: integer
+        default: 100
+        description: Maximum number of results per category
+    responses:
+      200:
+        description: Compatible products grouped by category
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            queried_child_sku:
+              type: string
+            compatibles:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  products:
+                    type: array
+                    items:
+                      type: object
+      404:
+        description: Product not found
+      503:
+        description: Database not available
     """
     try:
         child_sku = sku.strip().upper()
@@ -697,11 +779,34 @@ def api_get_compatible(sku):
 @app.route('/api/product/<sku>', methods=['GET'])
 def api_get_product(sku):
     """
-    REST API endpoint to get details about a specific product.
-
-    Returns JSON with product details only (no compatibility data).
-
-    Example: GET /api/product/FB03060M
+    Get details for a specific product SKU.
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: sku
+        in: path
+        required: true
+        type: string
+        description: Product SKU (e.g. FB03060M)
+    responses:
+      200:
+        description: Product details
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            sku:
+              type: string
+            category:
+              type: string
+            product:
+              type: object
+            data_source:
+              type: string
+      404:
+        description: Product not found
     """
     try:
         sku = sku.strip().upper()
@@ -773,16 +878,51 @@ def api_get_product(sku):
 @app.route('/api/products', methods=['GET'])
 def api_list_products():
     """
-    REST API endpoint to list all products.
-
-    Query Parameters:
-        - category: Filter by category (optional)
-        - brand: Filter by brand (optional)
-        - limit: Number of results to return (default: 100, max: 1000)
-        - offset: Number of results to skip (default: 0)
-
-    Example: GET /api/products
-    Example: GET /api/products?category=Shower Bases&brand=Swan&limit=50
+    List all products in the catalogue.
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: category
+        in: query
+        required: false
+        type: string
+        description: Filter by category (e.g. Shower Bases)
+      - name: brand
+        in: query
+        required: false
+        type: string
+        description: Filter by brand name (case-insensitive)
+      - name: limit
+        in: query
+        required: false
+        type: integer
+        default: 100
+        description: Number of results to return (max 1000)
+      - name: offset
+        in: query
+        required: false
+        type: integer
+        default: 0
+        description: Number of results to skip for pagination
+    responses:
+      200:
+        description: Paginated list of products
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            total_count:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            products:
+              type: array
+              items:
+                type: object
     """
     try:
         category_filter = request.args.get('category', '').strip()
@@ -877,11 +1017,29 @@ def api_list_products():
 @app.route('/api/categories', methods=['GET'])
 def api_list_categories():
     """
-    REST API endpoint to list all available product categories.
-
-    Returns JSON with category names and product counts.
-
-    Example: GET /api/categories
+    List all available product categories.
+    ---
+    tags:
+      - Products
+    responses:
+      200:
+        description: List of categories with product counts
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            total_categories:
+              type: integer
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  product_count:
+                    type: integer
     """
     try:
         logger.info("API request for categories list")
@@ -914,11 +1072,29 @@ def api_list_categories():
 @app.route('/api/health', methods=['GET'])
 def api_health():
     """
-    Health check endpoint for monitoring.
-
-    Returns system status and data freshness information.
-
-    Example: GET /api/health
+    Health check — returns system status and data stats.
+    ---
+    tags:
+      - System
+    responses:
+      200:
+        description: System is healthy
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            status:
+              type: string
+              example: healthy
+            total_products:
+              type: integer
+            categories:
+              type: integer
+            data_source:
+              type: object
+      500:
+        description: System unhealthy
     """
     try:
         data_source_info = data_loader.get_data_source_info()
@@ -962,16 +1138,33 @@ def api_health():
 @app.route('/api/compute-compatibilities', methods=['POST'])
 def compute_compatibilities():
     """
-    Manually trigger compatibility computation for products without compatibilities.
-
-    This endpoint computes compatibilities in the background without blocking.
-    Use this after webhook syncs to finish processing new products.
-
-    Query params:
-        ?all=true - Recompute ALL compatibilities (slow)
-        (default) - Only compute for products missing compatibilities (fast)
-
-    Returns immediately with 202 Accepted while processing continues in background.
+    Trigger compatibility computation in the background.
+    By default only fills gaps; pass ?all=true to recompute everything.
+    Returns 202 Accepted immediately while processing continues in background.
+    ---
+    tags:
+      - System
+    parameters:
+      - name: all
+        in: query
+        required: false
+        type: boolean
+        default: false
+        description: Set to true to recompute ALL compatibilities (slow, ~10-15 min)
+    responses:
+      202:
+        description: Computation started in background
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message:
+              type: string
+            estimated_duration:
+              type: string
+      500:
+        description: Server error
     """
     try:
         compute_all = request.args.get('all', '').lower() == 'true'
@@ -1061,19 +1254,38 @@ def compute_compatibilities():
 @app.route('/api/salsify/webhook', methods=['POST'])
 def salsify_webhook():
     """
-    Salsify webhook endpoint for automated data updates.
-
-    Salsify sends a POST request when publication completes with:
-    {
-        "channel_id": "...",
-        "channel_name": "...",
-        "user_id": "...",
-        "publication_status": "completed",
-        "product_feed_export_url": "https://s3.amazonaws.com/...",
-        "digital_asset_export_url": "..."
-    }
-
-    Authentication: ?key=<SALSIFY_WEBHOOK_SECRET>
+    Receive a Salsify publication webhook and trigger a background data sync.
+    Authenticated via ?key=<SALSIFY_WEBHOOK_SECRET> query parameter.
+    ---
+    tags:
+      - Sync
+    parameters:
+      - name: key
+        in: query
+        required: true
+        type: string
+        description: Webhook secret key for authentication
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            channel_id:
+              type: string
+            publication_status:
+              type: string
+              example: completed
+            product_feed_export_url:
+              type: string
+              description: S3 URL of the exported Excel file
+    responses:
+      200:
+        description: Webhook received and sync queued
+      401:
+        description: Unauthorized — invalid key
+      500:
+        description: Webhook not configured or internal error
     """
     try:
         webhook_secret = os.environ.get('SALSIFY_WEBHOOK_SECRET')
@@ -1183,15 +1395,27 @@ def salsify_webhook():
 @app.route('/api/salsify/status', methods=['GET'])
 def salsify_status():
     """
-    Get status of Salsify webhook syncs.
-
-    Query Parameters:
-        - limit: Number of recent syncs to return (default: 10, max: 100)
-        - sync_id: Get specific sync by ID
-
-    Example: GET /api/salsify/status
-    Example: GET /api/salsify/status?sync_id=123
-    Example: GET /api/salsify/status?limit=5
+    Get the status of recent Salsify webhook syncs.
+    ---
+    tags:
+      - Sync
+    parameters:
+      - name: limit
+        in: query
+        required: false
+        type: integer
+        default: 10
+        description: Number of recent syncs to return (max 100)
+      - name: sync_id
+        in: query
+        required: false
+        type: integer
+        description: Get a specific sync record by ID
+    responses:
+      200:
+        description: Sync status records
+      404:
+        description: Specific sync_id not found
     """
     try:
         from models import get_session, SyncStatus
@@ -1268,15 +1492,32 @@ def salsify_status():
 @app.route('/api/salsify/cleanup', methods=['POST'])
 def salsify_cleanup():
     """
-    Cleanup stuck webhook syncs that have been in 'processing' status for too long.
-
-    This handles cases where background threads were killed due to app restarts.
-
-    Query Parameters:
-        - hours: Number of hours to consider a sync stuck (default: 2)
-
-    Example: POST /api/salsify/cleanup
-    Example: POST /api/salsify/cleanup?hours=1
+    Clean up stuck sync records that have been processing for too long.
+    Marks them as failed so new syncs can proceed normally.
+    ---
+    tags:
+      - Sync
+    parameters:
+      - name: hours
+        in: query
+        required: false
+        type: integer
+        default: 2
+        description: Mark syncs stuck longer than this many hours as failed
+    responses:
+      200:
+        description: Cleanup result
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            cleaned_count:
+              type: integer
+            cleaned_ids:
+              type: array
+              items:
+                type: integer
     """
     try:
         from models import get_session, SyncStatus
