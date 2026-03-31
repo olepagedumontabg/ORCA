@@ -168,7 +168,20 @@ def get_engine():
         database_url = os.environ.get('DATABASE_URL')
         if not database_url:
             raise ValueError("DATABASE_URL environment variable is not set")
-        
+
+        # Strip whitespace from the URL and from every query-string value,
+        # which prevents errors like: invalid channel_binding value: "require  "
+        from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
+        parsed = urlparse(database_url.strip())
+        if parsed.query:
+            cleaned_params = {
+                k: [v.strip() for v in vals]
+                for k, vals in parse_qs(parsed.query, keep_blank_values=True).items()
+            }
+            cleaned_query = urlencode(cleaned_params, doseq=True)
+            parsed = parsed._replace(query=cleaned_query)
+        database_url = urlunparse(parsed)
+
         # Create engine with optimized pooling settings
         _engine = create_engine(
             database_url,
