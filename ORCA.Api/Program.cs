@@ -13,6 +13,18 @@ if (string.IsNullOrEmpty(databaseUrl))
     throw new InvalidOperationException(
         "DATABASE_URL environment variable or ConnectionStrings:DefaultConnection must be set.");
 
+// Convert URL format to Npgsql key=value format if needed
+string connectionString;
+if (databaseUrl.StartsWith("postgresql://") || databaseUrl.StartsWith("postgres://"))
+{
+    var uri = new Uri(databaseUrl);
+    connectionString = $"Host={uri.Host};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+}
+else
+{
+    connectionString = databaseUrl;
+}
+
 builder.Services.AddDbContext<OrcaDbContext>(options =>
     options.UseNpgsql(databaseUrl, npgsql =>
     {
