@@ -27,9 +27,9 @@ public class CompatibilityController : ControllerBase
         string sku,
         [FromQuery] string? category = null,
         [FromQuery] string? brand = null,
-        [FromQuery] int limit = 100)
+        [FromQuery] string? serie = null)
     {
-        var result = await _compatibilityService.GetCompatibleProductsAsync(sku, category, brand, limit);
+        var result = await _compatibilityService.GetCompatibleProductsAsync(sku, category, brand, serie);
 
         if (!result.Success)
             return NotFound(result);

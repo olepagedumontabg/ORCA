@@ -25,11 +25,9 @@ public class CompatibilityService : ICompatibilityService
         _logger = logger;
     }
 
-    public async Task<CompatibilityResultDto> GetCompatibleProductsAsync(
-        string sku, string? categoryFilter = null, string? brandFilter = null, int limit = 100)
+    public async Task<CompatibilityResultDto> GetCompatibleProductsAsync(string sku, string? categoryFilter = null, string? brandFilter = null, string? serieFilter = null)
     {
         sku = sku.Trim().ToUpper();
-        limit = Math.Clamp(limit, 1, 100);
 
         var product = await _productService.GetBySkuAsync(sku);
 
@@ -69,7 +67,7 @@ public class CompatibilityService : ICompatibilityService
         }
 
         // Apply filters
-        categories = ApplyFilters(categories, categoryFilter, brandFilter, limit);
+        categories = ApplyFilters(categories, categoryFilter, brandFilter, serieFilter);
 
         // Build incompatibility reasons dictionary
         var incompatibilityReasons = new Dictionary<string, string>();
@@ -92,7 +90,7 @@ public class CompatibilityService : ICompatibilityService
     public async Task<CompatibilityResultDto> SearchAsync(CompatibilitySearchRequest request)
     {
         return await GetCompatibleProductsAsync(
-            request.Sku, request.Category, request.Brand, request.Limit);
+            request.Sku, request.Category, request.Brand, request.Serie);
     }
 
     public async Task<CompatibilityResultDto> ComputeCompatibilitiesAsync(string sku)
@@ -370,7 +368,7 @@ public class CompatibilityService : ICompatibilityService
 
     private static List<CompatibilityCategoryResult> ApplyFilters(
         List<CompatibilityCategoryResult> categories,
-        string? categoryFilter, string? brandFilter, int limit)
+        string? categoryFilter, string? brandFilter, string serieFilter)
     {
         if (!string.IsNullOrWhiteSpace(categoryFilter))
         {
@@ -389,10 +387,19 @@ public class CompatibilityService : ICompatibilityService
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(serieFilter))
+        {
+            foreach (var cat in categories)
+            {
+                cat.Products = cat.Products
+                    .Where(p => string.Equals(p.Series, serieFilter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
+
         foreach (var cat in categories)
         {
-            if (cat.Products.Count > limit)
-                cat.Products = cat.Products.Take(limit).ToList();
+            cat.Products = cat.Products.ToList();
         }
 
         return categories;

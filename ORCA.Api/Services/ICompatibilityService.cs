@@ -9,7 +9,7 @@ public interface ICompatibilityService
     /// falls back to on-demand computation via the compatibility engine.
     /// </summary>
     Task<CompatibilityResultDto> GetCompatibleProductsAsync(
-        string sku, string? categoryFilter = null, string? brandFilter = null, int limit = 100);
+        string sku, string? categoryFilter = null, string? brandFilter = null, string? serieFilter = null);
 
     /// <summary>
     /// Search for compatible products using a structured request.

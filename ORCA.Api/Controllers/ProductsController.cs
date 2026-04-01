@@ -72,14 +72,14 @@ public class ProductsController : ControllerBase
         int id,
         [FromQuery] string? category = null,
         [FromQuery] string? brand = null,
-        [FromQuery] int limit = 100)
+        [FromQuery] string? serie = null)
     {
         var product = await _productService.GetByIdAsync(id);
         if (product == null)
             return NotFound(new { success = false, error = $"Product not found: {id}" });
 
         var result = await _compatibilityService.GetCompatibleProductsAsync(
-            product.Sku, category, brand, limit);
+            product.Sku, category, brand, serie);
 
         return Ok(result);
     }
@@ -92,10 +92,10 @@ public class ProductsController : ControllerBase
         string sku,
         [FromQuery] string? category = null,
         [FromQuery] string? brand = null,
-        [FromQuery] int limit = 100)
+        [FromQuery] string? serie = null)
     {
         var result = await _compatibilityService.GetCompatibleProductsAsync(
-            sku, category, brand, limit);
+            sku, category, brand, serie);
 
         if (!result.Success)
             return NotFound(result);
