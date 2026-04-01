@@ -84,7 +84,15 @@ if (Directory.Exists(staticPath))
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(staticPath),
-        RequestPath = "/static"
+        RequestPath = "/static",
+        OnPrepareResponse = ctx =>
+        {
+            var ext = Path.GetExtension(ctx.File.Name).ToLowerInvariant();
+            if (ext is ".js" or ".css")
+            {
+                ctx.Context.Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
+            }
+        }
     });
 }
 
