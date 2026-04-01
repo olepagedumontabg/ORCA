@@ -48,6 +48,23 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICompatibilityService, CompatibilityService>();
 builder.Services.AddScoped<ICompatibilityEngine, CompatibilityEngine>();
 
+// ---------- Swagger ----------
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "ORCA Compatibility API",
+        Version = "v1",
+        Description = "Bathroom product compatibility finder — identifies compatible shower bases, bathtubs, doors, walls, screens, and more."
+    });
+
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        options.IncludeXmlComments(xmlPath);
+});
+
 // ---------- Controllers ----------
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -98,6 +115,12 @@ if (Directory.Exists(staticPath))
 
 // ---------- Middleware ----------
 app.UseCors();
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "ORCA Compatibility API v1");
+    options.RoutePrefix = "swagger";
+});
 app.MapControllers();
 
 // ---------- Startup info ----------
