@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compatibility Finder Documentation</title>
-    
-    <!-- Tailwind CSS CDN -->
+    <title>API Documentation — Compatibility Finder</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Custom styles -->
     <link rel="stylesheet" href="/static/css/styles.css">
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -22,37 +19,33 @@
             }
         }
     </script>
-    
+
     <style>
-        /* Table styles */
-        .doc-table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        .doc-table th, .doc-table td {
-            border: 1px solid #e5e7eb;
-            padding: 8px 12px;
-        }
-        .doc-table th {
-            background-color: #f3f4f6;
-            text-align: left;
-        }
-        .doc-table tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
-        
-        /* Code block styles */
-        .code-block {
-            background-color: #f3f4f6;
-            border-radius: 6px;
-            padding: 12px;
-            font-family: monospace;
-            overflow-x: auto;
-            white-space: pre;
-        }
+        .method-get    { background: #D1FAE5; color: #065F46; }
+        .method-post   { background: #DBEAFE; color: #1E40AF; }
+        .method-delete { background: #FEE2E2; color: #991B1B; }
+        .method-badge  { display: inline-block; font-size: 0.7rem; font-weight: 700;
+                         padding: 2px 8px; border-radius: 4px; letter-spacing: .04em;
+                         font-family: monospace; vertical-align: middle; }
+        .endpoint-path { font-family: monospace; font-size: 0.95rem; color: #111827; font-weight: 600; }
+        .param-table   { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+        .param-table th, .param-table td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
+        .param-table th { background: #f9fafb; font-weight: 600; color: #374151; }
+        .param-table code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; }
+        .code-block { background: #f3f4f6; border-radius: 6px; padding: 12px 14px;
+                      font-family: monospace; font-size: 0.8rem; overflow-x: auto;
+                      white-space: pre; color: #1f2937; }
+        .toc-link { display: block; color: #001A70; font-size: 0.875rem; padding: 2px 0; }
+        .toc-link:hover { text-decoration: underline; }
+        .section-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 2rem; }
+        .section-card > .section-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f3f4f6; }
+        .section-card > .section-body   { padding: 1.5rem; }
+        .endpoint-block { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+        .endpoint-block:last-child { margin-bottom: 0; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
+
     <header class="bg-white shadow-sm border-b border-gray-200 h-20">
         <div class="container mx-auto px-4 h-full">
             <div class="flex items-center justify-between h-full">
@@ -62,575 +55,486 @@
                 <nav class="flex space-x-6">
                     <a href="/" class="text-gray-600 hover:text-primary transition">Home</a>
                     <a href="/sync-history" class="text-gray-600 hover:text-primary transition">Sync History</a>
-                    <a href="/swagger" class="text-gray-600 hover:text-primary transition">API Docs</a>
+                    <a href="/documentation" class="text-primary font-semibold">API Docs</a>
                 </nav>
             </div>
         </div>
     </header>
-    
-    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div class="bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="text-lg leading-6 font-medium text-gray-900 mb-6">Table of Contents</div>
-                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-600">
-                    <li><a href="#overview" class="text-primary hover:underline">Application Overview</a></li>
-                    <li><a href="#search" class="text-primary hover:underline">Search Functionality</a></li>
-                    <li><a href="#compatibility" class="text-primary hover:underline">Compatibility Logic</a></li>
-                    <li><a href="#filters" class="text-primary hover:underline">Filtering System</a></li>
-                    <li><a href="#data-updates" class="text-primary hover:underline">Data Update Process</a></li>
-                    <li><a href="#architecture" class="text-primary hover:underline">Application Architecture</a></li>
-                    <li><a href="#faq" class="text-primary hover:underline">FAQ & Troubleshooting</a></li>
-                </ul>
+
+    <main class="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+
+        <!-- Page title -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">API Documentation</h1>
+            <p class="mt-1 text-gray-500 text-sm">A guide to the ORCA Compatibility Finder API for developers and integrators.</p>
+        </div>
+
+        <!-- Table of contents -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="text-base font-semibold text-gray-900">Table of Contents</h2>
+            </div>
+            <div class="section-body grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+                <div>
+                    <a href="#overview"       class="toc-link">1. Overview</a>
+                    <a href="#base-url"        class="toc-link">2. Base URL &amp; Format</a>
+                    <a href="#endpoints-products"    class="toc-link">3. Products</a>
+                    <a href="#endpoints-compat"      class="toc-link">4. Compatibility</a>
+                </div>
+                <div>
+                    <a href="#endpoints-salsify"     class="toc-link">5. Salsify / Data Sync</a>
+                    <a href="#endpoints-utility"     class="toc-link">6. Utility</a>
+                    <a href="#compat-logic"           class="toc-link">7. How Compatibility Works</a>
+                    <a href="#data-flow"              class="toc-link">8. Data Flow</a>
+                </div>
             </div>
         </div>
-        
-        <section id="overview" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Application Overview</h2>
-                <p class="text-gray-600 mb-4">
-                    The Compatibility Finder is a web-based application designed to help users identify compatible bathroom products. 
-                    By searching for a specific SKU, users can find all compatible products across various categories such as:
+
+        <!-- 1. Overview -->
+        <div id="overview" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">1. Overview</h2>
+            </div>
+            <div class="section-body text-gray-600 space-y-3 text-sm leading-relaxed">
+                <p>
+                    The <strong>ORCA Compatibility Finder</strong> is a REST API that identifies which bathroom products work together.
+                    Given a product SKU, it returns every compatible product across all relevant categories — shower doors, walls,
+                    screens, return panels, bathtubs, and more.
                 </p>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li>Shower Bases</li>
-                    <li>Shower Doors</li>
-                    <li>Tub Doors</li>
-                    <li>Shower Walls</li>
-                    <li>Return Panels</li>
-                    <li>Bathtubs</li>
-                </ul>
-                <p class="text-gray-600 mb-4">
-                    The application uses real-time data from an Excel spreadsheet that is automatically updated daily through FTP.
-                    It implements sophisticated compatibility algorithms to match products based on dimensions, series compatibility,
-                    and brand/family relationships.
+                <p>
+                    Product data is synchronized automatically from <strong>Salsify PIM</strong> via a webhook. When Salsify publishes
+                    a new Excel export, the API downloads it, upserts every product into the database, and recomputes all compatibility
+                    pairs in the background — all without any downtime.
+                </p>
+                <p>
+                    Compatibility results can also be pre-computed and cached in the database, or forced on-demand per SKU. A manual
+                    override system (whitelist / blacklist) lets administrators fine-tune specific pairs.
                 </p>
             </div>
-        </section>
-        
-        <section id="search" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Search Functionality</h2>
-                <p class="text-gray-600 mb-4">
-                    The search functionality allows users to find products by either SKU or product name.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Search Features:</h3>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Suggestive Search:</strong> As you type (3+ characters), the system suggests matching SKUs and product names</li>
-                    <li><strong>Dual Search:</strong> Search by either SKU or product name</li>
-                    <li><strong>Keyboard Navigation:</strong> Use arrow keys to navigate suggestions and Enter to select</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">How Search Works:</h3>
-                <ol class="list-decimal pl-5 mb-4 text-gray-600">
-                    <li>As you type, the application sends a request to the server with your query</li>
-                    <li>The server searches across all Excel worksheets for matches in both SKU and Product Name fields</li>
-                    <li>Matching results are returned to the dropdown in format "SKU - Product Name"</li>
-                    <li>When you select an item, only the SKU portion is extracted for searching</li>
-                    <li>The search then finds the detailed information for that SKU and identifies all compatible products</li>
-                </ol>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Implementation Details:</h3>
-                <p class="text-gray-600 mb-4">
-                    The search functionality is implemented using AlpineJS for the UI interactions and vanilla JavaScript DOM manipulation
-                    for the suggestion dropdown. Search requests are processed by a Flask endpoint that queries the in-memory data.
-                </p>
-                <div class="code-block text-sm text-gray-800">
-// When a suggestion is selected:
-function selectSuggestionDirect(suggestion, index) {
-    // Extract just the SKU part (everything before the " - ")
-    const skuMatch = suggestion.match(/^(.*?)(?:\s+-\s+|$)/);
-    const extractedSku = skuMatch ? skuMatch[1].trim() : suggestion;
-    
-    // Update the search input with just the SKU
-    this.searchInput = extractedSku;
-    
-    // Close suggestions dropdown
-    this.closeSuggestions();
+        </div>
+
+        <!-- 2. Base URL & Format -->
+        <div id="base-url" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">2. Base URL &amp; Format</h2>
+            </div>
+            <div class="section-body text-sm text-gray-600 space-y-4">
+                <div>
+                    <p class="mb-2">All API routes are prefixed with <code class="bg-gray-100 px-1 rounded font-mono">/api/</code>.
+                    Responses are JSON. Field names use <strong>snake_case</strong>.</p>
+                    <div class="code-block">Base URL: https://&lt;your-domain&gt;
+
+Content-Type: application/json
+Accept:       application/json</div>
+                </div>
+                <div>
+                    <p class="mb-2 font-medium text-gray-700">Successful response shape (example):</p>
+                    <div class="code-block">{
+  "success": true,
+  "product": { ... }
 }</div>
+                </div>
+                <div>
+                    <p class="mb-2 font-medium text-gray-700">Error response shape:</p>
+                    <div class="code-block">{
+  "success": false,
+  "error": "Product not found: 99999"
+}</div>
+                </div>
             </div>
-        </section>
-        
-        <section id="compatibility" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Product Compatibility Logic</h2>
-                <p class="text-gray-600 mb-4">
-                    The compatibility system uses sophisticated algorithms to match products based on dimensions, series compatibility,
-                    brand relationships, and specific business rules for each product category. The system supports bidirectional
-                    compatibility searches.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Shower Base Compatibility</h3>
-                <p class="text-gray-600 mb-4">
-                    When searching for a shower base, the system finds compatible shower doors, shower screens, walls, and return panels.
-                </p>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Doors:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Dimensional Match:</strong> Base max door width must be between door's minimum and maximum width</li>
-                    <li><strong>Installation Type:</strong> Only alcove and corner bases are compatible with doors</li>
-                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
-                    <li><strong>Door Type Validation:</strong> Only approved door types (Pivot, Sliding, Bypass) are considered</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Screens:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Width Calculation:</strong> Max Door Width - Fixed Panel Width must be > 22 inches</li>
-                    <li><strong>Installation Type:</strong> Compatible with both alcove and corner bases</li>
-                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Walls:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Brand/Family Match:</strong> Uses brand family matching logic</li>
-                    <li><strong>Nominal Dimensions:</strong> Exact match preferred for shower-type walls</li>
-                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
-                    <li><strong>Special Rules:</strong> "utile" and "nextile" families have specific base family requirements</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Bathtub Compatibility</h3>
-                <p class="text-gray-600 mb-4">
-                    Bathtub compatibility includes tub doors, tub screens, and walls with specific dimensional matching.
-                </p>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Tub Doors:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Installation Requirement:</strong> Only alcove bathtubs are compatible with doors</li>
-                    <li><strong>Dimensional Match:</strong> Tub max door width must be between door's minimum and maximum width</li>
-                    <li><strong>Series Compatibility:</strong> Must pass bathtub series compatibility rules</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Tub Screens:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Installation Requirement:</strong> Only alcove bathtubs are compatible with screens</li>
-                    <li><strong>Width Calculation:</strong> Tub Max Door Width - Screen Fixed Panel Width must be > 22 inches</li>
-                    <li><strong>Series Compatibility:</strong> Must pass bathtub series compatibility rules</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Walls:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Exact Nominal Match:</strong> Priority given to walls with exact nominal dimensions</li>
-                    <li><strong>Cut-to-Size Walls:</strong> For walls marked "Cut to Size = Yes", finds closest dimensions that are larger than tub</li>
-                    <li><strong>Family Grouping:</strong> Cut walls are grouped by family and closest match per family is selected</li>
-                    <li><strong>Brand/Family Rules:</strong> Special matching rules for bathtub brand/family combinations</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Shower Compatibility</h3>
-                <p class="text-gray-600 mb-4">
-                    Shower units are compatible with doors based on dimensional and series matching.
-                </p>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Doors:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Dimensional Match:</strong> Shower max door width must be between door's minimum and maximum width</li>
-                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
-                    <li><strong>Installation Match:</strong> Shower installation type must match door requirements</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Tub Shower Compatibility</h3>
-                <p class="text-gray-600 mb-4">
-                    Tub showers use similar logic to regular showers but with specific tub shower requirements.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Bidirectional Screen Compatibility</h3>
-                <p class="text-gray-600 mb-4">
-                    The system supports reverse compatibility searches for screens to find compatible bases/tubs.
-                </p>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Shower Screen → Shower Base:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Width Calculation:</strong> Base Max Door Width - Screen Fixed Panel Width must be > 22 inches</li>
-                    <li><strong>Installation Types:</strong> Finds alcove and corner bases</li>
-                    <li><strong>Series Compatibility:</strong> Must pass series compatibility rules</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Tub Screen → Bathtub:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Width Calculation:</strong> Tub Max Door Width - Screen Fixed Panel Width must be > 22 inches</li>
-                    <li><strong>Series Compatibility:</strong> Must pass bathtub series compatibility rules</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Series Compatibility Rules</h3>
-                <p class="text-gray-600 mb-4">
-                    Series compatibility is a core business rule that determines which product lines work together.
-                </p>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">General Rules:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Same Series:</strong> Products with identical series are always compatible</li>
-                    <li><strong>Empty Series:</strong> If either product has no series, they are considered compatible</li>
-                    <li><strong>Retail Series:</strong> Compatible with Retail, MAAX, and Swan series</li>
-                    <li><strong>MAAX Series:</strong> Compatible with Retail, MAAX, Collection, and Professional</li>
-                    <li><strong>Collection/Professional:</strong> Compatible with MAAX, Collection, and Professional</li>
-                    <li><strong>Swan Series:</strong> Only compatible with Swan and Retail</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Brand/Family Matching Logic</h3>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Same Brand Rules:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li>If both products have the same brand, family must also match (if both have families)</li>
-                    <li>Products without family information are considered compatible within the same brand</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Cross-Brand Rules:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Neptune ↔ Maax:</strong> Special compatibility rule allowing Neptune bases with Maax walls</li>
-                    <li><strong>w&b Family:</strong> Products with "w&b" family only match with other "w&b" family products</li>
-                    <li><strong>utile/nextile Families:</strong> Special wall families with specific base family requirements</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Advanced Features</h3>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Combo Products:</h4>
-                <p class="text-gray-600 mb-4">
-                    Some doors are sold with return panels as combinations. The system handles these by:
-                </p>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li>Combining door and return panel information</li>
-                    <li>Using door properties for compatibility checking</li>
-                    <li>Displaying both components in results</li>
-                    <li>Proper ranking based on door component</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Blacklist/Whitelist System:</h4>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Blacklist:</strong> Prevents specific SKU pairs from being shown as compatible</li>
-                    <li><strong>Whitelist:</strong> Overrides incompatibility reasons for specific SKU pairs</li>
-                    <li><strong>Order Agnostic:</strong> Works regardless of search direction (A→B or B→A)</li>
-                </ul>
-                
-                <h4 class="text-md font-medium text-gray-800 mb-2">Incompatibility Reasons:</h4>
-                <p class="text-gray-600 mb-4">
-                    When products cannot be matched, the system provides specific reasons:
-                </p>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li>"Doors can't fit" - when dimensional requirements aren't met</li>
-                    <li>"Walls can't fit" - when wall dimensions are incompatible</li>
-                    <li>Custom messages from the data for specific scenarios</li>
-                </ul>
+        </div>
+
+        <!-- 3. Products -->
+        <div id="endpoints-products" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">3. Products</h2>
             </div>
-        </section>
-        
-        <section id="filters" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Filtering System</h2>
-                <p class="text-gray-600 mb-4">
-                    The filtering system allows users to refine compatibility results based on various criteria:
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Filter Types:</h3>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li><strong>Categories:</strong> Filter by product type (Shower Doors, Walls, etc.)</li>
-                    <li><strong>Brands:</strong> Filter by manufacturer brand</li>
-                    <li><strong>Series:</strong> Filter by product series</li>
-                    <li><strong>Glass Thickness:</strong> Filter by glass thickness (6mm, 8mm, etc.)</li>
-                    <li><strong>Door Types:</strong> Filter by door type (Sliding, Pivot, Bypass)</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">How Filtering Works:</h3>
-                <p class="text-gray-600 mb-4">
-                    When search results are displayed, the system analyzes all compatible products and extracts available filter options.
-                    These options are dynamically populated based on the current search results. When filters are applied:
-                </p>
-                <ol class="list-decimal pl-5 mb-4 text-gray-600">
-                    <li>The original compatibility results are preserved</li>
-                    <li>Each selected filter narrows down the visible results</li>
-                    <li>Multiple filters can be combined (e.g., Brand + Series)</li>
-                    <li>Combo products are filtered based on their main component's attributes</li>
-                    <li>Empty categories are automatically hidden</li>
-                </ol>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Implementation Detail:</h3>
-                <div class="code-block text-sm text-gray-800">
-function applyFilters() {
-    // Start with a copy of the original compatible products
-    this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
-    
-    // Apply category filters if any are selected
-    if (this.filters.selectedCategories.length > 0) {
-        this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(category => 
-            this.filters.selectedCategories.includes(category.category)
-        );
+            <div class="section-body space-y-5">
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/products</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">List all products. Supports pagination and category filtering.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>page</code></td><td>int</td><td>1</td><td>Page number</td></tr>
+                            <tr><td><code>pageSize</code></td><td>int</td><td>50</td><td>Results per page</td></tr>
+                            <tr><td><code>category</code></td><td>string</td><td>—</td><td>Filter by category name (e.g. <code>Shower Bases</code>)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/products?category=Shower+Bases&page=1&pageSize=20
+
+{
+  "success": true,
+  "products": [ { "id": 1, "sku": "100959", "name": "Biarritz 40", "category": "Shower Bases", ... } ],
+  "total": 142,
+  "page": 1,
+  "page_size": 20
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/product/{sku}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Get a single product by SKU. Also available at <code class="bg-gray-100 px-1 rounded font-mono text-xs">/api/products/sku/{sku}</code>.</p>
+                    <div class="code-block">GET /api/product/100959
+
+{
+  "success": true,
+  "product": {
+    "id": 1, "sku": "100959", "name": "Biarritz 40", "brand": "MAAX",
+    "series": "MAAX", "category": "Shower Bases",
+    "image_url": "https://...", "product_page_url": "https://..."
+  }
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/products/{id}</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Get a single product by its internal numeric database ID.</p>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/categories</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">List all product categories with the number of products in each.</p>
+                    <div class="code-block">GET /api/categories
+
+{
+  "success": true,
+  "categories": [
+    { "category": "Shower Bases", "count": 142 },
+    { "category": "Shower Doors", "count": 87 },
+    ...
+  ]
+}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 4. Compatibility -->
+        <div id="endpoints-compat" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">4. Compatibility</h2>
+            </div>
+            <div class="section-body space-y-5">
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/compatible/{sku}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">
+                        The main compatibility lookup. Returns all products compatible with the given SKU, grouped by category.
+                        Results come from the pre-computed cache when available, falling back to on-demand computation.
+                        Also available at <code class="bg-gray-100 px-1 rounded font-mono text-xs">/api/products/sku/{sku}/compatible</code>.
+                    </p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>category</code></td><td>string</td><td>—</td><td>Return only this category (e.g. <code>Walls</code>)</td></tr>
+                            <tr><td><code>brand</code></td><td>string</td><td>—</td><td>Return only this brand</td></tr>
+                            <tr><td><code>limit</code></td><td>int</td><td>100</td><td>Max results per category</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/compatible/100959?category=Shower+Doors&limit=10
+
+{
+  "success": true,
+  "sku": "100959",
+  "product": { "name": "Biarritz 40", "category": "Shower Bases", ... },
+  "compatible_products": [
+    {
+      "category": "Shower Doors",
+      "count": 4,
+      "products": [ { "sku": "700A36N", "name": "Kameleon 36", ... }, ... ]
     }
-    
-    // Apply product-level filters to each category's products
-    this.filteredCompatibleProducts.forEach(category => {
-        if (!category.products) return;
-        
-        category.products = category.products.filter(product => {
-            // For combo products, use main_product for filtering
-            if (this.isComboProduct(product)) {
-                if (product.main_product) {
-                    return this.filterMatchesMainProduct(product.main_product);
-                }
-                return false;
-            }
-            
-            // Regular product filtering
-            return this.filterMatchesProduct(product);
-        });
-    });
-    
-    // Remove empty categories
-    this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(
-        category => category.products && category.products.length > 0
-    );
+  ],
+  "total_compatible": 4
 }</div>
-            </div>
-        </section>
-        
-        <section id="data-updates" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Data Update Process</h2>
-                <p class="text-gray-600 mb-4">
-                    The application automatically updates its product data from an external FTP server without interrupting service.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Update Process:</h3>
-                <ol class="list-decimal pl-5 mb-4 text-gray-600">
-                    <li><strong>Scheduled Updates:</strong> The system checks for updates at 2:00 AM daily</li>
-                    <li><strong>FTP Connection:</strong> Connects to the configured FTP server using stored credentials</li>
-                    <li><strong>File Selection:</strong> Finds the most recent file with prefix "Product Data" and date suffix</li>
-                    <li><strong>Validation:</strong> Downloads and validates the file structure before applying updates</li>
-                    <li><strong>Backup:</strong> Creates a backup of the current data file</li>
-                    <li><strong>In-Memory Update:</strong> Updates the data in memory without restarting the server</li>
-                    <li><strong>Notifications:</strong> Sends email notifications on success or failure</li>
-                </ol>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Data Structure:</h3>
-                <p class="text-gray-600 mb-4">
-                    The Excel file contains multiple worksheets, each representing a different product category:
-                </p>
-                <ul class="list-disc pl-5 mb-4 text-gray-600">
-                    <li>Shower Bases</li>
-                    <li>Bathtubs</li>
-                    <li>Showers</li>
-                    <li>Tub Showers</li>
-                    <li>Walls</li>
-                    <li>Screens</li>
-                    <li>Shower Doors</li>
-                    <li>Tub Doors</li>
-                    <li>Enclosures</li>
-                    <li>Return Panels</li>
-                </ul>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Key Components:</h3>
-                <table class="doc-table mb-4">
-                    <thead>
-                        <tr>
-                            <th>Component</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>data_update_service.py</td>
-                            <td>Orchestrates the entire update process</td>
-                        </tr>
-                        <tr>
-                            <td>manage_ftp.py</td>
-                            <td>Manages FTP credentials and manual update commands</td>
-                        </tr>
-                        <tr>
-                            <td>email_notifications.py</td>
-                            <td>Handles sending update status notifications via SendGrid</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        
-        <section id="architecture" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Application Architecture</h2>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Technology Stack:</h3>
-                <table class="doc-table mb-4">
-                    <thead>
-                        <tr>
-                            <th>Component</th>
-                            <th>Technology</th>
-                            <th>Purpose</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Backend</td>
-                            <td>Python + Flask</td>
-                            <td>Server-side processing and API endpoints</td>
-                        </tr>
-                        <tr>
-                            <td>Frontend</td>
-                            <td>HTML + Tailwind CSS + AlpineJS</td>
-                            <td>User interface and client-side interactivity</td>
-                        </tr>
-                        <tr>
-                            <td>Data Processing</td>
-                            <td>Pandas</td>
-                            <td>Excel data manipulation and querying</td>
-                        </tr>
-                        <tr>
-                            <td>Server</td>
-                            <td>Gunicorn</td>
-                            <td>WSGI HTTP Server</td>
-                        </tr>
-                        <tr>
-                            <td>Notifications</td>
-                            <td>SendGrid</td>
-                            <td>Email notifications for data updates</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Core Files and Their Functions:</h3>
-                <table class="doc-table mb-6">
-                    <thead>
-                        <tr>
-                            <th>File</th>
-                            <th>Purpose</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>app.py</td>
-                            <td>Main application routes and server configuration</td>
-                        </tr>
-                        <tr>
-                            <td>main.py</td>
-                            <td>Entry point for the application</td>
-                        </tr>
-                        <tr>
-                            <td>logic/compatibility.py</td>
-                            <td>Core compatibility checking logic</td>
-                        </tr>
-                        <tr>
-                            <td>logic/base_compatibility.py</td>
-                            <td>Compatibility logic for shower bases</td>
-                        </tr>
-                        <tr>
-                            <td>logic/bathtub_compatibility.py</td>
-                            <td>Specialized compatibility logic for bathtubs</td>
-                        </tr>
-                        <tr>
-                            <td>logic/image_handler.py</td>
-                            <td>Handles product image URL generation</td>
-                        </tr>
-                        <tr>
-                            <td>data_update_service.py</td>
-                            <td>Manages automatic data updates</td>
-                        </tr>
-                        <tr>
-                            <td>email_notifications.py</td>
-                            <td>Email notification system</td>
-                        </tr>
-                        <tr>
-                            <td>templates/index.html</td>
-                            <td>Main user interface template</td>
-                        </tr>
-                        <tr>
-                            <td>static/js/app.js</td>
-                            <td>Client-side JavaScript functionality</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Data Flow Diagram:</h3>
-                <div class="bg-gray-100 p-4 rounded-lg text-center mb-4">
-                    <div class="inline-block mx-auto text-left text-gray-800">
-                        <pre>
-+---------------+       +---------------+       +---------------+
-|   Excel File  |------>|  Data Update  |------>|  In-Memory    |
-|  (FTP Server) |       |   Service     |       |  Data Cache   |
-+---------------+       +---------------+       +-------+-------+
-                                                       |
-             +-------------------+                     |
-             |                   |                     v
-+------------v------+    +-------+-------+    +-------+-------+
-|   User Interface  |<---|  Flask Routes  |<---|  Compatibility |
-| (HTML + AlpineJS) |    |   (app.py)    |    |     Logic      |
-+-------------------+    +---------------+    +---------------+
-        </pre>
-                    </div>
                 </div>
-            </div>
-        </section>
-        
-        <section id="faq" class="mt-8 bg-white shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">FAQ & Troubleshooting</h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Q: Why isn't a product showing up in compatibility results?</h3>
-                        <p class="text-gray-600">
-                            A: Products might not appear in compatibility results for several reasons:
-                        </p>
-                        <ul class="list-disc pl-5 mt-2 text-gray-600">
-                            <li>The products might not be dimensionally compatible</li>
-                            <li>The series might not be designed to work together</li>
-                            <li>There might be brand/family matching restrictions</li>
-                            <li>The product could be incorrectly categorized in the data</li>
-                            <li>The data might be outdated (check the last update timestamp)</li>
-                        </ul>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/compatibility/search</span>
                     </div>
-                    
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Q: How can I see when the data was last updated?</h3>
-                        <p class="text-gray-600">
-                            A: The application logs data update times in the data_update.log file. The system is configured 
-                            to automatically update at 2:00 AM daily, but you can also trigger a manual update using the manage_ftp.py script.
-                        </p>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Q: What happens if a data update fails?</h3>
-                        <p class="text-gray-600">
-                            A: If a data update fails, the system will:
-                        </p>
-                        <ol class="list-decimal pl-5 mt-2 text-gray-600">
-                            <li>Continue using the most recent valid data</li>
-                            <li>Log the error in data_update.log</li>
-                            <li>Send an email notification to the configured recipients</li>
-                            <li>Attempt the update again on the next scheduled run</li>
-                        </ol>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Q: How are "combo" products handled?</h3>
-                        <p class="text-gray-600">
-                            A: Combo products (those with a main product and secondary components) are handled specially:
-                        </p>
-                        <ul class="list-disc pl-5 mt-2 text-gray-600">
-                            <li>They are marked with is_combo=true in the data</li>
-                            <li>They have both main_product and secondary_product objects</li>
-                            <li>When filtering, the main_product's attributes are used</li>
-                            <li>For ranking, the value is inherited from the main component</li>
-                        </ul>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Q: What browser requirements does the application have?</h3>
-                        <p class="text-gray-600">
-                            A: The application is designed to work with modern browsers including:
-                        </p>
-                        <ul class="list-disc pl-5 mt-2 text-gray-600">
-                            <li>Chrome 80+</li>
-                            <li>Firefox 75+</li>
-                            <li>Safari 13.1+</li>
-                            <li>Edge 80+</li>
-                        </ul>
-                        <p class="text-gray-600 mt-2">
-                            It uses modern JavaScript features and may not function correctly in older browsers.
-                        </p>
-                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Search for compatible products with a JSON body. Useful when you want to pass filters programmatically.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>sku</code></td><td>string</td><td>Yes</td><td>Source SKU to find compatibles for</td></tr>
+                            <tr><td><code>category</code></td><td>string</td><td>No</td><td>Filter results to this category</td></tr>
+                            <tr><td><code>brand</code></td><td>string</td><td>No</td><td>Filter results to this brand</td></tr>
+                            <tr><td><code>limit</code></td><td>int</td><td>No</td><td>Max results per category (default 100)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">POST /api/compatibility/search
+{ "sku": "100959", "category": "Walls", "brand": "MAAX", "limit": 20 }</div>
                 </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/compatibility/compute/{sku}</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Force recomputation of compatibility for a single SKU and save the result to the database. Useful after a manual data correction.</p>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/compute-compatibilities</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Recompute and cache compatibility for <strong>all</strong> products. This runs synchronously and can take several minutes. Normally triggered automatically after a Salsify sync.</p>
+                </div>
+
             </div>
-        </section>
-        
-        <div class="mt-8 text-center text-gray-500 text-sm">
-            <p>Documentation Last Updated: May 14, 2025</p>
         </div>
+
+        <!-- 5. Salsify / Data Sync -->
+        <div id="endpoints-salsify" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">5. Salsify / Data Sync</h2>
+            </div>
+            <div class="section-body space-y-5 text-sm text-gray-600">
+                <p>
+                    Product data comes from <strong>Salsify PIM</strong>. When a publication is triggered in Salsify, it calls the
+                    webhook below with the URL of an Excel export. The API downloads the file, upserts all products, and recomputes
+                    compatibility in the background.
+                </p>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/salsify/webhook?key=SECRET</span>
+                    </div>
+                    <p class="mb-3">Receives a Salsify publication event. The <code>key</code> query parameter must match the <code>SALSIFY_WEBHOOK_SECRET</code> environment variable. Only processes publications with status <code>completed</code>.</p>
+                    <div class="code-block">POST /api/salsify/webhook?key=your-secret
+{
+  "publication_status": "completed",
+  "product_feed_url": "https://s3.amazonaws.com/.../export.xlsx",
+  "channel_id": "abc123",
+  "channel_name": "ORCA Export"
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/salsify/status</span>
+                    </div>
+                    <p class="mb-3">Returns the history of recent sync jobs. This is the same data shown on the Sync History page.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>limit</code></td><td>int</td><td>10</td><td>Number of records to return</td></tr>
+                            <tr><td><code>sync_id</code></td><td>int</td><td>—</td><td>Return a single sync record by ID</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/salsify/status?limit=5
+
+{
+  "success": true,
+  "count": 2,
+  "syncs": [
+    {
+      "id": 42, "status": "completed", "sync_type": "webhook",
+      "started_at": "2026-04-01T10:00:00Z", "completed_at": "2026-04-01T10:02:15Z",
+      "sync_metadata": { "products_synced": 1840, "channel_name": "ORCA Export" }
+    },
+    ...
+  ]
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/salsify/cleanup</span>
+                    </div>
+                    <p>Deletes old sync records from the database to keep the history table clean.</p>
+                    <table class="param-table mt-2">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>older_than_days</code></td><td>int</td><td>30</td><td>Delete records older than this many days</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Utility -->
+        <div id="endpoints-utility" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">6. Utility</h2>
+            </div>
+            <div class="section-body space-y-5">
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/Health</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Health check. Returns database connectivity status and basic stats. Useful for monitoring.</p>
+                    <div class="code-block">GET /api/Health
+
+{
+  "status": "healthy",
+  "database": "connected",
+  "product_count": 1840,
+  "timestamp": "2026-04-01T13:00:00Z"
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/suggest?q={query}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">
+                        Autocomplete endpoint used by the search bar. Returns matching SKUs and display strings
+                        (<code class="bg-gray-100 px-1 rounded font-mono text-xs">SKU - Product Name</code>) for a partial query. Matches against both SKU and product name.
+                    </p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>q</code></td><td>string</td><td>Search term (minimum 2 characters)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /suggest?q=biarra
+
+{
+  "suggestions": ["100959", "100960"],
+  "displaySuggestions": ["100959 - Biarritz 40", "100960 - Biarritz 48"]
+}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 7. How Compatibility Works -->
+        <div id="compat-logic" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">7. How Compatibility Works</h2>
+            </div>
+            <div class="section-body text-sm text-gray-600 space-y-4 leading-relaxed">
+                <p>
+                    Compatibility is determined by a set of rules applied between two products. The rules depend on the
+                    categories involved. Here is a plain-language summary of the main rules.
+                </p>
+
+                <h3 class="text-base font-semibold text-gray-800">Shower Base → Door</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>The base must be an <strong>alcove</strong> or <strong>corner</strong> installation type</li>
+                    <li>The base's max door width must fall within the door's min–max width range</li>
+                    <li>Door type must be Pivot, Sliding, or Bypass</li>
+                    <li>Both products must pass the <strong>series compatibility</strong> check (see below)</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Shower Base → Screen</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Base max door width minus the screen's fixed panel width must be greater than 22 inches</li>
+                    <li>Series compatibility must pass</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Shower Base / Bathtub → Walls</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Brand and family must match (see Brand/Family rules below)</li>
+                    <li>For shower-type walls, nominal dimensions are checked for an exact match</li>
+                    <li>For bathtubs, cut-to-size walls are matched by finding the closest wall that is still larger than the tub</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Series Compatibility</h3>
+                <p>Products in different series are sometimes cross-compatible. The rules:</p>
+                <table class="param-table">
+                    <thead><tr><th>Product series</th><th>Compatible with</th></tr></thead>
+                    <tbody>
+                        <tr><td>Same series</td><td>Always compatible</td></tr>
+                        <tr><td>Either side has no series</td><td>Compatible</td></tr>
+                        <tr><td>Retail</td><td>Retail, MAAX, Swan</td></tr>
+                        <tr><td>MAAX</td><td>Retail, MAAX, Collection, Professional</td></tr>
+                        <tr><td>Collection / Professional</td><td>MAAX, Collection, Professional</td></tr>
+                        <tr><td>Swan</td><td>Swan, Retail only</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-base font-semibold text-gray-800">Brand / Family Rules</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Same brand: family must also match (if both products have a family)</li>
+                    <li><strong>Neptune ↔ Maax</strong>: cross-brand compatibility is allowed</li>
+                    <li><strong>w&amp;b family</strong>: only matches other w&amp;b products</li>
+                    <li><strong>utile / nextile</strong> wall families have specific base family requirements</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Overrides (Whitelist / Blacklist)</h3>
+                <p>
+                    Administrators can add entries to the <code class="bg-gray-100 px-1 rounded font-mono text-xs">compatibility_overrides</code>
+                    table to force two SKUs to always be shown as compatible (whitelist) or never compatible (blacklist),
+                    regardless of what the rules compute. Overrides are bidirectional — they apply whether you search A→B or B→A.
+                </p>
+            </div>
+        </div>
+
+        <!-- 8. Data Flow -->
+        <div id="data-flow" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">8. Data Flow</h2>
+            </div>
+            <div class="section-body text-sm text-gray-600 space-y-3 leading-relaxed">
+                <p>Here is how data moves through the system from Salsify to a compatibility result:</p>
+                <ol class="list-decimal pl-5 space-y-2">
+                    <li>
+                        <strong>Salsify publishes</strong> a product export and calls <code class="bg-gray-100 px-1 rounded font-mono text-xs">POST /api/salsify/webhook</code>
+                        with the URL of the Excel file.
+                    </li>
+                    <li>
+                        <strong>The API downloads</strong> the Excel file from S3, parses each worksheet (one per product category),
+                        and upserts every row into the <code class="bg-gray-100 px-1 rounded font-mono text-xs">products</code> database table.
+                    </li>
+                    <li>
+                        <strong>Compatibility is recomputed</strong> for all products in the background. Results are stored in the
+                        <code class="bg-gray-100 px-1 rounded font-mono text-xs">product_compatibility</code> table.
+                    </li>
+                    <li>
+                        <strong>A query hits</strong> <code class="bg-gray-100 px-1 rounded font-mono text-xs">GET /api/compatible/{sku}</code>.
+                        The API reads from the pre-computed table, applies any active overrides, and returns the result.
+                    </li>
+                </ol>
+
+                <div class="mt-4">
+                    <p class="font-medium text-gray-700 mb-2">Database tables:</p>
+                    <table class="param-table">
+                        <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>products</code></td><td>All product data with a JSON attributes column</td></tr>
+                            <tr><td><code>product_compatibility</code></td><td>Pre-computed compatible pairs</td></tr>
+                            <tr><td><code>compatibility_overrides</code></td><td>Manual whitelist / blacklist entries</td></tr>
+                            <tr><td><code>sync_statuses</code></td><td>Salsify sync history (shown on the Sync History page)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </main>
+
+    <footer class="mt-12 py-6 border-t border-gray-200 bg-white">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-gray-400">
+            ORCA Compatibility Finder — ASP.NET Core 8 API
+        </div>
+    </footer>
+
 </body>
 </html>
