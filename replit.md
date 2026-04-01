@@ -77,4 +77,15 @@ ORCA.Api/
 
 - **Salsify PIM**: Webhook at `POST /api/salsify/webhook?key=SALSIFY_WEBHOOK_SECRET`; publishes Excel to S3; C# downloads and syncs automatically in background
 - **PostgreSQL**: Neon-hosted, accessed via `DATABASE_URL` environment variable
-- **NuGet Packages**: Npgsql.EntityFrameworkCore.PostgreSQL, ClosedXML, Microsoft.EntityFrameworkCore.Design
+- **NuGet Packages**: Npgsql.EntityFrameworkCore.PostgreSQL, ClosedXML, Swashbuckle.AspNetCore, Microsoft.EntityFrameworkCore.Design
+
+### Frontend
+Static HTML/CSS/JS files are served directly by the C# app:
+- `templates/` — HTML pages (index, sync-history, documentation) served by `HomeController`
+- `static/` — CSS, JS, images served at `/static/` via `PhysicalFileProvider`
+- Swagger UI available at `/swagger` (interactive API explorer)
+- Human-readable API docs at `/documentation`
+
+### Notes
+- All Python source files (`app.py`, `main.py`, `models.py`, `services/`, `logic/`) have been removed. The project is 100% C#.
+- `data/` folder retains legacy Excel files for reference but is not used by the running API.
