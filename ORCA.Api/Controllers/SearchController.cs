@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ORCA.Api.Data;
@@ -16,12 +17,13 @@ public class SearchController : ControllerBase
 
     /// <summary>
     /// GET /suggest?q=... — SKU / product name autocomplete (matches Python /suggest endpoint)
+    /// Returns displaySuggestions in camelCase to match the original Python API and existing JS.
     /// </summary>
     [HttpGet("/suggest")]
     public async Task<IActionResult> Suggest([FromQuery] string? q)
     {
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
-            return Ok(new { suggestions = Array.Empty<string>(), displaySuggestions = Array.Empty<string>() });
+            return Ok(new SuggestResponse());
 
         var query = q.Trim().ToLower();
 
@@ -36,11 +38,23 @@ public class SearchController : ControllerBase
             .Select(p => new { p.Sku, p.ProductName })
             .ToListAsync();
 
-        var suggestions = matches.Select(m => m.Sku).ToList();
-        var displaySuggestions = matches
-            .Select(m => string.IsNullOrWhiteSpace(m.ProductName) ? m.Sku : $"{m.Sku} - {m.ProductName}")
-            .ToList();
-
-        return Ok(new { suggestions, displaySuggestions });
+        return Ok(new SuggestResponse
+        {
+            Suggestions = matches.Select(m => m.Sku).ToList(),
+            DisplaySuggestions = matches
+                .Select(m => string.IsNullOrWhiteSpace(m.ProductName)
+                    ? m.Sku
+                    : $"{m.Sku} - {m.ProductName}")
+                .ToList()
+        });
     }
+}
+
+public class SuggestResponse
+{
+    [JsonPropertyName("suggestions")]
+    public List<string> Suggestions { get; set; } = new();
+
+    [JsonPropertyName("displaySuggestions")]
+    public List<string> DisplaySuggestions { get; set; } = new();
 }
