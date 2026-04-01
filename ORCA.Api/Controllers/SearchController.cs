@@ -1,0 +1,60 @@
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ORCA.Api.Data;
+
+namespace ORCA.Api.Controllers;
+
+[ApiController]
+public class SearchController : ControllerBase
+{
+    private readonly OrcaDbContext _db;
+
+    public SearchController(OrcaDbContext db)
+    {
+        _db = db;
+    }
+
+    /// <summary>
+    /// GET /suggest?q=... — SKU / product name autocomplete (matches Python /suggest endpoint)
+    /// Returns displaySuggestions in camelCase to match the original Python API and existing JS.
+    /// </summary>
+    [HttpGet("/suggest")]
+    public async Task<IActionResult> Suggest([FromQuery] string? q)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+            return Ok(new SuggestResponse());
+
+        var query = q.Trim().ToLower();
+
+        var matches = await _db.Products
+            .AsNoTracking()
+            .Where(p =>
+                p.Sku.ToLower().Contains(query) ||
+                (p.ProductName != null && p.ProductName.ToLower().Contains(query)))
+            .OrderBy(p => p.Sku.ToLower().StartsWith(query) ? 0 : 1)
+            .ThenBy(p => p.Sku)
+            .Take(20)
+            .Select(p => new { p.Sku, p.ProductName })
+            .ToListAsync();
+
+        return Ok(new SuggestResponse
+        {
+            Suggestions = matches.Select(m => m.Sku).ToList(),
+            DisplaySuggestions = matches
+                .Select(m => string.IsNullOrWhiteSpace(m.ProductName)
+                    ? m.Sku
+                    : $"{m.Sku} - {m.ProductName}")
+                .ToList()
+        });
+    }
+}
+
+public class SuggestResponse
+{
+    [JsonPropertyName("suggestions")]
+    public List<string> Suggestions { get; set; } = new();
+
+    [JsonPropertyName("displaySuggestions")]
+    public List<string> DisplaySuggestions { get; set; } = new();
+}

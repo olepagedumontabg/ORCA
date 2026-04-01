@@ -20,7 +20,7 @@
     </script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="/static/css/styles.css">
     <style>
         [x-cloak] { display: none !important; }
         .alpine-loading { opacity: 0; transition: opacity 0.3s ease-in-out; }
@@ -50,12 +50,12 @@
         <div class="container mx-auto px-4 h-full">
             <div class="flex items-center justify-between h-full">
                 <a href="/" class="flex items-center">
-                    <img src="{{ url_for('static', filename='images/abg-logo-header.svg') }}" alt="ABG Logo" class="h-6 w-auto">
+                    <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
                 </a>
                 <nav class="flex space-x-6">
                     <a href="/" class="text-primary font-semibold">Home</a>
                     <a href="/sync-history" class="text-gray-600 hover:text-primary transition">Sync History</a>
-                    <a href="/documentation" class="text-gray-600 hover:text-primary transition">API Docs</a>
+                    <a href="/swagger" class="text-gray-600 hover:text-primary transition">API Docs</a>
                 </nav>
             </div>
         </div>
@@ -67,7 +67,7 @@
         <!-- Hero section for landing page -->
         <div x-show="!hasSearched" class="text-center mb-8" x-cloak>
             <div class="relative rounded-lg overflow-hidden mb-6">
-                <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Bathroom Products" class="w-full h-64 object-cover">
+                <img src="/static/images/hero-image.jpg" alt="Bathroom Products" class="w-full h-64 object-cover">
                 <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                     <div class="text-white">
                         <h2 class="text-3xl md:text-4xl font-bold mb-2">Find Compatible Bathroom Products</h2>
@@ -164,7 +164,7 @@
                 <!-- Hero section for results page -->
                 <div class="text-center mb-8">
                     <div class="relative rounded-lg overflow-hidden mb-6">
-                        <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Bathroom Products" class="w-full h-64 object-cover">
+                        <img src="/static/images/hero-image.jpg" alt="Bathroom Products" class="w-full h-64 object-cover">
                         <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                             <div class="text-white">
                                 <h2 class="text-3xl md:text-4xl font-bold mb-2">Find Compatible Bathroom Products</h2>
@@ -719,7 +719,7 @@
     </footer>
 
     <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/debug.js"></script>
 </body>
 </html>
