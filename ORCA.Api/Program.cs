@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using ORCA.Api.Data;
 using ORCA.Api.Services;
 
@@ -72,6 +73,20 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
+
+// ---------- Static files (serve ../static/ at /static/) ----------
+var staticPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "static"));
+if (!Directory.Exists(staticPath))
+    staticPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "static"));
+
+if (Directory.Exists(staticPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(staticPath),
+        RequestPath = "/static"
+    });
+}
 
 // ---------- Middleware ----------
 app.UseCors();
