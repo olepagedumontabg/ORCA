@@ -331,35 +331,35 @@
 
                 syncs.forEach(sync => {
                     let meta = null;
-                    try { meta = sync.syncMetadata ? JSON.parse(sync.syncMetadata) : null; } catch {}
+                    try { meta = sync.sync_metadata ? JSON.parse(sync.sync_metadata) : null; } catch {}
 
                     const channelName = (meta && meta.channel_name) || 'Unknown';
                     const statusLabel = sync.status === 'partial_success' ? 'Partial'
                         : (sync.status.charAt(0).toUpperCase() + sync.status.slice(1));
 
-                    const startedFormatted = sync.startedAt
-                        ? new Date(sync.startedAt).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
+                    const startedFormatted = sync.started_at
+                        ? new Date(sync.started_at).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
                         : '-';
 
-                    const duration = formatDuration(sync.startedAt, sync.completedAt, sync.status);
+                    const duration = formatDuration(sync.started_at, sync.completed_at, sync.status);
 
                     let productsHtml = '<div class="text-gray-400">No changes</div>';
                     const parts = [];
-                    if (sync.productsAdded   > 0) parts.push(`<div class="text-green-600"><i class="fas fa-plus-circle"></i> ${sync.productsAdded} added</div>`);
-                    if (sync.productsUpdated > 0) parts.push(`<div class="text-blue-600"><i class="fas fa-edit"></i> ${sync.productsUpdated} updated</div>`);
-                    if (sync.productsDeleted > 0) parts.push(`<div class="text-red-600"><i class="fas fa-trash-alt"></i> ${sync.productsDeleted} deleted</div>`);
+                    if (sync.products_added   > 0) parts.push(`<div class="text-green-600"><i class="fas fa-plus-circle"></i> ${sync.products_added} added</div>`);
+                    if (sync.products_updated > 0) parts.push(`<div class="text-blue-600"><i class="fas fa-edit"></i> ${sync.products_updated} updated</div>`);
+                    if (sync.products_deleted > 0) parts.push(`<div class="text-red-600"><i class="fas fa-trash-alt"></i> ${sync.products_deleted} deleted</div>`);
                     if (parts.length > 0) productsHtml = '<div class="flex flex-col space-y-1">' + parts.join('') + '</div>';
 
-                    const compatHtml = sync.compatibilitiesUpdated > 0
-                        ? `<span class="text-primary font-medium">${sync.compatibilitiesUpdated}</span> updated`
+                    const compatHtml = sync.compatibilities_updated > 0
+                        ? `<span class="text-primary font-medium">${sync.compatibilities_updated}</span> updated`
                         : '<span class="text-gray-400">-</span>';
 
                     const cd = meta && meta.change_details;
                     const hasDetails = cd && (cd.updated_products?.length || cd.added_products?.length || cd.deleted_products?.length);
 
                     let detailsBtn = '<span class="text-gray-400">No details</span>';
-                    if (sync.errorMessage) {
-                        detailsBtn = `<button onclick="showError('${escapeHtml(sync.errorMessage).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
+                    if (sync.error_message) {
+                        detailsBtn = `<button onclick="showError('${escapeHtml(sync.error_message).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
                     } else if (hasDetails) {
                         detailsBtn = `<button onclick="toggleDetails(${sync.id})" class="text-primary hover:text-blue-800 font-medium" id="toggle-btn-${sync.id}"><i class="fas fa-eye-slash"></i> Hide Details</button>`;
                     }
@@ -371,7 +371,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${sync.id}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <div class="font-medium">${escapeHtml(channelName)}</div>
-                            <div class="text-xs text-gray-500">${escapeHtml(sync.syncType)}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(sync.sync_type)}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="status-badge status-${sync.status}">${escapeHtml(statusLabel)}</span>
