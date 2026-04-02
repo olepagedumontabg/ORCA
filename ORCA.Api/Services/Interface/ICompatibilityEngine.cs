@@ -1,7 +1,7 @@
 using ORCA.Api.Domain.Entities;
 using ORCA.Api.DTOs;
 
-namespace ORCA.Api.Services;
+namespace ORCA.Api.Services.Interface;
 
 public interface ICompatibilityEngine
 {

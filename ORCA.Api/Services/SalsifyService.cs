@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using ORCA.Api.Data;
 using ORCA.Api.Domain.Entities;
+using ORCA.Api.Services.Interface;
 using System.Text.Json;
 
 namespace ORCA.Api.Services;

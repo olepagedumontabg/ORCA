@@ -1,4 +1,4 @@
-namespace ORCA.Api.Services;
+namespace ORCA.Api.Services.Interface;
 
 public interface ISalsifyService
 {

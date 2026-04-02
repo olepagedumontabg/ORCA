@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ORCA.Api.Data;
 using ORCA.Api.Domain.Entities;
 using ORCA.Api.DTOs;
+using ORCA.Api.Services.Interface;
 
 namespace ORCA.Api.Services;
 

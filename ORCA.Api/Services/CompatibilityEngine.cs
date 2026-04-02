@@ -1,6 +1,7 @@
 using ORCA.Api.Domain.Constants;
 using ORCA.Api.Domain.Entities;
 using ORCA.Api.DTOs;
+using ORCA.Api.Services.Interface;
 using ORCA.Api.Services.Rules;
 
 namespace ORCA.Api.Services;
