@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ORCA.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:61860;http://localhost:61861"
+    }
+  }
+}
