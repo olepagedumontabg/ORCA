@@ -10,53 +10,62 @@ using ORCA.Api.Domain.Entities;
 using ORCA.Api.Services;
 using System.Net;
 using System.Reflection;
-using System.Text;
 
 namespace ORCA.Tests.Services;
 
 [TestClass]
 public class SalsifyServiceTests
 {
-    // -----------------------------
-    // Helpers
-    // -----------------------------
+    // ─── helpers ──────────────────────────────────────────────────────────────
 
-    private OrcaDbContext CreateDb()
-    {
-        var options = new DbContextOptionsBuilder<OrcaDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+    /// <summary>
+    /// Returns DbContextOptions backed by a named in-memory database.
+    /// Every call to CreateContext() with the SAME name shares data,
+    /// but each call produces a FRESH DbContext instance — avoiding the
+    /// "second operation on same context" concurrency error that occurs
+    /// when the service's fire-and-forget scope and the test both hold
+    /// a reference to the exact same object.
+    /// </summary>
+    private static DbContextOptions<OrcaDbContext> DbOptions(string name) =>
+        new DbContextOptionsBuilder<OrcaDbContext>()
+            .UseInMemoryDatabase(name)
             .Options;
 
-        return new OrcaDbContext(options);
-    }
+    private static OrcaDbContext CreateContext(DbContextOptions<OrcaDbContext> opts) =>
+        new(opts);
 
-    private IServiceScopeFactory CreateScopeFactory(
-        OrcaDbContext db,
+    /// <summary>
+    /// Scope factory where each CreateScope() call creates a brand-new
+    /// OrcaDbContext instance backed by the shared in-memory database.
+    /// This mirrors real DI behaviour (scoped lifetime = new instance per scope).
+    /// </summary>
+    private static IServiceScopeFactory CreateScopeFactory(
+        DbContextOptions<OrcaDbContext> opts,
         ICompatibilityService compatibilityService)
     {
-        var providerMock = new Mock<IServiceProvider>();
-
-        providerMock.Setup(p => p.GetService(typeof(OrcaDbContext)))
-            .Returns(db);
-
-        providerMock.Setup(p => p.GetService(typeof(ICompatibilityService)))
-            .Returns(compatibilityService);
-
-        var scopeMock = new Mock<IServiceScope>();
-        scopeMock.Setup(s => s.ServiceProvider)
-            .Returns(providerMock.Object);
-
         var factoryMock = new Mock<IServiceScopeFactory>();
+
         factoryMock.Setup(f => f.CreateScope())
-            .Returns(scopeMock.Object);
+            .Returns(() =>
+            {
+                var db = new OrcaDbContext(opts);
+
+                var providerMock = new Mock<IServiceProvider>();
+                providerMock.Setup(p => p.GetService(typeof(OrcaDbContext))).Returns(db);
+                providerMock.Setup(p => p.GetService(typeof(ICompatibilityService))).Returns(compatibilityService);
+
+                var scopeMock = new Mock<IServiceScope>();
+                scopeMock.Setup(s => s.ServiceProvider).Returns(providerMock.Object);
+
+                return scopeMock.Object;
+            });
 
         return factoryMock.Object;
     }
 
-    private HttpClient CreateHttpClient(byte[] response)
+    private static HttpClient CreateHttpClient(byte[] response)
     {
         var handlerMock = new Mock<HttpMessageHandler>();
-
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -67,179 +76,129 @@ public class SalsifyServiceTests
                 StatusCode = HttpStatusCode.OK,
                 Content = new ByteArrayContent(response)
             });
-
         return new HttpClient(handlerMock.Object);
     }
 
-    private byte[] CreateExcel(params (string sku, string name)[] rows)
+    private static byte[] CreateExcel(params (string sku, string name)[] rows)
     {
         using var wb = new XLWorkbook();
         var ws = wb.AddWorksheet("Category1");
-
         ws.Cell(1, 1).Value = "Unique ID";
         ws.Cell(1, 2).Value = "Product Name";
-
         int r = 2;
-        foreach (var row in rows)
+        foreach (var (sku, name) in rows)
         {
-            ws.Cell(r, 1).Value = row.sku;
-            ws.Cell(r, 2).Value = row.name;
+            ws.Cell(r, 1).Value = sku;
+            ws.Cell(r, 2).Value = name;
             r++;
         }
-
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
         return ms.ToArray();
     }
 
-    private async Task InvokePrivateRunSync(SalsifyService service, int syncId, string url)
+    private static async Task InvokeRunSyncAsync(SalsifyService service, int syncId, string url)
     {
         var method = typeof(SalsifyService)
-            .GetMethod("RunSyncAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        var task = (Task)method.Invoke(service, new object[] { syncId, url });
-        await task;
+            .GetMethod("RunSyncAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        await (Task)method.Invoke(service, [syncId, url])!;
     }
 
-    // -----------------------------
-    // TESTS
-    // -----------------------------
+    // ─── ProcessWebhookAsync ───────────────────────────────────────────────────
 
     [TestMethod]
-    public async Task ProcessWebhookAsync_Should_Create_Record()
+    public async Task ProcessWebhookAsync_Should_Return_Success_And_Create_SyncRecord()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(ProcessWebhookAsync_Should_Return_Success_And_Create_SyncRecord));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, CreateHttpClient([]), new Mock<ILogger<SalsifyService>>().Object);
 
-        var compatMock = new Mock<ICompatibilityService>();
-
-        var scopeFactory = CreateScopeFactory(db, compatMock.Object);
-
-        var httpClient = CreateHttpClient(Array.Empty<byte>());
-
-        var logger = new Mock<ILogger<SalsifyService>>();
-
-        var service = new SalsifyService(scopeFactory, httpClient, logger.Object);
-
-        var result = await service.ProcessWebhookAsync("url", "ch1", "channel");
+        var result = await service.ProcessWebhookAsync("http://test/feed", "ch1", "channel");
 
         Assert.IsTrue(result.Success);
         Assert.IsTrue(result.SyncId > 0);
 
-        var record = db.SyncStatuses.FirstOrDefault();
-        Assert.IsNotNull(record);
-        Assert.AreEqual("queued", record.Status);
+        // Give the fire-and-forget background task a moment, then verify a record exists.
+        await Task.Delay(200);
+        await using var ctx = CreateContext(opts);
+        Assert.IsTrue(await ctx.SyncStatuses.AnyAsync(s => s.Id == result.SyncId));
     }
+
+    // ─── RunSyncAsync (private, invoked via reflection) ───────────────────────
 
     [TestMethod]
     public async Task RunSync_Should_Add_New_Product()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(RunSync_Should_Add_New_Product));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, CreateHttpClient(CreateExcel(("SKU1", "Product 1"))), new Mock<ILogger<SalsifyService>>().Object);
 
-        var excel = CreateExcel(("SKU1", "Product 1"));
-
-        var compatMock = new Mock<ICompatibilityService>();
-
-        var scopeFactory = CreateScopeFactory(db, compatMock.Object);
-
-        var httpClient = CreateHttpClient(excel);
-
-        var logger = new Mock<ILogger<SalsifyService>>();
-
-        var service = new SalsifyService(scopeFactory, httpClient, logger.Object);
-
+        await using var setup = CreateContext(opts);
         var sync = new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow };
-        db.SyncStatuses.Add(sync);
-        await db.SaveChangesAsync();
+        setup.SyncStatuses.Add(sync);
+        await setup.SaveChangesAsync();
 
-        await InvokePrivateRunSync(service, sync.Id, "url");
+        await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
-        Assert.AreEqual(1, db.Products.Count());
-        Assert.AreEqual("SKU1", db.Products.First().Sku);
+        await using var verify = CreateContext(opts);
+        Assert.AreEqual(1, await verify.Products.CountAsync());
+        Assert.AreEqual("SKU1", (await verify.Products.FirstAsync()).Sku);
     }
 
     [TestMethod]
     public async Task RunSync_Should_Update_Existing_Product()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(RunSync_Should_Update_Existing_Product));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, CreateHttpClient(CreateExcel(("SKU1", "New Name"))), new Mock<ILogger<SalsifyService>>().Object);
 
-        db.Products.Add(new Product
-        {
-            Sku = "SKU1",
-            ProductName = "Old Name",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        });
-
-        await db.SaveChangesAsync();
-
-        var excel = CreateExcel(("SKU1", "New Name"));
-
-        var compatMock = new Mock<ICompatibilityService>();
-
-        var scopeFactory = CreateScopeFactory(db, compatMock.Object);
-
-        var httpClient = CreateHttpClient(excel);
-
-        var service = new SalsifyService(scopeFactory, httpClient, new Mock<ILogger<SalsifyService>>().Object);
-
+        await using var setup = CreateContext(opts);
+        setup.Products.Add(new Product { Sku = "SKU1", ProductName = "Old Name", Category = "", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         var sync = new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow };
-        db.SyncStatuses.Add(sync);
-        await db.SaveChangesAsync();
+        setup.SyncStatuses.Add(sync);
+        await setup.SaveChangesAsync();
 
-        await InvokePrivateRunSync(service, sync.Id, "url");
+        await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
-        var product = db.Products.First();
+        await using var verify = CreateContext(opts);
+        var product = await verify.Products.FirstAsync();
         Assert.AreEqual("New Name", product.ProductName);
     }
 
     [TestMethod]
     public async Task RunSync_Should_Delete_Missing_Product()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(RunSync_Should_Delete_Missing_Product));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, CreateHttpClient(CreateExcel(("SKU1", "Product 1"))), new Mock<ILogger<SalsifyService>>().Object);
 
-        db.Products.Add(new Product
-        {
-            Sku = "OLDSKU",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        });
-
-        await db.SaveChangesAsync();
-
-        var excel = CreateExcel(("SKU1", "Product 1"));
-
-        var scopeFactory = CreateScopeFactory(db, new Mock<ICompatibilityService>().Object);
-
-        var service = new SalsifyService(scopeFactory, CreateHttpClient(excel), new Mock<ILogger<SalsifyService>>().Object);
-
+        await using var setup = CreateContext(opts);
+        setup.Products.Add(new Product { Sku = "OLDSKU", Category = "", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         var sync = new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow };
-        db.SyncStatuses.Add(sync);
-        await db.SaveChangesAsync();
+        setup.SyncStatuses.Add(sync);
+        await setup.SaveChangesAsync();
 
-        await InvokePrivateRunSync(service, sync.Id, "url");
+        await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
-        Assert.AreEqual(1, db.Products.Count());
-        Assert.AreEqual("SKU1", db.Products.First().Sku);
+        await using var verify = CreateContext(opts);
+        Assert.AreEqual(1, await verify.Products.CountAsync());
+        Assert.AreEqual("SKU1", (await verify.Products.FirstAsync()).Sku);
     }
 
     [TestMethod]
-    public async Task RunSync_Should_Call_Compatibility_Service()
+    public async Task RunSync_Should_Call_Compatibility_Service_For_Each_Changed_Sku()
     {
-        var db = CreateDb();
-
-        var excel = CreateExcel(("SKU1", "Product 1"));
-
+        var opts = DbOptions(nameof(RunSync_Should_Call_Compatibility_Service_For_Each_Changed_Sku));
         var compatMock = new Mock<ICompatibilityService>();
+        var scopeFactory = CreateScopeFactory(opts, compatMock.Object);
+        var service = new SalsifyService(scopeFactory, CreateHttpClient(CreateExcel(("SKU1", "Product 1"))), new Mock<ILogger<SalsifyService>>().Object);
 
-        var scopeFactory = CreateScopeFactory(db, compatMock.Object);
-
-        var service = new SalsifyService(scopeFactory, CreateHttpClient(excel), new Mock<ILogger<SalsifyService>>().Object);
-
+        await using var setup = CreateContext(opts);
         var sync = new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow };
-        db.SyncStatuses.Add(sync);
-        await db.SaveChangesAsync();
+        setup.SyncStatuses.Add(sync);
+        await setup.SaveChangesAsync();
 
-        await InvokePrivateRunSync(service, sync.Id, "url");
+        await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
         compatMock.Verify(c => c.ComputeCompatibilitiesAsync("SKU1"), Times.Once);
     }
@@ -247,79 +206,107 @@ public class SalsifyServiceTests
     [TestMethod]
     public async Task RunSync_Should_Set_Status_To_Completed()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(RunSync_Should_Set_Status_To_Completed));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, CreateHttpClient(CreateExcel(("SKU1", "Product 1"))), new Mock<ILogger<SalsifyService>>().Object);
 
-        var excel = CreateExcel(("SKU1", "Product 1"));
-
-        var scopeFactory = CreateScopeFactory(db, new Mock<ICompatibilityService>().Object);
-
-        var service = new SalsifyService(scopeFactory, CreateHttpClient(excel), new Mock<ILogger<SalsifyService>>().Object);
-
+        await using var setup = CreateContext(opts);
         var sync = new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow };
-        db.SyncStatuses.Add(sync);
-        await db.SaveChangesAsync();
+        setup.SyncStatuses.Add(sync);
+        await setup.SaveChangesAsync();
 
-        await InvokePrivateRunSync(service, sync.Id, "url");
+        await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
-        var updated = db.SyncStatuses.First();
-        Assert.AreEqual("completed", updated.Status);
-        Assert.IsNotNull(updated.CompletedAt);
+        await using var verify = CreateContext(opts);
+        var record = await verify.SyncStatuses.FirstAsync();
+        Assert.AreEqual("completed", record.Status);
+        Assert.IsNotNull(record.CompletedAt);
     }
 
     [TestMethod]
-    public async Task RunSync_Should_Set_Status_To_Failed_On_Error()
+    public async Task RunSync_Should_Set_Status_To_Failed_On_Http_Error()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(RunSync_Should_Set_Status_To_Failed_On_Http_Error));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, new HttpClient(new FailingHandler()), new Mock<ILogger<SalsifyService>>().Object);
 
-        var httpClient = new HttpClient(new FailingHandler());
-
-        var scopeFactory = CreateScopeFactory(db, new Mock<ICompatibilityService>().Object);
-
-        var service = new SalsifyService(scopeFactory, httpClient, new Mock<ILogger<SalsifyService>>().Object);
-
+        await using var setup = CreateContext(opts);
         var sync = new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow };
-        db.SyncStatuses.Add(sync);
-        await db.SaveChangesAsync();
+        setup.SyncStatuses.Add(sync);
+        await setup.SaveChangesAsync();
 
-        await InvokePrivateRunSync(service, sync.Id, "url");
+        await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
-        var updated = db.SyncStatuses.First();
-        Assert.AreEqual("failed", updated.Status);
-        Assert.IsNotNull(updated.ErrorMessage);
+        await using var verify = CreateContext(opts);
+        var record = await verify.SyncStatuses.FirstAsync();
+        Assert.AreEqual("failed", record.Status);
+        Assert.IsNotNull(record.ErrorMessage);
     }
 
+    // ─── CleanupAsync ─────────────────────────────────────────────────────────
+
     [TestMethod]
-    public async Task CleanupAsync_Should_Delete_Old_Records()
+    public async Task CleanupAsync_Should_Delete_Old_Completed_Records()
     {
-        var db = CreateDb();
+        var opts = DbOptions(nameof(CleanupAsync_Should_Delete_Old_Completed_Records));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, new HttpClient(), new Mock<ILogger<SalsifyService>>().Object);
 
-        db.SyncStatuses.Add(new SyncStatus
-        {
-            Status = "completed",
-            StartedAt = DateTime.UtcNow.AddDays(-10)
-        });
-
-        await db.SaveChangesAsync();
-
-        var service = new SalsifyService(
-            CreateScopeFactory(db, new Mock<ICompatibilityService>().Object),
-            new HttpClient(),
-            new Mock<ILogger<SalsifyService>>().Object);
+        await using var setup = CreateContext(opts);
+        setup.SyncStatuses.Add(new SyncStatus { Status = "completed", StartedAt = DateTime.UtcNow.AddDays(-10) });
+        setup.SyncStatuses.Add(new SyncStatus { Status = "completed", StartedAt = DateTime.UtcNow.AddDays(-1) });
+        await setup.SaveChangesAsync();
 
         var result = await service.CleanupAsync(5);
 
         Assert.AreEqual(1, result.DeletedCount);
+
+        await using var verify = CreateContext(opts);
+        Assert.AreEqual(1, await verify.SyncStatuses.CountAsync());
     }
 
-    // -----------------------------
-    // Fake handler erreur HTTP
-    // -----------------------------
-
-    private class FailingHandler : HttpMessageHandler
+    [TestMethod]
+    public async Task CleanupAsync_Should_Not_Delete_Recent_Records()
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            throw new Exception("HTTP failure");
-        }
+        var opts = DbOptions(nameof(CleanupAsync_Should_Not_Delete_Recent_Records));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, new HttpClient(), new Mock<ILogger<SalsifyService>>().Object);
+
+        await using var setup = CreateContext(opts);
+        setup.SyncStatuses.Add(new SyncStatus { Status = "completed", StartedAt = DateTime.UtcNow.AddDays(-1) });
+        await setup.SaveChangesAsync();
+
+        var result = await service.CleanupAsync(5);
+
+        Assert.AreEqual(0, result.DeletedCount);
+        await using var verify = CreateContext(opts);
+        Assert.AreEqual(1, await verify.SyncStatuses.CountAsync());
+    }
+
+    [TestMethod]
+    public async Task CleanupAsync_Should_Not_Delete_Queued_Or_Running_Records()
+    {
+        var opts = DbOptions(nameof(CleanupAsync_Should_Not_Delete_Queued_Or_Running_Records));
+        var scopeFactory = CreateScopeFactory(opts, new Mock<ICompatibilityService>().Object);
+        var service = new SalsifyService(scopeFactory, new HttpClient(), new Mock<ILogger<SalsifyService>>().Object);
+
+        await using var setup = CreateContext(opts);
+        setup.SyncStatuses.AddRange(
+            new SyncStatus { Status = "queued", StartedAt = DateTime.UtcNow.AddDays(-10) },
+            new SyncStatus { Status = "running", StartedAt = DateTime.UtcNow.AddDays(-10) });
+        await setup.SaveChangesAsync();
+
+        var result = await service.CleanupAsync(5);
+
+        Assert.AreEqual(0, result.DeletedCount);
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private sealed class FailingHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) =>
+            throw new HttpRequestException("Simulated HTTP failure");
     }
 }

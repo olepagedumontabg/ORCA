@@ -221,9 +221,11 @@ public class SalsifyService : ISalsifyService
         if (toDeleteSkus.Count > 0)
         {
             _logger.LogInformation("Removing {Count} products no longer in Excel", toDeleteSkus.Count);
-            await db.Products
+            var stale = await db.Products
                 .Where(p => toDeleteSkus.Contains(p.Sku))
-                .ExecuteDeleteAsync();
+                .ToListAsync();
+            db.Products.RemoveRange(stale);
+            await db.SaveChangesAsync();
             deleted = toDeleteSkus.Count;
         }
 
@@ -357,12 +359,15 @@ public class SalsifyService : ISalsifyService
         var db = scope.ServiceProvider.GetRequiredService<OrcaDbContext>();
 
         var cutoff = DateTime.UtcNow.AddDays(-olderThanDays);
-        var deleted = await db.SyncStatuses
+        var toDelete = await db.SyncStatuses
             .Where(s => s.StartedAt < cutoff
                 && (s.Status == "completed" || s.Status == "failed"))
-            .ExecuteDeleteAsync();
+            .ToListAsync();
 
-        return new CleanupResult(true, deleted,
-            $"Deleted {deleted} sync records older than {olderThanDays} days");
+        db.SyncStatuses.RemoveRange(toDelete);
+        await db.SaveChangesAsync();
+
+        return new CleanupResult(true, toDelete.Count,
+            $"Deleted {toDelete.Count} sync records older than {olderThanDays} days");
     }
 }
