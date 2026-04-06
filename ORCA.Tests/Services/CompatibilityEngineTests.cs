@@ -372,7 +372,7 @@ public class CompatibilityEngineTests
             "{\"Minimum Width\": 30, \"Maximum Width\": 50}", "A");
 
         var baseP = CreateProduct("B1", CompatibilityConstants.Categories.ShowerBases,
-            "{\"Max Door Width\": 40, \"Installation\": \"alcove\"}", "B");
+            "{\"Max Door Width\": 60, \"Installation\": \"alcove\"}", "B");
 
         var result = engine.FindCompatibleProducts(door,
             new() { { CompatibilityConstants.Categories.ShowerBases, new() { baseP } } });

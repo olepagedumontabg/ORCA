@@ -84,7 +84,9 @@ public class CompatibilityService : ICompatibilityService
             Compatibles = categories.Where(c => c.Products.Count > 0).ToList(),
             IncompatibilityReasons = incompatibilityReasons,
             TotalCategories = categories.Count(c => c.Products.Count > 0),
-            DataSource = precomputed != null ? "database" : "computed"
+            DataSource = (precomputed != null && precomputed.Any())
+                ? "database"
+                : "computed"
         };
     }
 
@@ -234,24 +236,34 @@ public class CompatibilityService : ICompatibilityService
         return results;
     }
 
-    private async Task StoreComputedCompatibilitiesAsync(
-        Product baseProduct, List<CompatibilityCategoryResult> categories)
+    private async Task StoreComputedCompatibilitiesAsync(Product baseProduct, List<CompatibilityCategoryResult> categories)
     {
-        // Remove existing computed compatibilities for this product
+        // Remove existing
         var existing = await _db.ProductCompatibilities
             .Where(pc => pc.BaseProductId == baseProduct.Id)
             .ToListAsync();
+
         _db.ProductCompatibilities.RemoveRange(existing);
 
-        // Store new results
+        // 🔥 Load all products ONCE
+        var skus = categories
+            .SelectMany(c => c.Products)
+            .Select(p => p.Sku)
+            .Distinct()
+            .ToList();
+
+        var productsMap = await _db.Products
+            .Where(p => skus.Contains(p.Sku))
+            .ToDictionaryAsync(p => p.Sku, p => p);
+
         int score = 1000;
+
         foreach (var category in categories)
         {
             foreach (var compatible in category.Products)
             {
-                var compatProduct = await _db.Products
-                    .FirstOrDefaultAsync(p => p.Sku == compatible.Sku);
-                if (compatProduct == null) continue;
+                if (!productsMap.TryGetValue(compatible.Sku, out var compatProduct))
+                    continue;
 
                 _db.ProductCompatibilities.Add(new ProductCompatibility
                 {
@@ -263,22 +275,20 @@ public class CompatibilityService : ICompatibilityService
                 });
             }
 
-            // Store incompatibility reasons
+            // incompatibility
             if (!string.IsNullOrEmpty(category.IncompatibilityReason))
             {
-                // Store as a self-referencing row with the reason
                 _db.ProductCompatibilities.Add(new ProductCompatibility
                 {
                     BaseProductId = baseProduct.Id,
                     CompatibleProductId = baseProduct.Id,
-                    IncompatibilityReason = $"{category.Category}: {category.IncompatibilityReason}",
+                    IncompatibilityReason = category.IncompatibilityReason,
                     ComputedAt = DateTime.UtcNow
                 });
             }
         }
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Stored computed compatibilities for {Sku}", baseProduct.Sku);
     }
 
     private static string[] GetCandidateCategories(string productCategory)
@@ -369,7 +379,7 @@ public class CompatibilityService : ICompatibilityService
 
     private static List<CompatibilityCategoryResult> ApplyFilters(
         List<CompatibilityCategoryResult> categories,
-        string? categoryFilter, string? brandFilter, string serieFilter)
+        string? categoryFilter, string? brandFilter, string? serieFilter)
     {
         if (!string.IsNullOrWhiteSpace(categoryFilter))
         {

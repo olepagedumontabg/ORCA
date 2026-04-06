@@ -5,7 +5,7 @@ public class ProductCompatibility
     public int Id { get; set; }
     public int BaseProductId { get; set; }
     public int CompatibleProductId { get; set; }
-
+    public string? Category { get; set; }
     public int? CompatibilityScore { get; set; }
     public string? MatchReason { get; set; }
     public string? IncompatibilityReason { get; set; }
