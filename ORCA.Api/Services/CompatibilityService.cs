@@ -32,13 +32,6 @@ public class CompatibilityService : ICompatibilityService
 
         var product = await _productService.GetBySkuAsync(sku);
 
-        // Try parent SKU if variant not found (e.g., SKU.010 → SKU)
-        if (product == null && sku.Contains('.'))
-        {
-            var parentSku = sku.Split('.')[0];
-            product = await _productService.GetBySkuAsync(parentSku);
-        }
-
         if (product == null)
         {
             return new CompatibilityResultDto
@@ -50,6 +43,16 @@ public class CompatibilityService : ICompatibilityService
 
         // Try pre-computed results first
         var precomputed = await LoadPrecomputedCompatibilitiesAsync(product.Id);
+
+        // Cascade through alternate IDs if no pre-computed data found
+        foreach (var altSku in new[] { product.AlternateId1, product.AlternateId2, product.AlternateId3 })
+        {
+            if (precomputed != null && precomputed.Count > 0) break;
+            if (string.IsNullOrEmpty(altSku)) continue;
+            var altProduct = await _productService.GetBySkuAsync(altSku);
+            if (altProduct != null)
+                precomputed = await LoadPrecomputedCompatibilitiesAsync(altProduct.Id);
+        }
 
         List<CompatibilityCategoryResult> categories;
 
@@ -429,7 +432,10 @@ public class CompatibilityService : ICompatibilityService
             Category = product.Category,
             ImageUrl = product.ImageUrl,
             ProductPageUrl = product.ProductPageUrl,
-            NominalDimensions = product.NominalDimensions
+            NominalDimensions = product.NominalDimensions,
+            AlternateId1 = product.AlternateId1,
+            AlternateId2 = product.AlternateId2,
+            AlternateId3 = product.AlternateId3
         };
     }
 

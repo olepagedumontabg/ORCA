@@ -20,6 +20,10 @@ public class Product
     public string? ProductPageUrl { get; set; }
     public string? ImageUrl { get; set; }
 
+    public string? AlternateId1 { get; set; }
+    public string? AlternateId2 { get; set; }
+    public string? AlternateId3 { get; set; }
+
     public int? Ranking { get; set; }
 
     public DateTime CreatedAt { get; set; }
