@@ -12,4 +12,7 @@ public class ProductDto
     public string? ImageUrl { get; set; }
     public string? ProductPageUrl { get; set; }
     public string? NominalDimensions { get; set; }
+    public string? AlternateId1 { get; set; }
+    public string? AlternateId2 { get; set; }
+    public string? AlternateId3 { get; set; }
 }
