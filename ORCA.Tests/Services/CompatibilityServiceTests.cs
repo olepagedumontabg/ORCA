@@ -61,24 +61,96 @@ namespace ORCA.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetCompatible_UsesParentSku_WhenVariantNotFound()
+        public async Task GetCompatible_DotNotationFallback_IsRemoved()
         {
             _productServiceMock
                 .Setup(x => x.GetBySkuAsync("ABC.001"))
                 .ReturnsAsync((Product?)null);
 
-            _productServiceMock
-                .Setup(x => x.GetBySkuAsync("ABC"))
-                .ReturnsAsync(new Product { Id = 1, Sku = "ABC", Category = "Test" });
-
             var result = await _service.GetCompatibleProductsAsync("ABC.001");
 
-            Assert.IsTrue(result.Success);
+            Assert.IsFalse(result.Success);
+            _productServiceMock.Verify(x => x.GetBySkuAsync("ABC"), Times.Never);
         }
 
         // =============================
         // 🟢 PRECOMPUTED
         // =============================
+
+        [TestMethod]
+        public async Task GetCompatible_UsesAlternateId1_WhenNoPrecomputedData()
+        {
+            var product    = new Product { Id = 1, Sku = "ABC",  Category = "Doors", AlternateId1 = "ALT1" };
+            var altProduct = new Product { Id = 2, Sku = "ALT1", Category = "Doors" };
+            var compatible = new Product { Id = 3, Sku = "DEF",  Category = "Doors" };
+
+            _db.Products.AddRange(product, altProduct, compatible);
+            _db.ProductCompatibilities.Add(new ProductCompatibility
+            {
+                BaseProductId = 2,
+                CompatibleProductId = 3,
+                CompatibilityScore = 100
+            });
+            await _db.SaveChangesAsync();
+
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ABC")).ReturnsAsync(product);
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ALT1")).ReturnsAsync(altProduct);
+
+            var result = await _service.GetCompatibleProductsAsync("ABC");
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("database", result.DataSource);
+            Assert.IsTrue(result.Compatibles.Any(c => c.Products.Any(p => p.Sku == "DEF")));
+        }
+
+        [TestMethod]
+        public async Task GetCompatible_CascadesToAlternateId2_WhenAlternateId1HasNoData()
+        {
+            var product     = new Product { Id = 1, Sku = "ABC",  Category = "Doors", AlternateId1 = "ALT1", AlternateId2 = "ALT2" };
+            var altProduct  = new Product { Id = 2, Sku = "ALT1", Category = "Doors" };
+            var alt2Product = new Product { Id = 3, Sku = "ALT2", Category = "Doors" };
+            var compatible  = new Product { Id = 4, Sku = "DEF",  Category = "Doors" };
+
+            _db.Products.AddRange(product, altProduct, alt2Product, compatible);
+            _db.ProductCompatibilities.Add(new ProductCompatibility
+            {
+                BaseProductId = 3,
+                CompatibleProductId = 4,
+                CompatibilityScore = 100
+            });
+            await _db.SaveChangesAsync();
+
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ABC")).ReturnsAsync(product);
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ALT1")).ReturnsAsync(altProduct);
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ALT2")).ReturnsAsync(alt2Product);
+
+            var result = await _service.GetCompatibleProductsAsync("ABC");
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("database", result.DataSource);
+            Assert.IsTrue(result.Compatibles.Any(c => c.Products.Any(p => p.Sku == "DEF")));
+        }
+
+        [TestMethod]
+        public async Task GetCompatible_ComputesOnDemand_WhenAllAlternatesHaveNoData()
+        {
+            var product    = new Product { Id = 1, Sku = "ABC",  Category = "Doors", AlternateId1 = "ALT1" };
+            var altProduct = new Product { Id = 2, Sku = "ALT1", Category = "Doors" };
+
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ABC")).ReturnsAsync(product);
+            _productServiceMock.Setup(x => x.GetBySkuAsync("ALT1")).ReturnsAsync(altProduct);
+            _productServiceMock
+                .Setup(x => x.GetProductsByCategoriesAsync(It.IsAny<string[]>()))
+                .ReturnsAsync(new List<Product>());
+            _engineMock
+                .Setup(x => x.FindCompatibleProducts(It.IsAny<Product>(), It.IsAny<Dictionary<string, List<Product>>>()))
+                .Returns(new List<CompatibilityCategoryResult>());
+
+            var result = await _service.GetCompatibleProductsAsync("ABC");
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("computed", result.DataSource);
+        }
 
         [TestMethod]
         public async Task GetCompatible_UsesPrecomputedData()
