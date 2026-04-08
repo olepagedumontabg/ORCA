@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ORCA.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,6 +48,9 @@ namespace ORCA.Api.Migrations
                     attributes = table.Column<string>(type: "jsonb", nullable: true),
                     product_page_url = table.Column<string>(type: "text", nullable: true),
                     image_url = table.Column<string>(type: "text", nullable: true),
+                    AlternateId1 = table.Column<string>(type: "text", nullable: true),
+                    AlternateId2 = table.Column<string>(type: "text", nullable: true),
+                    AlternateId3 = table.Column<string>(type: "text", nullable: true),
                     ranking = table.Column<int>(type: "integer", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
@@ -87,6 +90,7 @@ namespace ORCA.Api.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     base_product_id = table.Column<int>(type: "integer", nullable: false),
                     compatible_product_id = table.Column<int>(type: "integer", nullable: false),
+                    Category = table.Column<string>(type: "text", nullable: true),
                     compatibility_score = table.Column<int>(type: "integer", nullable: true),
                     match_reason = table.Column<string>(type: "text", nullable: true),
                     incompatibility_reason = table.Column<string>(type: "text", nullable: true),

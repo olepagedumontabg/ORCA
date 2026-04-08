@@ -12,8 +12,8 @@ using ORCA.Api.Data;
 namespace ORCA.Api.Migrations
 {
     [DbContext(typeof(OrcaDbContext))]
-    [Migration("20260331185507_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260408132928_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -83,6 +83,15 @@ namespace ORCA.Api.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AlternateId1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AlternateId2")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AlternateId3")
+                        .HasColumnType("text");
 
                     b.Property<string>("Attributes")
                         .HasColumnType("jsonb")
@@ -188,6 +197,9 @@ namespace ORCA.Api.Migrations
                     b.Property<int>("BaseProductId")
                         .HasColumnType("integer")
                         .HasColumnName("base_product_id");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
 
                     b.Property<int?>("CompatibilityScore")
                         .HasColumnType("integer")
