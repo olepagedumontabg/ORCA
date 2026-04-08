@@ -160,32 +160,134 @@
     </footer>
 
     <!-- Error Modal -->
-    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
-            <div class="flex items-center justify-between mb-4">
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onclick="closeErrorOutside(event)">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
                 <h3 class="text-xl font-bold text-red-600">
-                    <i class="fas fa-exclamation-triangle"></i> Sync Error
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Sync Failed
                 </h3>
-                <button onclick="closeError()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+                <button onclick="closeError()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-            <div id="errorContent" class="bg-red-50 border border-red-200 rounded p-4 text-sm font-mono text-red-800 overflow-auto max-h-96">
+
+            <!-- Sync meta: ID, channel, time -->
+            <div id="errorMeta" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 text-sm"></div>
+
+            <!-- Stage badge -->
+            <div id="errorStageBadge" class="hidden mb-4 flex items-center gap-2">
+                <span class="text-gray-500 font-medium whitespace-nowrap">Failed at:</span>
+                <span id="errorStageText" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-semibold text-sm"></span>
             </div>
-            <div class="mt-4 flex justify-end">
-                <button onclick="closeError()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">Close</button>
+
+            <!-- Error message -->
+            <div class="mb-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Error Message</div>
+                <div id="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm font-mono text-red-800 break-words whitespace-pre-wrap overflow-auto max-h-48"></div>
+            </div>
+
+            <!-- Feed URL -->
+            <div id="errorFeedUrlBlock" class="hidden mb-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Product Feed URL</div>
+                <div id="errorFeedUrl" class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 break-all"></div>
+            </div>
+
+            <!-- Suggestions -->
+            <div id="errorSuggestions" class="hidden mb-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Possible Causes</div>
+                <ul id="errorSuggestionList" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-1 text-sm text-yellow-900 list-disc list-inside"></ul>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-gray-100">
+                <button onclick="closeError()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded font-medium transition">Close</button>
             </div>
         </div>
     </div>
 
     <script>
-        function showError(msg) {
-            document.getElementById('errorContent').textContent = msg;
+        function closeErrorOutside(e) {
+            if (e.target === document.getElementById('errorModal')) closeError();
+        }
+
+        function showError(syncId) {
+            const syncObj = _syncCache[syncId] || {};
+            let meta = null;
+            try { meta = syncObj.sync_metadata ? JSON.parse(syncObj.sync_metadata) : null; } catch {}
+
+            const rawMsg = syncObj.error_message || 'Unknown error';
+
+            // Parse [step] prefix written by the server
+            const stepMatch = rawMsg.match(/^\[([^\]]+)\]\s*/);
+            const step = stepMatch ? stepMatch[1] : null;
+            const message = stepMatch ? rawMsg.slice(stepMatch[0].length) : rawMsg;
+
+            // Sync meta row
+            const metaDiv = document.getElementById('errorMeta');
+            const failedAt = syncObj.completed_at
+                ? new Date(syncObj.completed_at).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
+                : '-';
+            metaDiv.innerHTML = `
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="text-xs text-gray-500 mb-1">Sync ID</div>
+                    <div class="font-bold text-gray-900">#${syncId}</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="text-xs text-gray-500 mb-1">Channel</div>
+                    <div class="font-medium text-gray-900">${escapeHtml(meta && meta.channel_name || 'Unknown')}</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="text-xs text-gray-500 mb-1">Failed At</div>
+                    <div class="font-medium text-gray-900">${failedAt}</div>
+                </div>`;
+
+            // Stage badge
+            if (step) {
+                document.getElementById('errorStageText').textContent = step;
+                document.getElementById('errorStageBadge').classList.remove('hidden');
+            } else {
+                document.getElementById('errorStageBadge').classList.add('hidden');
+            }
+
+            // Error message
+            document.getElementById('errorMessage').textContent = message;
+
+            // Feed URL
+            const feedUrl = meta && (meta.product_feed_url || meta.feed_url);
+            if (feedUrl) {
+                document.getElementById('errorFeedUrl').textContent = feedUrl;
+                document.getElementById('errorFeedUrlBlock').classList.remove('hidden');
+            } else {
+                document.getElementById('errorFeedUrlBlock').classList.add('hidden');
+            }
+
+            // Suggestions based on keywords
+            const suggestions = [];
+            const lower = rawMsg.toLowerCase();
+            if (lower.includes('0 bytes') || lower.includes('empty'))
+                suggestions.push('The product feed URL returned an empty file — it may have expired. Trigger a new Salsify publication to get a fresh URL.');
+            if (lower.includes('unauthorized') || lower.includes('403') || lower.includes('401'))
+                suggestions.push('The download was rejected (access denied). Check that the Salsify S3 URL is publicly accessible or that credentials are correct.');
+            if (lower.includes('404') || lower.includes('not found'))
+                suggestions.push('The file was not found at the given URL. The product feed link may have expired — trigger a new Salsify publication.');
+            if (lower.includes('timeout') || lower.includes('timed out'))
+                suggestions.push('The download timed out. The Excel file may be very large, or Salsify\'s S3 is temporarily slow. Retry the sync.');
+            if (lower.includes('archive') || lower.includes('zip') || lower.includes('format') || lower.includes('parse') || lower.includes('openxml'))
+                suggestions.push('The file could not be parsed as an Excel workbook. Make sure Salsify exports an .xlsx file, not CSV or another format.');
+            if (lower.includes('database') || lower.includes('sql') || lower.includes('connection'))
+                suggestions.push('A database error occurred while saving products. Check the database connection and try again.');
+            if (suggestions.length === 0)
+                suggestions.push('Review the error message above and check the application logs for more details.');
+
+            const ul = document.getElementById('errorSuggestionList');
+            ul.innerHTML = suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+            document.getElementById('errorSuggestions').classList.remove('hidden');
+
             document.getElementById('errorModal').classList.remove('hidden');
         }
+
         function closeError() {
             document.getElementById('errorModal').classList.add('hidden');
         }
+
+        const _syncCache = {};
 
         function toggleDetails(id) {
             const row = document.getElementById('details-' + id);
@@ -333,6 +435,8 @@
                     let meta = null;
                     try { meta = sync.sync_metadata ? JSON.parse(sync.sync_metadata) : null; } catch {}
 
+                    _syncCache[sync.id] = sync;
+
                     const channelName = (meta && meta.channel_name) || 'Unknown';
                     const statusLabel = sync.status === 'partial_success' ? 'Partial'
                         : (sync.status.charAt(0).toUpperCase() + sync.status.slice(1));
@@ -359,7 +463,7 @@
 
                     let detailsBtn = '<span class="text-gray-400">No details</span>';
                     if (sync.error_message) {
-                        detailsBtn = `<button onclick="showError('${escapeHtml(sync.error_message).replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
+                        detailsBtn = `<button onclick="showError(${sync.id})" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
                     } else if (hasDetails) {
                         detailsBtn = `<button onclick="toggleDetails(${sync.id})" class="text-primary hover:text-blue-800 font-medium" id="toggle-btn-${sync.id}"><i class="fas fa-eye-slash"></i> Hide Details</button>`;
                     }

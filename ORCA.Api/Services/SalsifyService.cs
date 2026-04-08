@@ -66,21 +66,29 @@ public class SalsifyService : ISalsifyService
         var compatibilityService = scope.ServiceProvider.GetRequiredService<ICompatibilityService>();
 
         SyncStatus? syncRecord = null;
+        var step = "initializing";
 
         try
         {
             syncRecord = await db.SyncStatuses.FindAsync(syncId);
             if (syncRecord == null) return;
 
+            step = "updating status to running";
             syncRecord.Status = "running";
             await db.SaveChangesAsync();
 
+            step = "downloading Excel file from Salsify";
             _logger.LogInformation("Downloading Excel from: {Url}", productFeedUrl);
             var excelBytes = await _httpClient.GetByteArrayAsync(productFeedUrl);
 
+            if (excelBytes.Length == 0)
+                throw new InvalidOperationException("The downloaded file is empty (0 bytes). The product feed URL may be expired or invalid.");
+
+            step = $"parsing Excel file ({excelBytes.Length:N0} bytes)";
             _logger.LogInformation("Parsing Excel ({Size} bytes)", excelBytes.Length);
             var (added, updated, deleted, changedSkus) = await SyncFromExcelBytesAsync(db, excelBytes);
 
+            step = "recomputing product compatibilities";
             _logger.LogInformation("Recomputing compatibilities for {Count} changed products", changedSkus.Count);
             int compatCount = 0;
             foreach (var sku in changedSkus)
@@ -96,6 +104,7 @@ public class SalsifyService : ISalsifyService
                 }
             }
 
+            step = "saving final sync results";
             syncRecord = await db.SyncStatuses.FindAsync(syncId);
             if (syncRecord != null)
             {
@@ -113,7 +122,7 @@ public class SalsifyService : ISalsifyService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Sync #{SyncId} failed", syncId);
+            _logger.LogError(ex, "Sync #{SyncId} failed at step [{Step}]", syncId, step);
 
             try
             {
@@ -124,7 +133,7 @@ public class SalsifyService : ISalsifyService
                 {
                     syncRecord.Status = "failed";
                     syncRecord.CompletedAt = DateTime.UtcNow;
-                    syncRecord.ErrorMessage = ex.Message;
+                    syncRecord.ErrorMessage = $"[{step}] {ex.Message}";
                     await db.SaveChangesAsync();
                 }
             }
