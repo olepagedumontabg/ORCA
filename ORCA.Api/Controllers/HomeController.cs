@@ -12,8 +12,18 @@ public class HomeController : ControllerBase
         _env = env;
     }
 
-    private string TemplatesDir =>
-        Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "templates"));
+    private string TemplatesDir
+    {
+        get
+        {
+            var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "templates"));
+            if (!Directory.Exists(path))
+                path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "templates"));
+            if (!Directory.Exists(path))
+                path = Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "templates"));
+            return path;
+        }
+    }
 
     private ContentResult ServeTemplate(string filename)
     {
