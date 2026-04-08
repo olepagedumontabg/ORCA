@@ -17,7 +17,8 @@ public class SalsifyService : ISalsifyService
     {
         "Unique ID", "Product Name", "Brand", "Series", "Family",
         "Length", "Width", "Height", "Nominal Dimensions",
-        "Product Page URL", "Image URL", "Ranking"
+        "Product Page URL", "Image URL", "Ranking",
+        "Alternate ID 1", "Alternate ID 2", "Alternate ID 3"
     };
 
     public SalsifyService(
@@ -179,13 +180,14 @@ public class SalsifyService : ISalsifyService
 
                 if (existing != null)
                 {
-                    bool changed = UpdateProduct(existing, productData, attrsJson);
+                    var (changed, dimensionsChanged) = UpdateProduct(existing, productData, attrsJson);
                     if (changed)
                     {
                         existing.UpdatedAt = DateTime.UtcNow;
                         updated++;
-                        changedSkus.Add(skuRaw);
                     }
+                    if (dimensionsChanged)
+                        changedSkus.Add(skuRaw);
                 }
                 else
                 {
@@ -204,13 +206,16 @@ public class SalsifyService : ISalsifyService
                         ProductPageUrl = productData.ProductPageUrl,
                         ImageUrl = productData.ImageUrl,
                         Ranking = productData.Ranking,
+                        AlternateId1 = productData.AlternateId1,
+                        AlternateId2 = productData.AlternateId2,
+                        AlternateId3 = productData.AlternateId3,
                         Attributes = attrsJson,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
                     db.Products.Add(product);
                     added++;
-                    changedSkus.Add(skuRaw);
+                    changedSkus.Add(skuRaw); // new product always triggers compat recompute
                 }
             }
 
@@ -235,7 +240,8 @@ public class SalsifyService : ISalsifyService
 
     private static (string Sku, string? ProductName, string? Brand, string? Series, string? Family,
         string Category, decimal? Length, decimal? Width, decimal? Height,
-        string? NominalDimensions, string? ProductPageUrl, string? ImageUrl, int? Ranking)
+        string? NominalDimensions, string? ProductPageUrl, string? ImageUrl, int? Ranking,
+        string? AlternateId1, string? AlternateId2, string? AlternateId3)
         ExtractProductData(IXLRow row, Dictionary<int, string> headers, string sku, string category)
     {
         T? Get<T>(string name) where T : struct
@@ -270,7 +276,10 @@ public class SalsifyService : ISalsifyService
             GetStr("Nominal Dimensions"),
             GetStr("Product Page URL"),
             GetStr("Image URL"),
-            Get<int>("Ranking")
+            Get<int>("Ranking"),
+            GetStr("Alternate ID 1"),
+            GetStr("Alternate ID 2"),
+            GetStr("Alternate ID 3")
         );
     }
 
@@ -300,29 +309,35 @@ public class SalsifyService : ISalsifyService
         return attrs.Count > 0 ? JsonSerializer.Serialize(attrs) : null;
     }
 
-    private static bool UpdateProduct(Product product,
+    private static (bool Changed, bool DimensionsChanged) UpdateProduct(Product product,
         (string Sku, string? ProductName, string? Brand, string? Series, string? Family,
         string Category, decimal? Length, decimal? Width, decimal? Height,
-        string? NominalDimensions, string? ProductPageUrl, string? ImageUrl, int? Ranking) data,
+        string? NominalDimensions, string? ProductPageUrl, string? ImageUrl, int? Ranking,
+        string? AlternateId1, string? AlternateId2, string? AlternateId3) data,
         string? attrsJson)
     {
         bool changed = false;
+        bool dimensionsChanged = false;
+
+        if (product.Length != data.Length) { product.Length = data.Length; changed = true; dimensionsChanged = true; }
+        if (product.Width != data.Width) { product.Width = data.Width; changed = true; dimensionsChanged = true; }
+        if (product.Height != data.Height) { product.Height = data.Height; changed = true; dimensionsChanged = true; }
+        if (product.NominalDimensions != data.NominalDimensions) { product.NominalDimensions = data.NominalDimensions; changed = true; dimensionsChanged = true; }
 
         if (product.ProductName != data.ProductName) { product.ProductName = data.ProductName; changed = true; }
         if (product.Brand != data.Brand) { product.Brand = data.Brand; changed = true; }
         if (product.Series != data.Series) { product.Series = data.Series; changed = true; }
         if (product.Family != data.Family) { product.Family = data.Family; changed = true; }
         if (product.Category != data.Category) { product.Category = data.Category; changed = true; }
-        if (product.Length != data.Length) { product.Length = data.Length; changed = true; }
-        if (product.Width != data.Width) { product.Width = data.Width; changed = true; }
-        if (product.Height != data.Height) { product.Height = data.Height; changed = true; }
-        if (product.NominalDimensions != data.NominalDimensions) { product.NominalDimensions = data.NominalDimensions; changed = true; }
         if (product.ProductPageUrl != data.ProductPageUrl) { product.ProductPageUrl = data.ProductPageUrl; changed = true; }
         if (product.ImageUrl != data.ImageUrl) { product.ImageUrl = data.ImageUrl; changed = true; }
         if (product.Ranking != data.Ranking) { product.Ranking = data.Ranking; changed = true; }
+        if (product.AlternateId1 != data.AlternateId1) { product.AlternateId1 = data.AlternateId1; changed = true; }
+        if (product.AlternateId2 != data.AlternateId2) { product.AlternateId2 = data.AlternateId2; changed = true; }
+        if (product.AlternateId3 != data.AlternateId3) { product.AlternateId3 = data.AlternateId3; changed = true; }
         if (product.Attributes != attrsJson) { product.Attributes = attrsJson; changed = true; }
 
-        return changed;
+        return (changed, dimensionsChanged);
     }
 
     public async Task<List<SyncStatusDto>> GetStatusAsync(int? syncId, int limit)
