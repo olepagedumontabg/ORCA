@@ -210,8 +210,7 @@
 
         function showError(syncId) {
             const syncObj = _syncCache[syncId] || {};
-            let meta = null;
-            try { meta = syncObj.sync_metadata ? JSON.parse(syncObj.sync_metadata) : null; } catch {}
+            const meta = syncObj.metadata || null;
 
             const rawMsg = syncObj.error_message || 'Unknown error';
 
@@ -432,78 +431,136 @@
                 document.getElementById('syncTable').classList.remove('hidden');
                 const tbody = document.getElementById('syncTableBody');
 
-                syncs.forEach(sync => {
-                    let meta = null;
-                    try { meta = sync.sync_metadata ? JSON.parse(sync.sync_metadata) : null; } catch {}
-
-                    _syncCache[sync.id] = sync;
-
-                    const channelName = (meta && meta.channel_name) || 'Unknown';
-                    const statusLabel = sync.status === 'partial_success' ? 'Partial'
-                        : sync.status === 'interrupted' ? 'Interrupted'
-                        : (sync.status.charAt(0).toUpperCase() + sync.status.slice(1));
-
-                    const startedFormatted = sync.started_at
-                        ? new Date(sync.started_at).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
-                        : '-';
-
-                    const duration = formatDuration(sync.started_at, sync.completed_at, sync.status);
-
-                    let productsHtml = '<div class="text-gray-400">No changes</div>';
-                    const parts = [];
-                    if (sync.products_added   > 0) parts.push(`<div class="text-green-600"><i class="fas fa-plus-circle"></i> ${sync.products_added} added</div>`);
-                    if (sync.products_updated > 0) parts.push(`<div class="text-blue-600"><i class="fas fa-edit"></i> ${sync.products_updated} updated</div>`);
-                    if (sync.products_deleted > 0) parts.push(`<div class="text-red-600"><i class="fas fa-trash-alt"></i> ${sync.products_deleted} deleted</div>`);
-                    if (parts.length > 0) productsHtml = '<div class="flex flex-col space-y-1">' + parts.join('') + '</div>';
-
-                    const compatHtml = sync.compatibilities_updated > 0
-                        ? `<span class="text-primary font-medium">${sync.compatibilities_updated}</span> updated`
-                        : '<span class="text-gray-400">-</span>';
-
-                    const cd = meta && meta.change_details;
-                    const hasDetails = cd && (cd.updated_products?.length || cd.added_products?.length || cd.deleted_products?.length);
-
-                    let detailsBtn = '<span class="text-gray-400">No details</span>';
-                    if (sync.error_message) {
-                        detailsBtn = `<button onclick="showError(${sync.id})" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
-                    } else if (hasDetails) {
-                        detailsBtn = `<button onclick="toggleDetails(${sync.id})" class="text-primary hover:text-blue-800 font-medium" id="toggle-btn-${sync.id}"><i class="fas fa-eye-slash"></i> Hide Details</button>`;
-                    }
-
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50 transition';
-                    row.id = 'sync-row-' + sync.id;
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${sync.id}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div class="font-medium">${escapeHtml(channelName)}</div>
-                            <div class="text-xs text-gray-500">${escapeHtml(sync.sync_type)}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="status-badge status-${sync.status}">${escapeHtml(statusLabel)}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${startedFormatted}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${duration}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">${productsHtml}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${compatHtml}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">${detailsBtn}</td>
-                    `;
-                    tbody.appendChild(row);
-
-                    if (hasDetails) {
-                        const detailsHtml = buildDetailsRow(sync, meta);
-                        if (detailsHtml) {
-                            const tmp = document.createElement('tbody');
-                            tmp.innerHTML = detailsHtml;
-                            tbody.appendChild(tmp.firstElementChild);
-                        }
-                    }
-                });
-
+                syncs.forEach(sync => renderSyncRow(sync, tbody));
+                startPollingIfNeeded(syncs);
             } catch (err) {
                 document.getElementById('loadingState').classList.add('hidden');
                 document.getElementById('errorState').classList.remove('hidden');
                 document.getElementById('errorText').textContent = 'Failed to load sync history: ' + err.message;
+            }
+        }
+
+        function buildCompatHtml(sync) {
+            const meta = sync.metadata || null;
+            const isRunning = sync.status === 'running' || sync.status === 'processing';
+            const total = meta && meta.products_total != null ? meta.products_total : null;
+            const done  = meta && meta.products_done  != null ? meta.products_done  : null;
+
+            if (isRunning && total != null) {
+                const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                return `<div class="min-w-[140px]">
+                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                        <span class="font-medium text-blue-700 animate-pulse">Computing…</span>
+                        <span class="font-mono">${done} / ${total}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width:${pct}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1 text-right">${pct}%</div>
+                </div>`;
+            }
+            if (sync.compatibilities_updated > 0) {
+                return `<span class="text-primary font-medium">${sync.compatibilities_updated}</span> updated`;
+            }
+            return '<span class="text-gray-400">-</span>';
+        }
+
+        function renderSyncRow(sync, tbody) {
+            const meta = sync.metadata || null;
+            _syncCache[sync.id] = sync;
+
+            const channelName = (meta && meta.channel_name) || 'Unknown';
+            const statusLabel = sync.status === 'partial_success' ? 'Partial'
+                : sync.status === 'interrupted' ? 'Interrupted'
+                : (sync.status.charAt(0).toUpperCase() + sync.status.slice(1));
+
+            const startedFormatted = sync.started_at
+                ? new Date(sync.started_at).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
+                : '-';
+
+            const duration = formatDuration(sync.started_at, sync.completed_at, sync.status);
+
+            let productsHtml = '<div class="text-gray-400">No changes</div>';
+            const parts = [];
+            if (sync.products_added   > 0) parts.push(`<div class="text-green-600"><i class="fas fa-plus-circle"></i> ${sync.products_added} added</div>`);
+            if (sync.products_updated > 0) parts.push(`<div class="text-blue-600"><i class="fas fa-edit"></i> ${sync.products_updated} updated</div>`);
+            if (sync.products_deleted > 0) parts.push(`<div class="text-red-600"><i class="fas fa-trash-alt"></i> ${sync.products_deleted} deleted</div>`);
+            if (parts.length > 0) productsHtml = '<div class="flex flex-col space-y-1">' + parts.join('') + '</div>';
+
+            const compatHtml = buildCompatHtml(sync);
+
+            const cd = meta && meta.change_details;
+            const hasDetails = cd && (cd.updated_products?.length || cd.added_products?.length || cd.deleted_products?.length);
+
+            let detailsBtn = '<span class="text-gray-400">No details</span>';
+            if (sync.error_message) {
+                detailsBtn = `<button onclick="showError(${sync.id})" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
+            } else if (hasDetails) {
+                detailsBtn = `<button onclick="toggleDetails(${sync.id})" class="text-primary hover:text-blue-800 font-medium" id="toggle-btn-${sync.id}"><i class="fas fa-eye-slash"></i> Hide Details</button>`;
+            }
+
+            const existing = document.getElementById('sync-row-' + sync.id);
+            const row = existing || document.createElement('tr');
+            row.className = 'hover:bg-gray-50 transition';
+            row.id = 'sync-row-' + sync.id;
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${sync.id}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div class="font-medium">${escapeHtml(channelName)}</div>
+                    <div class="text-xs text-gray-500">${escapeHtml(sync.sync_type)}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="status-badge status-${sync.status}">${escapeHtml(statusLabel)}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${startedFormatted}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${duration}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${productsHtml}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">${compatHtml}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${detailsBtn}</td>
+            `;
+            if (!existing && tbody) tbody.appendChild(row);
+
+            if (hasDetails && !existing) {
+                const detailsHtml = buildDetailsRow(sync, meta);
+                if (detailsHtml) {
+                    const tmp = document.createElement('tbody');
+                    tmp.innerHTML = detailsHtml;
+                    tbody.appendChild(tmp.firstElementChild);
+                }
+            }
+        }
+
+        let _pollInterval = null;
+
+        async function pollRunningSyncs() {
+            const running = Object.values(_syncCache).filter(s => s.status === 'running' || s.status === 'processing');
+            if (running.length === 0) {
+                clearInterval(_pollInterval);
+                _pollInterval = null;
+                return;
+            }
+            try {
+                const res = await fetch('/api/salsify/status?limit=100');
+                if (!res.ok) return;
+                const data = await res.json();
+                const syncs = data.syncs || [];
+                syncs.forEach(sync => {
+                    const prev = _syncCache[sync.id];
+                    if (prev && (prev.status === 'running' || prev.status === 'processing')) {
+                        renderSyncRow(sync, null);
+                        if (sync.status !== 'running' && sync.status !== 'processing') {
+                            clearInterval(_pollInterval);
+                            _pollInterval = null;
+                        }
+                    }
+                });
+            } catch { /* silent */ }
+        }
+
+        function startPollingIfNeeded(syncs) {
+            const hasRunning = syncs.some(s => s.status === 'running' || s.status === 'processing');
+            if (hasRunning && !_pollInterval) {
+                _pollInterval = setInterval(pollRunningSyncs, 5000);
             }
         }
 

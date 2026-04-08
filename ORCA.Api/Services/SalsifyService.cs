@@ -4,6 +4,7 @@ using ORCA.Api.Data;
 using ORCA.Api.Domain.Entities;
 using ORCA.Api.Services.Interface;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ORCA.Api.Services;
 
@@ -90,7 +91,36 @@ public class SalsifyService : ISalsifyService
 
             step = "recomputing product compatibilities";
             _logger.LogInformation("Recomputing compatibilities for {Count} changed products", changedSkus.Count);
-            int compatCount = await compatibilityService.BulkComputeCompatibilitiesAsync(changedSkus);
+
+            // Store total in metadata so the UI can show a progress bar
+            syncRecord = await db.SyncStatuses.FindAsync(syncId);
+            if (syncRecord != null)
+            {
+                var metaNode = JsonNode.Parse(syncRecord.SyncMetadata ?? "{}") ?? new JsonObject();
+                metaNode["products_total"] = changedSkus.Count;
+                metaNode["products_done"] = 0;
+                syncRecord.SyncMetadata = metaNode.ToJsonString();
+                await db.SaveChangesAsync();
+            }
+
+            int compatCount = await compatibilityService.BulkComputeCompatibilitiesAsync(changedSkus, async done =>
+            {
+                try
+                {
+                    var sr = await db.SyncStatuses.FindAsync(syncId);
+                    if (sr != null)
+                    {
+                        var node = JsonNode.Parse(sr.SyncMetadata ?? "{}") ?? new JsonObject();
+                        node["products_done"] = done;
+                        sr.SyncMetadata = node.ToJsonString();
+                        await db.SaveChangesAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to update progress for sync #{SyncId}", syncId);
+                }
+            });
 
             step = "saving final sync results";
             syncRecord = await db.SyncStatuses.FindAsync(syncId);

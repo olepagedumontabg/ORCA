@@ -133,7 +133,7 @@ public class CompatibilityService : ICompatibilityService
         };
     }
 
-    public async Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus)
+    public async Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus, Func<int, Task>? onProgress = null)
     {
         var skuSet = skus
             .Select(s => s.Trim().ToUpperInvariant())
@@ -237,6 +237,11 @@ public class CompatibilityService : ICompatibilityService
             }
 
             processed++;
+
+            if (onProgress != null && processed % 50 == 0)
+            {
+                try { await onProgress(processed); } catch { /* non-fatal */ }
+            }
         }
 
         // Bulk insert in chunks to avoid parameter limit

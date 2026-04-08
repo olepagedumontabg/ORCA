@@ -25,6 +25,7 @@ public interface ICompatibilityService
     /// Bulk recompute compatibilities for a set of SKUs in a single pass.
     /// Loads all products and overrides once, then computes and stores in batch.
     /// Returns the number of SKUs processed.
+    /// onProgress is called every 50 products with the current done count.
     /// </summary>
-    Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus);
+    Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus, Func<int, Task>? onProgress = null);
 }
