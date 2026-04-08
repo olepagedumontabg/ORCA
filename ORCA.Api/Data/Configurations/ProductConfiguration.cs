@@ -41,6 +41,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(p => p.Ranking).HasColumnName("ranking");
 
+        builder.Property(p => p.AlternateId1).HasColumnName("alternate_id_1").HasMaxLength(50);
+        builder.Property(p => p.AlternateId2).HasColumnName("alternate_id_2").HasMaxLength(50);
+        builder.Property(p => p.AlternateId3).HasColumnName("alternate_id_3").HasMaxLength(50);
+
         builder.Property(p => p.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(p => p.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
     }
