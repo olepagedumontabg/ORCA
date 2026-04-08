@@ -12,7 +12,8 @@ packages = [
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+run = ["dotnet", "publish/ORCA.Api.dll"]
+build = ["dotnet", "publish", "ORCA.Api/ORCA.Api.csproj", "-c", "Release", "-o", "publish"]
 
 [workflows]
 runButton = "Project"
