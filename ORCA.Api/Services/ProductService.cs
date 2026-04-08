@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ORCA.Api.Data;
 using ORCA.Api.Domain.Entities;
 using ORCA.Api.DTOs;
+using ORCA.Api.Services.Interface;
 
 namespace ORCA.Api.Services;
 
@@ -53,7 +54,10 @@ public class ProductService : IProductService
                 Category = p.Category,
                 ImageUrl = p.ImageUrl,
                 ProductPageUrl = p.ProductPageUrl,
-                NominalDimensions = p.NominalDimensions
+                NominalDimensions = p.NominalDimensions,
+                AlternateId1 = p.AlternateId1,
+                AlternateId2 = p.AlternateId2,
+                AlternateId3 = p.AlternateId3
             })
             .ToListAsync();
 

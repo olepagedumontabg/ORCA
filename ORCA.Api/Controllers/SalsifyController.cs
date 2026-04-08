@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using ORCA.Api.Services;
+using ORCA.Api.Services.Interface;
+using System.Text.Json.Serialization;
 
 namespace ORCA.Api.Controllers;
 
@@ -99,9 +100,18 @@ public class SalsifyController : ControllerBase
 
 public class SalsifyWebhookPayload
 {
+    [JsonPropertyName("channel_id")]
     public string? ChannelId { get; set; }
+
+    [JsonPropertyName("channel_name")]
     public string? ChannelName { get; set; }
+
+    [JsonPropertyName("publication_status")]
     public string? PublicationStatus { get; set; }
+
+    [JsonPropertyName("product_feed_url")]
     public string? ProductFeedUrl { get; set; }
+
+    [JsonPropertyName("product_feed_export_url")]
     public string? ProductFeedExportUrl { get; set; }
 }

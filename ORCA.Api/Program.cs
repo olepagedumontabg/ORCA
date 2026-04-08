@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using ORCA.Api.Data;
 using ORCA.Api.Services;
+using ORCA.Api.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 

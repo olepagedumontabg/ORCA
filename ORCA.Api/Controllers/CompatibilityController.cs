@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ORCA.Api.DTOs;
-using ORCA.Api.Services;
+using ORCA.Api.Services.Interface;
 
 namespace ORCA.Api.Controllers;
 
@@ -44,21 +44,33 @@ public class CompatibilityController : ControllerBase
     [HttpPost("api/compute-compatibilities")]
     public async Task<IActionResult> ComputeAll()
     {
-        var products = await _productService.GetAllAsync(page: 1, pageSize: int.MaxValue);
         int count = 0;
         int errors = 0;
 
-        foreach (var p in products.Products)
+        const int pageSize = 500;
+        int page = 1;
+
+        while (true)
         {
-            try
+            var result = await _productService.GetAllAsync(page, pageSize);
+
+            if (result.Products == null || !result.Products.Any())
+                break;
+
+            foreach (var p in result.Products)
             {
-                await _compatibilityService.ComputeCompatibilitiesAsync(p.Sku);
-                count++;
+                try
+                {
+                    await _compatibilityService.ComputeCompatibilitiesAsync(p.Sku);
+                    count++;
+                }
+                catch
+                {
+                    errors++;
+                }
             }
-            catch
-            {
-                errors++;
-            }
+
+            page++;
         }
 
         return Ok(new

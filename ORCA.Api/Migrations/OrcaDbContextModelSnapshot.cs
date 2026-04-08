@@ -81,6 +81,15 @@ namespace ORCA.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AlternateId1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AlternateId2")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AlternateId3")
+                        .HasColumnType("text");
+
                     b.Property<string>("Attributes")
                         .HasColumnType("jsonb")
                         .HasColumnName("attributes");
@@ -185,6 +194,9 @@ namespace ORCA.Api.Migrations
                     b.Property<int>("BaseProductId")
                         .HasColumnType("integer")
                         .HasColumnName("base_product_id");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
 
                     b.Property<int?>("CompatibilityScore")
                         .HasColumnType("integer")
