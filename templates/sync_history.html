@@ -35,6 +35,15 @@
         .status-queued       { background-color: #FEF3C7; color: #92400E; }
         .status-partial_success { background-color: #FEF3C7; color: #92400E; }
         .status-interrupted  { background-color: #F3E8FF; color: #6B21A8; }
+        @keyframes indeterminate {
+            0%   { transform: translateX(-100%) scaleX(0.4); }
+            50%  { transform: translateX(50%)   scaleX(0.6); }
+            100% { transform: translateX(300%)  scaleX(0.4); }
+        }
+        .animate-indeterminate {
+            width: 40%;
+            animation: indeterminate 1.4s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -446,21 +455,52 @@
             const total = meta && meta.products_total != null ? meta.products_total : null;
             const done  = meta && meta.products_done  != null ? meta.products_done  : null;
 
-            if (isRunning && total != null) {
-                const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                return `<div class="min-w-[140px]">
-                    <div class="flex justify-between text-xs text-gray-600 mb-1">
-                        <span class="font-medium text-blue-700 animate-pulse">Computing…</span>
-                        <span class="font-mono">${done} / ${total}</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width:${pct}%"></div>
-                    </div>
-                    <div class="text-xs text-gray-400 mt-1 text-right">${pct}%</div>
-                </div>`;
+            if (isRunning) {
+                if (total != null) {
+                    // Deterministic bar — compatibility computation phase
+                    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                    return `<div class="min-w-[160px]">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span class="font-medium text-blue-700 animate-pulse">Computing…</span>
+                            <span class="font-mono">${done} / ${total}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-blue-500 h-2.5 rounded-full transition-all duration-500" style="width:${pct}%"></div>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1 text-right">${pct}%</div>
+                    </div>`;
+                } else {
+                    // Indeterminate bar — Excel parsing / preparing phase
+                    return `<div class="min-w-[160px]">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span class="font-medium text-blue-600 animate-pulse">Preparing…</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                            <div class="h-2.5 rounded-full bg-blue-400 animate-indeterminate"></div>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">Parsing product data</div>
+                    </div>`;
+                }
             }
+
+            if (sync.status === 'completed' || sync.status === 'partial_success') {
+                const count = sync.compatibilities_updated || 0;
+                const displayTotal = total || count;
+                if (displayTotal > 0) {
+                    return `<div class="min-w-[160px]">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span class="font-medium text-green-700">Complete</span>
+                            <span class="font-mono text-green-700">${count.toLocaleString()} updated</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-green-500 h-2.5 rounded-full" style="width:100%"></div>
+                        </div>
+                    </div>`;
+                }
+            }
+
             if (sync.compatibilities_updated > 0) {
-                return `<span class="text-primary font-medium">${sync.compatibilities_updated}</span> updated`;
+                return `<span class="text-primary font-medium">${sync.compatibilities_updated.toLocaleString()}</span> updated`;
             }
             return '<span class="text-gray-400">-</span>';
         }
