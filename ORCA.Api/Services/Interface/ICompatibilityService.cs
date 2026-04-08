@@ -20,4 +20,11 @@ public interface ICompatibilityService
     /// Force recomputation of compatibility for a given SKU.
     /// </summary>
     Task<CompatibilityResultDto> ComputeCompatibilitiesAsync(string sku);
+
+    /// <summary>
+    /// Bulk recompute compatibilities for a set of SKUs in a single pass.
+    /// Loads all products and overrides once, then computes and stores in batch.
+    /// Returns the number of SKUs processed.
+    /// </summary>
+    Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus);
 }

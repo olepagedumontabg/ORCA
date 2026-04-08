@@ -32,8 +32,9 @@
         .status-running    { background-color: #DBEAFE; color: #1E40AF; }
         .status-failed     { background-color: #FEE2E2; color: #991B1B; }
         .status-pending    { background-color: #FEF3C7; color: #92400E; }
-        .status-queued     { background-color: #FEF3C7; color: #92400E; }
+        .status-queued       { background-color: #FEF3C7; color: #92400E; }
         .status-partial_success { background-color: #FEF3C7; color: #92400E; }
+        .status-interrupted  { background-color: #F3E8FF; color: #6B21A8; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -439,6 +440,7 @@
 
                     const channelName = (meta && meta.channel_name) || 'Unknown';
                     const statusLabel = sync.status === 'partial_success' ? 'Partial'
+                        : sync.status === 'interrupted' ? 'Interrupted'
                         : (sync.status.charAt(0).toUpperCase() + sync.status.slice(1));
 
                     const startedFormatted = sync.started_at

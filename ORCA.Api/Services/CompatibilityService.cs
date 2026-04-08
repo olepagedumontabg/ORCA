@@ -133,6 +133,129 @@ public class CompatibilityService : ICompatibilityService
         };
     }
 
+    public async Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus)
+    {
+        var skuSet = skus
+            .Select(s => s.Trim().ToUpperInvariant())
+            .Where(s => !string.IsNullOrEmpty(s))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (skuSet.Count == 0) return 0;
+
+        // Load ALL products once, grouped by category
+        var allProducts = await _db.Products.AsNoTracking().ToListAsync();
+        var byCategory = allProducts
+            .GroupBy(p => p.Category)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        var bySku = allProducts.ToDictionary(p => p.Sku, p => p, StringComparer.OrdinalIgnoreCase);
+
+        // Load ALL overrides once
+        var allOverrides = await _db.CompatibilityOverrides.AsNoTracking().ToListAsync();
+        var overridesBySku = new Dictionary<string, OverrideSet>(StringComparer.OrdinalIgnoreCase);
+        foreach (var o in allOverrides)
+        {
+            foreach (var thisSku in new[] { o.BaseSku, o.CompatibleSku })
+            {
+                if (!overridesBySku.ContainsKey(thisSku))
+                    overridesBySku[thisSku] = new OverrideSet(
+                        new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                        new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+
+                var otherSku = string.Equals(o.BaseSku, thisSku, StringComparison.OrdinalIgnoreCase)
+                    ? o.CompatibleSku : o.BaseSku;
+
+                if (string.Equals(o.OverrideType, "whitelist", StringComparison.OrdinalIgnoreCase))
+                    overridesBySku[thisSku].Whitelisted.Add(otherSku);
+                else if (string.Equals(o.OverrideType, "blacklist", StringComparison.OrdinalIgnoreCase))
+                    overridesBySku[thisSku].Blacklisted.Add(otherSku);
+            }
+        }
+
+        // Compute compatibilities in memory for all changed SKUs
+        var productsToProcess = skuSet
+            .Where(s => bySku.ContainsKey(s))
+            .Select(s => bySku[s])
+            .ToList();
+
+        if (productsToProcess.Count == 0) return 0;
+
+        var baseProductIds = productsToProcess.Select(p => p.Id).ToList();
+
+        // Bulk delete existing compatibility records for changed products
+        var existingRecords = await _db.ProductCompatibilities
+            .Where(pc => baseProductIds.Contains(pc.BaseProductId))
+            .ToListAsync();
+        _db.ProductCompatibilities.RemoveRange(existingRecords);
+
+        // Compute and collect all new records
+        var newRecords = new List<ProductCompatibility>();
+        int processed = 0;
+
+        foreach (var product in productsToProcess)
+        {
+            var candidateCategories = GetCandidateCategories(product.Category);
+            var candidatesByCategory = candidateCategories
+                .Where(c => byCategory.ContainsKey(c))
+                .ToDictionary(c => c, c => byCategory[c]);
+
+            var results = _engine.FindCompatibleProducts(product, candidatesByCategory);
+
+            overridesBySku.TryGetValue(product.Sku, out var overrideSet);
+            overrideSet ??= new OverrideSet(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+            results = ApplyOverrides(results, overrideSet);
+
+            int score = 1000;
+            foreach (var category in results)
+            {
+                foreach (var compatible in category.Products)
+                {
+                    if (!bySku.TryGetValue(compatible.Sku, out var compatProduct))
+                        continue;
+
+                    newRecords.Add(new ProductCompatibility
+                    {
+                        BaseProductId = product.Id,
+                        CompatibleProductId = compatProduct.Id,
+                        CompatibilityScore = score--,
+                        MatchReason = compatible.MatchReason ?? category.Category,
+                        ComputedAt = DateTime.UtcNow
+                    });
+                }
+
+                if (!string.IsNullOrEmpty(category.IncompatibilityReason))
+                {
+                    newRecords.Add(new ProductCompatibility
+                    {
+                        BaseProductId = product.Id,
+                        CompatibleProductId = product.Id,
+                        IncompatibilityReason = category.IncompatibilityReason,
+                        ComputedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            processed++;
+        }
+
+        // Bulk insert in chunks to avoid parameter limit
+        const int chunkSize = 500;
+        for (int i = 0; i < newRecords.Count; i += chunkSize)
+        {
+            _db.ProductCompatibilities.AddRange(newRecords.Skip(i).Take(chunkSize));
+            await _db.SaveChangesAsync();
+        }
+
+        if (newRecords.Count == 0)
+            await _db.SaveChangesAsync(); // flush the deletes
+
+        _logger.LogInformation("Bulk compatibility: processed {Count} products, {Records} compatibility records",
+            processed, newRecords.Count);
+
+        return processed;
+    }
+
     private async Task<List<CompatibilityCategoryResult>?> LoadPrecomputedCompatibilitiesAsync(int baseProductId)
     {
         var rows = await _db.ProductCompatibilities

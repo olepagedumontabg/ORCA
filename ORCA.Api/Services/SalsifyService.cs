@@ -90,19 +90,7 @@ public class SalsifyService : ISalsifyService
 
             step = "recomputing product compatibilities";
             _logger.LogInformation("Recomputing compatibilities for {Count} changed products", changedSkus.Count);
-            int compatCount = 0;
-            foreach (var sku in changedSkus)
-            {
-                try
-                {
-                    await compatibilityService.ComputeCompatibilitiesAsync(sku);
-                    compatCount++;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to compute compatibility for {Sku}", sku);
-                }
-            }
+            int compatCount = await compatibilityService.BulkComputeCompatibilitiesAsync(changedSkus);
 
             step = "saving final sync results";
             syncRecord = await db.SyncStatuses.FindAsync(syncId);
@@ -150,8 +138,10 @@ public class SalsifyService : ISalsifyService
         using var stream = new MemoryStream(excelBytes);
         using var workbook = new XLWorkbook(stream);
 
-        var existingSkus = (await db.Products.AsNoTracking().Select(p => p.Sku).ToListAsync())
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Load ALL existing products into memory once — avoids N+1 per-row queries
+        var existingProductsMap = await db.Products
+            .ToDictionaryAsync(p => p.Sku, p => p, StringComparer.OrdinalIgnoreCase);
+        var existingSkus = existingProductsMap.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var excelSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var changedSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -185,7 +175,7 @@ public class SalsifyService : ISalsifyService
                 var productData = ExtractProductData(row, headers, skuRaw, category);
                 var attrsJson = BuildAttributesJson(row, headers);
 
-                var existing = await db.Products.FirstOrDefaultAsync(p => p.Sku == skuRaw);
+                existingProductsMap.TryGetValue(skuRaw, out var existing);
 
                 if (existing != null)
                 {
@@ -223,6 +213,7 @@ public class SalsifyService : ISalsifyService
                         UpdatedAt = DateTime.UtcNow
                     };
                     db.Products.Add(product);
+                    existingProductsMap[skuRaw] = product; // track so duplicate SKUs in other worksheets update rather than re-add
                     added++;
                     changedSkus.Add(skuRaw); // new product always triggers compat recompute
                 }
