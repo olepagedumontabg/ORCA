@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Migrations\\20260408132928_init.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ORCA.Api\\Migrations\\20260408132928_init.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|c:\\users\\gcha00909092\\documents\\github\\orca\\orca.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|solutionrelative:orca.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -27,24 +23,12 @@
       "RelativeMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|solutionrelative:orca.api\\services\\compatibilityservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|c:\\users\\gcha00909092\\documents\\github\\orca\\orca.api\\controllers\\compatibilitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|solutionrelative:orca.api\\controllers\\compatibilitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E5D18870-966A-418F-8BBE-2C67B1884B46}|ORCA.Tests\\ORCA.Tests.csproj|c:\\users\\gcha00909092\\documents\\github\\orca\\orca.tests\\services\\compatibilityservicetests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E5D18870-966A-418F-8BBE-2C67B1884B46}|ORCA.Tests\\ORCA.Tests.csproj|solutionrelative:orca.tests\\services\\compatibilityservicetests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|c:\\users\\gcha00909092\\documents\\github\\orca\\orca.api\\services\\interface\\icompatibilityservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|solutionrelative:orca.api\\services\\interface\\icompatibilityservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|c:\\users\\gcha00909092\\documents\\github\\orca\\orca.api\\services\\compatibilityengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5703C823-B407-4B01-9776-969E506FC7F0}|ORCA.Api\\ORCA.Api.csproj|solutionrelative:orca.api\\services\\compatibilityengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E5D18870-966A-418F-8BBE-2C67B1884B46}|ORCA.Tests\\ORCA.Tests.csproj|c:\\users\\gcha00909092\\documents\\github\\orca\\orca.tests\\controller\\compatibilitycontrollertests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E5D18870-966A-418F-8BBE-2C67B1884B46}|ORCA.Tests\\ORCA.Tests.csproj|solutionrelative:orca.tests\\controller\\compatibilitycontrollertests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -54,24 +38,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "20260408132928_init.cs",
-              "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Migrations\\20260408132928_init.cs",
-              "RelativeDocumentMoniker": "ORCA.Api\\Migrations\\20260408132928_init.cs",
-              "ToolTip": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Migrations\\20260408132928_init.cs",
-              "RelativeToolTip": "ORCA.Api\\Migrations\\20260408132928_init.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-08T13:29:29.201Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "OrcaDbContext.cs",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Data\\OrcaDbContext.cs",
               "RelativeDocumentMoniker": "ORCA.Api\\Data\\OrcaDbContext.cs",
@@ -84,7 +55,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\appsettings.json",
               "RelativeDocumentMoniker": "ORCA.Api\\appsettings.json",
@@ -97,7 +68,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Program.cs",
               "RelativeDocumentMoniker": "ORCA.Api\\Program.cs",
@@ -110,7 +81,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "ORCA.Api.csproj",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\ORCA.Api.csproj",
               "RelativeDocumentMoniker": "ORCA.Api\\ORCA.Api.csproj",
@@ -123,7 +94,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 5,
               "Title": "ICompatibilityService.cs",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Services\\Interface\\ICompatibilityService.cs",
               "RelativeDocumentMoniker": "ORCA.Api\\Services\\Interface\\ICompatibilityService.cs",
@@ -135,7 +106,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 6,
               "Title": "CompatibilityEngine.cs",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Services\\CompatibilityEngine.cs",
               "RelativeDocumentMoniker": "ORCA.Api\\Services\\CompatibilityEngine.cs",
@@ -147,7 +118,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 4,
               "Title": "CompatibilityService.cs",
               "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Services\\CompatibilityService.cs",
               "RelativeDocumentMoniker": "ORCA.Api\\Services\\CompatibilityService.cs",
@@ -156,42 +127,6 @@
               "ViewState": "AgIAAEYBAAAAAAAAAAAAwB8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-06T19:58:16.901Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "CompatibilityController.cs",
-              "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Controllers\\CompatibilityController.cs",
-              "RelativeDocumentMoniker": "ORCA.Api\\Controllers\\CompatibilityController.cs",
-              "ToolTip": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Api\\Controllers\\CompatibilityController.cs",
-              "RelativeToolTip": "ORCA.Api\\Controllers\\CompatibilityController.cs",
-              "ViewState": "AgIAADgAAAAAAAAAAAAgwFIAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-06T19:14:22.951Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CompatibilityServiceTests.cs",
-              "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Tests\\Services\\CompatibilityServiceTests.cs",
-              "RelativeDocumentMoniker": "ORCA.Tests\\Services\\CompatibilityServiceTests.cs",
-              "ToolTip": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Tests\\Services\\CompatibilityServiceTests.cs",
-              "RelativeToolTip": "ORCA.Tests\\Services\\CompatibilityServiceTests.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAqwD4AAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-06T20:06:40.016Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "CompatibilityControllerTests.cs",
-              "DocumentMoniker": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Tests\\Controller\\CompatibilityControllerTests.cs",
-              "RelativeDocumentMoniker": "ORCA.Tests\\Controller\\CompatibilityControllerTests.cs",
-              "ToolTip": "C:\\Users\\GCHA00909092\\Documents\\GitHub\\ORCA\\ORCA.Tests\\Controller\\CompatibilityControllerTests.cs",
-              "RelativeToolTip": "ORCA.Tests\\Controller\\CompatibilityControllerTests.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-06T19:34:37.887Z"
             }
           ]
         }
