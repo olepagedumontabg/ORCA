@@ -378,6 +378,10 @@ public class CompatibilityService : ICompatibilityService
         // Determine which candidate categories are needed
         var candidateCategories = GetCandidateCategories(product.Category);
 
+        // No on-demand rules for this category — compatibility comes from pre-computed data only
+        if (candidateCategories.Length == 0)
+            return new List<CompatibilityCategoryResult>();
+
         // Load all candidate products
         var candidates = await _productService.GetProductsByCategoriesAsync(candidateCategories);
 
