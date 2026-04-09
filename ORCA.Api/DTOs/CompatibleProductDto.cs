@@ -10,7 +10,6 @@ public class CompatibleProductDto
     public string Category { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? ProductPageUrl { get; set; }
-    public int? CompatibilityScore { get; set; }
     public string? MatchReason { get; set; }
     public bool IsCombo { get; set; }
 

@@ -63,7 +63,7 @@ public static class BathtubRules
                 results.Add(new CompatibilityCategoryResult
                 {
                     Category = "Tub Doors",
-                    Products = compatibleDoors.OrderBy(d => d.CompatibilityScore ?? 999).ToList()
+                    Products = compatibleDoors
                 });
         }
 
@@ -91,7 +91,7 @@ public static class BathtubRules
                 results.Add(new CompatibilityCategoryResult
                 {
                     Category = "Tub Screens",
-                    Products = compatibleScreens.OrderBy(s => s.CompatibilityScore ?? 999).ToList()
+                    Products = compatibleScreens
                 });
         }
 
@@ -110,7 +110,7 @@ public static class BathtubRules
                 results.Add(new CompatibilityCategoryResult
                 {
                     Category = "Walls",
-                    Products = matchingWalls.OrderBy(w => w.CompatibilityScore ?? 999).ToList()
+                    Products = matchingWalls
                 });
         }
 

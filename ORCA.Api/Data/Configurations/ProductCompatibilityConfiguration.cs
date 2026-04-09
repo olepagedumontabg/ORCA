@@ -16,19 +16,12 @@ public class ProductCompatibilityConfiguration : IEntityTypeConfiguration<Produc
         builder.Property(pc => pc.BaseProductId).HasColumnName("base_product_id").IsRequired();
         builder.Property(pc => pc.CompatibleProductId).HasColumnName("compatible_product_id").IsRequired();
 
-        builder.Property(pc => pc.CompatibilityScore).HasColumnName("compatibility_score");
         builder.Property(pc => pc.MatchReason).HasColumnName("match_reason");
         builder.Property(pc => pc.IncompatibilityReason).HasColumnName("incompatibility_reason");
         builder.Property(pc => pc.ComputedAt).HasColumnName("computed_at").HasDefaultValueSql("now()");
 
         builder.HasIndex(pc => pc.BaseProductId).HasDatabaseName("idx_compatibility_base");
         builder.HasIndex(pc => pc.CompatibleProductId).HasDatabaseName("idx_compatibility_compatible");
-        builder.HasIndex(pc => pc.CompatibilityScore).HasDatabaseName("idx_compatibility_score");
-
-        // Composite index for ordered compatibility lookups
-        builder.HasIndex(pc => new { pc.BaseProductId, pc.CompatibilityScore })
-            .HasDatabaseName("idx_base_score")
-            .IsDescending(false, true);
 
         // Unique constraint
         builder.HasIndex(pc => new { pc.BaseProductId, pc.CompatibleProductId })

@@ -53,7 +53,7 @@ public static class TubShowerRules
                 results.Add(new CompatibilityCategoryResult
                 {
                     Category = "Tub Doors",
-                    Products = compatibleDoors.OrderBy(d => d.CompatibilityScore ?? 999).ToList()
+                    Products = compatibleDoors
                 });
         }
 

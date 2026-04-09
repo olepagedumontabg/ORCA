@@ -141,7 +141,6 @@ public class CompatibilityService : ICompatibilityService
             .Where(pc => pc.BaseProductId == baseProductId
                 && (pc.IncompatibilityReason == null || pc.IncompatibilityReason == ""))
             .Include(pc => pc.CompatibleProduct)
-            .OrderByDescending(pc => pc.CompatibilityScore)
             .ToListAsync();
 
         // Reverse: rows where this product was listed as compatible by another product
@@ -150,7 +149,6 @@ public class CompatibilityService : ICompatibilityService
             .Where(pc => pc.CompatibleProductId == baseProductId
                 && (pc.IncompatibilityReason == null || pc.IncompatibilityReason == ""))
             .Include(pc => pc.BaseProduct)
-            .OrderByDescending(pc => pc.CompatibilityScore)
             .ToListAsync();
 
         if (forwardRows.Count == 0 && reverseRows.Count == 0)
@@ -185,7 +183,6 @@ public class CompatibilityService : ICompatibilityService
                 Category = category,
                 ImageUrl = row.CompatibleProduct.ImageUrl,
                 ProductPageUrl = row.CompatibleProduct.ProductPageUrl,
-                CompatibilityScore = row.CompatibilityScore,
                 MatchReason = row.MatchReason
             });
         }
@@ -211,7 +208,6 @@ public class CompatibilityService : ICompatibilityService
                 Category = category,
                 ImageUrl = row.BaseProduct.ImageUrl,
                 ProductPageUrl = row.BaseProduct.ProductPageUrl,
-                CompatibilityScore = row.CompatibilityScore,
                 MatchReason = row.MatchReason
             });
         }
@@ -240,7 +236,6 @@ public class CompatibilityService : ICompatibilityService
                 Category = cat,
                 ImageUrl = whitelistedProduct.ImageUrl,
                 ProductPageUrl = whitelistedProduct.ProductPageUrl,
-                CompatibilityScore = 1000, // Whitelisted = highest score
                 MatchReason = "Whitelisted"
             });
         }
@@ -295,8 +290,6 @@ public class CompatibilityService : ICompatibilityService
             .Where(p => skus.Contains(p.Sku))
             .ToDictionaryAsync(p => p.Sku, p => p);
 
-        int score = 1000;
-
         foreach (var category in categories)
         {
             foreach (var compatible in category.Products)
@@ -308,7 +301,6 @@ public class CompatibilityService : ICompatibilityService
                 {
                     BaseProductId = baseProduct.Id,
                     CompatibleProductId = compatProduct.Id,
-                    CompatibilityScore = score--,
                     MatchReason = compatible.MatchReason ?? category.Category,
                     ComputedAt = DateTime.UtcNow
                 });
