@@ -68,6 +68,12 @@ public class CompatibilityService : ICompatibilityService
             categories = await ComputeOnDemandAsync(product);
             _logger.LogInformation("Computed on-demand compatibilities for {Sku} ({Count} categories)",
                 sku, categories.Count);
+
+            // Persist the computed results (+ their reverse records) so that related products
+            // (e.g. walls, doors) can find this product in subsequent look-ups without needing
+            // their own rules in the engine.
+            if (categories.Count > 0)
+                await StoreComputedCompatibilitiesAsync(product, categories);
         }
 
         // Apply filters
@@ -181,14 +187,17 @@ public class CompatibilityService : ICompatibilityService
 
         var baseProductIds = productsToProcess.Select(p => p.Id).ToList();
 
-        // Bulk delete existing compatibility records for changed products
+        // Bulk delete existing compatibility records for changed products —
+        // both directions so reverse records from previous runs are also cleaned up
         var existingRecords = await _db.ProductCompatibilities
-            .Where(pc => baseProductIds.Contains(pc.BaseProductId))
+            .Where(pc => baseProductIds.Contains(pc.BaseProductId)
+                      || baseProductIds.Contains(pc.CompatibleProductId))
             .ToListAsync();
         _db.ProductCompatibilities.RemoveRange(existingRecords);
 
-        // Compute and collect all new records
-        var newRecords = new List<ProductCompatibility>();
+        // Use a dictionary keyed by (BaseId, CompatId) to deduplicate pairs across
+        // both the forward and the reverse records we generate below
+        var pairMap = new Dictionary<(int, int), ProductCompatibility>();
         int processed = 0;
 
         foreach (var product in productsToProcess)
@@ -213,24 +222,42 @@ public class CompatibilityService : ICompatibilityService
                     if (!bySku.TryGetValue(compatible.Sku, out var compatProduct))
                         continue;
 
-                    newRecords.Add(new ProductCompatibility
-                    {
-                        BaseProductId = product.Id,
-                        CompatibleProductId = compatProduct.Id,
-                        MatchReason = compatible.MatchReason ?? category.Category,
-                        ComputedAt = DateTime.UtcNow
-                    });
+                    // Forward: product → compatProduct
+                    var forwardKey = (product.Id, compatProduct.Id);
+                    if (!pairMap.ContainsKey(forwardKey))
+                        pairMap[forwardKey] = new ProductCompatibility
+                        {
+                            BaseProductId = product.Id,
+                            CompatibleProductId = compatProduct.Id,
+                            MatchReason = compatible.MatchReason ?? category.Category,
+                            ComputedAt = DateTime.UtcNow
+                        };
+
+                    // Reverse: compatProduct → product (bidirectional)
+                    // The MatchReason on the reverse row is the base product's category
+                    // so the wall shows "Shower Bases", the door shows "Shower Bases", etc.
+                    var reverseKey = (compatProduct.Id, product.Id);
+                    if (!pairMap.ContainsKey(reverseKey))
+                        pairMap[reverseKey] = new ProductCompatibility
+                        {
+                            BaseProductId = compatProduct.Id,
+                            CompatibleProductId = product.Id,
+                            MatchReason = product.Category,
+                            ComputedAt = DateTime.UtcNow
+                        };
                 }
 
                 if (!string.IsNullOrEmpty(category.IncompatibilityReason))
                 {
-                    newRecords.Add(new ProductCompatibility
-                    {
-                        BaseProductId = product.Id,
-                        CompatibleProductId = product.Id,
-                        IncompatibilityReason = category.IncompatibilityReason,
-                        ComputedAt = DateTime.UtcNow
-                    });
+                    var selfKey = (product.Id, product.Id);
+                    if (!pairMap.ContainsKey(selfKey))
+                        pairMap[selfKey] = new ProductCompatibility
+                        {
+                            BaseProductId = product.Id,
+                            CompatibleProductId = product.Id,
+                            IncompatibilityReason = category.IncompatibilityReason,
+                            ComputedAt = DateTime.UtcNow
+                        };
                 }
             }
 
@@ -241,6 +268,8 @@ public class CompatibilityService : ICompatibilityService
                 try { await onProgress(processed); } catch { /* non-fatal */ }
             }
         }
+
+        var newRecords = pairMap.Values.ToList();
 
         // Bulk insert in chunks to avoid parameter limit
         const int chunkSize = 500;
@@ -253,8 +282,8 @@ public class CompatibilityService : ICompatibilityService
         if (newRecords.Count == 0)
             await _db.SaveChangesAsync(); // flush the deletes
 
-        _logger.LogInformation("Bulk compatibility: processed {Count} products, {Records} compatibility records",
-            processed, newRecords.Count);
+        _logger.LogInformation("Bulk compatibility: processed {Count} products, {Records} compatibility records ({Bidirectional} bidirectional pairs)",
+            processed, newRecords.Count, newRecords.Count / 2);
 
         return processed;
     }
@@ -402,14 +431,15 @@ public class CompatibilityService : ICompatibilityService
 
     private async Task StoreComputedCompatibilitiesAsync(Product baseProduct, List<CompatibilityCategoryResult> categories)
     {
-        // Remove existing
+        // Remove existing records in both directions for this product
         var existing = await _db.ProductCompatibilities
-            .Where(pc => pc.BaseProductId == baseProduct.Id)
+            .Where(pc => pc.BaseProductId == baseProduct.Id
+                      || pc.CompatibleProductId == baseProduct.Id)
             .ToListAsync();
 
         _db.ProductCompatibilities.RemoveRange(existing);
 
-        // 🔥 Load all products ONCE
+        // Load all referenced products at once
         var skus = categories
             .SelectMany(c => c.Products)
             .Select(p => p.Sku)
@@ -420,6 +450,9 @@ public class CompatibilityService : ICompatibilityService
             .Where(p => skus.Contains(p.Sku))
             .ToDictionaryAsync(p => p.Sku, p => p);
 
+        // Deduplicate pairs: forward + reverse in one dictionary
+        var pairMap = new Dictionary<(int, int), ProductCompatibility>();
+
         foreach (var category in categories)
         {
             foreach (var compatible in category.Products)
@@ -427,28 +460,44 @@ public class CompatibilityService : ICompatibilityService
                 if (!productsMap.TryGetValue(compatible.Sku, out var compatProduct))
                     continue;
 
-                _db.ProductCompatibilities.Add(new ProductCompatibility
-                {
-                    BaseProductId = baseProduct.Id,
-                    CompatibleProductId = compatProduct.Id,
-                    MatchReason = compatible.MatchReason ?? category.Category,
-                    ComputedAt = DateTime.UtcNow
-                });
+                // Forward
+                var fwd = (baseProduct.Id, compatProduct.Id);
+                if (!pairMap.ContainsKey(fwd))
+                    pairMap[fwd] = new ProductCompatibility
+                    {
+                        BaseProductId = baseProduct.Id,
+                        CompatibleProductId = compatProduct.Id,
+                        MatchReason = compatible.MatchReason ?? category.Category,
+                        ComputedAt = DateTime.UtcNow
+                    };
+
+                // Reverse — MatchReason is the base product's category
+                var rev = (compatProduct.Id, baseProduct.Id);
+                if (!pairMap.ContainsKey(rev))
+                    pairMap[rev] = new ProductCompatibility
+                    {
+                        BaseProductId = compatProduct.Id,
+                        CompatibleProductId = baseProduct.Id,
+                        MatchReason = baseProduct.Category,
+                        ComputedAt = DateTime.UtcNow
+                    };
             }
 
-            // incompatibility
             if (!string.IsNullOrEmpty(category.IncompatibilityReason))
             {
-                _db.ProductCompatibilities.Add(new ProductCompatibility
-                {
-                    BaseProductId = baseProduct.Id,
-                    CompatibleProductId = baseProduct.Id,
-                    IncompatibilityReason = category.IncompatibilityReason,
-                    ComputedAt = DateTime.UtcNow
-                });
+                var self = (baseProduct.Id, baseProduct.Id);
+                if (!pairMap.ContainsKey(self))
+                    pairMap[self] = new ProductCompatibility
+                    {
+                        BaseProductId = baseProduct.Id,
+                        CompatibleProductId = baseProduct.Id,
+                        IncompatibilityReason = category.IncompatibilityReason,
+                        ComputedAt = DateTime.UtcNow
+                    };
             }
         }
 
+        _db.ProductCompatibilities.AddRange(pairMap.Values);
         await _db.SaveChangesAsync();
     }
 
