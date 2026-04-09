@@ -55,7 +55,7 @@ public static class ShowerRules
                 results.Add(new CompatibilityCategoryResult
                 {
                     Category = "Shower Doors",
-                    Products = compatibleDoors.OrderBy(d => d.CompatibilityScore ?? 999).ToList()
+                    Products = compatibleDoors
                 });
         }
 
