@@ -87,7 +87,6 @@ namespace ORCA.Api.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     base_product_id = table.Column<int>(type: "integer", nullable: false),
                     compatible_product_id = table.Column<int>(type: "integer", nullable: false),
-                    compatibility_score = table.Column<int>(type: "integer", nullable: true),
                     match_reason = table.Column<string>(type: "text", nullable: true),
                     incompatibility_reason = table.Column<string>(type: "text", nullable: true),
                     computed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
@@ -126,12 +125,6 @@ namespace ORCA.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "idx_base_score",
-                table: "product_compatibility",
-                columns: new[] { "base_product_id", "compatibility_score" },
-                descending: new[] { false, true });
-
-            migrationBuilder.CreateIndex(
                 name: "idx_compatibility_base",
                 table: "product_compatibility",
                 column: "base_product_id");
@@ -140,11 +133,6 @@ namespace ORCA.Api.Migrations
                 name: "idx_compatibility_compatible",
                 table: "product_compatibility",
                 column: "compatible_product_id");
-
-            migrationBuilder.CreateIndex(
-                name: "idx_compatibility_score",
-                table: "product_compatibility",
-                column: "compatibility_score");
 
             migrationBuilder.CreateIndex(
                 name: "uq_product_compatibility",

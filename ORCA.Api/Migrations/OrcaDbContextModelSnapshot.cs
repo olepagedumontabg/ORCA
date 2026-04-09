@@ -186,10 +186,6 @@ namespace ORCA.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("base_product_id");
 
-                    b.Property<int?>("CompatibilityScore")
-                        .HasColumnType("integer")
-                        .HasColumnName("compatibility_score");
-
                     b.Property<int>("CompatibleProductId")
                         .HasColumnType("integer")
                         .HasColumnName("compatible_product_id");
@@ -213,15 +209,8 @@ namespace ORCA.Api.Migrations
                     b.HasIndex("BaseProductId")
                         .HasDatabaseName("idx_compatibility_base");
 
-                    b.HasIndex("CompatibilityScore")
-                        .HasDatabaseName("idx_compatibility_score");
-
                     b.HasIndex("CompatibleProductId")
                         .HasDatabaseName("idx_compatibility_compatible");
-
-                    b.HasIndex("BaseProductId", "CompatibilityScore")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("idx_base_score");
 
                     b.HasIndex("BaseProductId", "CompatibleProductId")
                         .IsUnique()

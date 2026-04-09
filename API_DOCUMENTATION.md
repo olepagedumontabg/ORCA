@@ -172,7 +172,6 @@ This allows your application to pass all available SKU formats and get the best 
           "name": "Capella 78 32 ½-35 ½ x 78",
           "glass_thickness": "8mm",
           "door_type": "Pivot",
-          "compatibility_score": 95,
           "product_page_url": "https://...",
           "image_url": "https://..."
         }
@@ -185,8 +184,7 @@ This allows your application to pass all available SKU formats and get the best 
           "brand": "Maax",
           "category": "Walls",
           "sku": "107479",
-          "name": "Utile 3636 Shower Wall Kit",
-          "compatibility_score": 98
+          "name": "Utile 3636 Shower Wall Kit"
         }
       ]
     }
@@ -233,7 +231,7 @@ curl "https://your-app.replit.app/api/compatible/FB03060M?limit=5"
   - `products`: Array of compatible products
     - `glass_thickness`: Glass thickness for doors (e.g., "8mm")
     - `door_type`: Door type for doors (e.g., "Pivot", "Sliding")
-    - `compatibility_score`: Numerical score (0-100)
+
   - `total_count`: Total number of compatible products in this category (if truncated)
   - `truncated`: True if results were limited
 - `incompatibility_reasons`: Reasons why certain categories have no matches
@@ -329,7 +327,7 @@ curl "https://your-app.replit.app/api/products?category=Bathtubs&limit=1000"
   "category": "string",             // Product category
   "product_page_url": "string",     // Product webpage
   "image_url": "string",            // Product image
-  "compatibility_score": "number",  // Compatibility score (0-100)
+
   "glass_thickness": "string",      // Glass thickness (doors only, e.g., "8mm")
   "door_type": "string"             // Door type (doors only, e.g., "Pivot")
 }
