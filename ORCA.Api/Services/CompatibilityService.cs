@@ -206,7 +206,6 @@ public class CompatibilityService : ICompatibilityService
                 new HashSet<string>(StringComparer.OrdinalIgnoreCase));
             results = ApplyOverrides(results, overrideSet);
 
-            int score = 1000;
             foreach (var category in results)
             {
                 foreach (var compatible in category.Products)
@@ -218,7 +217,6 @@ public class CompatibilityService : ICompatibilityService
                     {
                         BaseProductId = product.Id,
                         CompatibleProductId = compatProduct.Id,
-                        CompatibilityScore = score--,
                         MatchReason = compatible.MatchReason ?? category.Category,
                         ComputedAt = DateTime.UtcNow
                     });
