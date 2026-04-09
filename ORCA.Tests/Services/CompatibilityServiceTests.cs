@@ -89,7 +89,6 @@ namespace ORCA.Tests.Services
             {
                 BaseProductId = 2,
                 CompatibleProductId = 3,
-                CompatibilityScore = 100
             });
             await _db.SaveChangesAsync();
 
@@ -116,7 +115,6 @@ namespace ORCA.Tests.Services
             {
                 BaseProductId = 3,
                 CompatibleProductId = 4,
-                CompatibilityScore = 100
             });
             await _db.SaveChangesAsync();
 
@@ -163,7 +161,6 @@ namespace ORCA.Tests.Services
             {
                 BaseProductId = 1,
                 CompatibleProductId = 2,
-                CompatibilityScore = 100
             });
 
             await _db.SaveChangesAsync();

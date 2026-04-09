@@ -263,15 +263,23 @@ public class CompatibilityService : ICompatibilityService
 
     private async Task<List<CompatibilityCategoryResult>?> LoadPrecomputedCompatibilitiesAsync(int baseProductId)
     {
-        var rows = await _db.ProductCompatibilities
+        // Forward: rows where this product is the base
+        var forwardRows = await _db.ProductCompatibilities
             .AsNoTracking()
             .Where(pc => pc.BaseProductId == baseProductId
                 && (pc.IncompatibilityReason == null || pc.IncompatibilityReason == ""))
             .Include(pc => pc.CompatibleProduct)
-            .OrderByDescending(pc => pc.CompatibilityScore)
             .ToListAsync();
 
-        if (rows.Count == 0)
+        // Reverse: rows where this product was listed as compatible by another product
+        var reverseRows = await _db.ProductCompatibilities
+            .AsNoTracking()
+            .Where(pc => pc.CompatibleProductId == baseProductId
+                && (pc.IncompatibilityReason == null || pc.IncompatibilityReason == ""))
+            .Include(pc => pc.BaseProduct)
+            .ToListAsync();
+
+        if (forwardRows.Count == 0 && reverseRows.Count == 0)
             return null;
 
         // Check overrides
@@ -280,14 +288,14 @@ public class CompatibilityService : ICompatibilityService
         var overrides = await LoadOverridesAsync(baseSku);
 
         var byCategory = new Dictionary<string, List<CompatibleProductDto>>();
+        var seenSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var row in rows)
+        // Forward rows: CompatibleProduct is the target
+        foreach (var row in forwardRows)
         {
             var compatSku = row.CompatibleProduct.Sku;
-
-            // Apply blacklist
-            if (overrides.Blacklisted.Contains(compatSku))
-                continue;
+            if (overrides.Blacklisted.Contains(compatSku)) continue;
+            if (!seenSkus.Add(compatSku)) continue;
 
             var category = row.CompatibleProduct.Category;
             if (!byCategory.ContainsKey(category))
@@ -303,7 +311,31 @@ public class CompatibilityService : ICompatibilityService
                 Category = category,
                 ImageUrl = row.CompatibleProduct.ImageUrl,
                 ProductPageUrl = row.CompatibleProduct.ProductPageUrl,
-                CompatibilityScore = row.CompatibilityScore,
+                MatchReason = row.MatchReason
+            });
+        }
+
+        // Reverse rows: BaseProduct is the target (bidirectional — if A→B exists, B→A is implied)
+        foreach (var row in reverseRows)
+        {
+            var compatSku = row.BaseProduct.Sku;
+            if (overrides.Blacklisted.Contains(compatSku)) continue;
+            if (!seenSkus.Add(compatSku)) continue;
+
+            var category = row.BaseProduct.Category;
+            if (!byCategory.ContainsKey(category))
+                byCategory[category] = new List<CompatibleProductDto>();
+
+            byCategory[category].Add(new CompatibleProductDto
+            {
+                Sku = compatSku,
+                Name = row.BaseProduct.ProductName,
+                Brand = row.BaseProduct.Brand,
+                Series = row.BaseProduct.Series,
+                Family = row.BaseProduct.Family,
+                Category = category,
+                ImageUrl = row.BaseProduct.ImageUrl,
+                ProductPageUrl = row.BaseProduct.ProductPageUrl,
                 MatchReason = row.MatchReason
             });
         }
@@ -311,13 +343,13 @@ public class CompatibilityService : ICompatibilityService
         // Add whitelisted products that aren't already in results
         foreach (var whitelistedSku in overrides.Whitelisted)
         {
-            bool alreadyIncluded = byCategory.Values.Any(list => list.Any(p => p.Sku == whitelistedSku));
-            if (alreadyIncluded) continue;
+            if (seenSkus.Contains(whitelistedSku)) continue;
 
             var whitelistedProduct = await _db.Products.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Sku == whitelistedSku);
             if (whitelistedProduct == null) continue;
 
+            seenSkus.Add(whitelistedSku);
             var cat = whitelistedProduct.Category;
             if (!byCategory.ContainsKey(cat))
                 byCategory[cat] = new List<CompatibleProductDto>();
@@ -332,7 +364,6 @@ public class CompatibilityService : ICompatibilityService
                 Category = cat,
                 ImageUrl = whitelistedProduct.ImageUrl,
                 ProductPageUrl = whitelistedProduct.ProductPageUrl,
-                CompatibilityScore = 1000, // Whitelisted = highest score
                 MatchReason = "Whitelisted"
             });
         }
@@ -387,8 +418,6 @@ public class CompatibilityService : ICompatibilityService
             .Where(p => skus.Contains(p.Sku))
             .ToDictionaryAsync(p => p.Sku, p => p);
 
-        int score = 1000;
-
         foreach (var category in categories)
         {
             foreach (var compatible in category.Products)
@@ -400,7 +429,6 @@ public class CompatibilityService : ICompatibilityService
                 {
                     BaseProductId = baseProduct.Id,
                     CompatibleProductId = compatProduct.Id,
-                    CompatibilityScore = score--,
                     MatchReason = compatible.MatchReason ?? category.Category,
                     ComputedAt = DateTime.UtcNow
                 });

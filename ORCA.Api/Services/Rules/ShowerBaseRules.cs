@@ -330,14 +330,13 @@ public static class ShowerBaseRules
             Category = product.Category,
             ImageUrl = product.ImageUrl,
             ProductPageUrl = product.ProductPageUrl,
-            CompatibilityScore = product.Ranking ?? 999,
             IsCombo = false
         };
     }
 
     private static List<CompatibleProductDto> SortByRanking(List<CompatibleProductDto> products)
     {
-        return products.OrderBy(p => p.CompatibilityScore ?? 999).ToList();
+        return products;
     }
 }
 

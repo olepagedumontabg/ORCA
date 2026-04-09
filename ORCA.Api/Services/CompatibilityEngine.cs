@@ -110,7 +110,7 @@ public class CompatibilityEngine : ICompatibilityEngine
             results.Add(new CompatibilityCategoryResult
             {
                 Category = resultCategory,
-                Products = matches.OrderBy(m => m.CompatibilityScore ?? 999).ToList()
+                Products = matches
             });
         }
         return results;
@@ -156,7 +156,7 @@ public class CompatibilityEngine : ICompatibilityEngine
             results.Add(new CompatibilityCategoryResult
             {
                 Category = "Shower Bases",
-                Products = matches.OrderBy(m => m.CompatibilityScore ?? 999).ToList()
+                Products = matches
             });
         }
         return results;
@@ -199,7 +199,7 @@ public class CompatibilityEngine : ICompatibilityEngine
             results.Add(new CompatibilityCategoryResult
             {
                 Category = resultCategory,
-                Products = matches.OrderBy(m => m.CompatibilityScore ?? 999).ToList()
+                Products = matches
             });
         }
         return results;
