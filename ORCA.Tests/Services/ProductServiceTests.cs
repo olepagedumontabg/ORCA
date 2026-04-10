@@ -486,4 +486,97 @@ public class ProductServiceTests
 
         Assert.AreEqual(3, results.Count);
     }
+
+    // ─── FindByAlternateIdAsync ────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task FindByAlternateIdAsync_FindsProduct_ByAlternateId1()
+    {
+        await using var ctx = CreateContext(nameof(FindByAlternateIdAsync_FindsProduct_ByAlternateId1));
+        var p = MakeProduct(1, "BASE-100", "Shower Base");
+        p.AlternateId1 = "BASE-100-CFG-001";
+        ctx.Products.Add(p);
+        await ctx.SaveChangesAsync();
+
+        var svc = new ProductService(ctx);
+        var result = await svc.FindByAlternateIdAsync("BASE-100-CFG-001");
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual("BASE-100", result.Sku);
+    }
+
+    [TestMethod]
+    public async Task FindByAlternateIdAsync_FindsProduct_ByAlternateId2()
+    {
+        await using var ctx = CreateContext(nameof(FindByAlternateIdAsync_FindsProduct_ByAlternateId2));
+        var p = MakeProduct(1, "BASE-100", "Shower Base");
+        p.AlternateId2 = "BASE-100-CFG-002";
+        ctx.Products.Add(p);
+        await ctx.SaveChangesAsync();
+
+        var svc = new ProductService(ctx);
+        var result = await svc.FindByAlternateIdAsync("BASE-100-CFG-002");
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual("BASE-100", result.Sku);
+    }
+
+    [TestMethod]
+    public async Task FindByAlternateIdAsync_FindsProduct_ByAlternateId3()
+    {
+        await using var ctx = CreateContext(nameof(FindByAlternateIdAsync_FindsProduct_ByAlternateId3));
+        var p = MakeProduct(1, "BASE-100", "Shower Base");
+        p.AlternateId3 = "BASE-100-CFG-003";
+        ctx.Products.Add(p);
+        await ctx.SaveChangesAsync();
+
+        var svc = new ProductService(ctx);
+        var result = await svc.FindByAlternateIdAsync("BASE-100-CFG-003");
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual("BASE-100", result.Sku);
+    }
+
+    [TestMethod]
+    public async Task FindByAlternateIdAsync_IsCaseInsensitive()
+    {
+        await using var ctx = CreateContext(nameof(FindByAlternateIdAsync_IsCaseInsensitive));
+        var p = MakeProduct(1, "BASE-100", "Shower Base");
+        p.AlternateId1 = "base-100-cfg-001";
+        ctx.Products.Add(p);
+        await ctx.SaveChangesAsync();
+
+        var svc = new ProductService(ctx);
+        // Search with uppercase even though stored lowercase
+        var result = await svc.FindByAlternateIdAsync("BASE-100-CFG-001");
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual("BASE-100", result.Sku);
+    }
+
+    [TestMethod]
+    public async Task FindByAlternateIdAsync_ReturnsNull_WhenNoMatch()
+    {
+        await using var ctx = CreateContext(nameof(FindByAlternateIdAsync_ReturnsNull_WhenNoMatch));
+        ctx.Products.Add(MakeProduct(1, "BASE-100", "Shower Base"));
+        await ctx.SaveChangesAsync();
+
+        var svc = new ProductService(ctx);
+        var result = await svc.FindByAlternateIdAsync("DOES-NOT-EXIST");
+
+        Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task FindByAlternateIdAsync_ReturnsNull_WhenAllAlternateIdsAreNull()
+    {
+        await using var ctx = CreateContext(nameof(FindByAlternateIdAsync_ReturnsNull_WhenAllAlternateIdsAreNull));
+        ctx.Products.Add(MakeProduct(1, "BASE-100", "Shower Base")); // no AlternateIds
+        await ctx.SaveChangesAsync();
+
+        var svc = new ProductService(ctx);
+        var result = await svc.FindByAlternateIdAsync("BASE-100-CFG-001");
+
+        Assert.IsNull(result);
+    }
 }
