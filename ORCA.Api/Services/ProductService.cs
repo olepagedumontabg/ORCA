@@ -83,4 +83,15 @@ public class ProductService : IProductService
             .Where(p => categories.Contains(p.Category))
             .ToListAsync();
     }
+
+    public async Task<Product?> FindByAlternateIdAsync(string alternateId)
+    {
+        var upper = alternateId.ToUpperInvariant();
+        return await _db.Products
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p =>
+                (p.AlternateId1 != null && p.AlternateId1.ToUpperInvariant() == upper) ||
+                (p.AlternateId2 != null && p.AlternateId2.ToUpperInvariant() == upper) ||
+                (p.AlternateId3 != null && p.AlternateId3.ToUpperInvariant() == upper));
+    }
 }

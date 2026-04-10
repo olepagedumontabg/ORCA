@@ -353,5 +353,95 @@ namespace ORCA.Tests.Services
             Assert.IsTrue(result.Success);
             Assert.IsFalse(result.Compatibles.Any(c => c.Products.Any(p => p.Sku == "DEF")));
         }
+
+        // =============================
+        // 🔗 CONFIG SKU RESOLUTION
+        // =============================
+
+        [TestMethod]
+        public async Task GetCompatible_ResolvesConfigSku_ViaReverseAlternateId()
+        {
+            // The website sends "BASE-100-CFG-001" (sellable/config SKU), which is not a
+            // standalone row in the DB. It IS stored as AlternateId1 on the base product.
+            var baseProduct = new Product { Id = 1, Sku = "BASE-100", Category = "Unknown" };
+
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync("BASE-100-CFG-001"))
+                .ReturnsAsync((Product?)null); // exact lookup fails
+
+            _productServiceMock
+                .Setup(x => x.FindByAlternateIdAsync("BASE-100-CFG-001"))
+                .ReturnsAsync(baseProduct); // reverse AlternateId finds the base
+
+            var result = await _service.GetCompatibleProductsAsync("BASE-100-CFG-001");
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("BASE-100", result.Product!.Sku);
+        }
+
+        [TestMethod]
+        public async Task GetCompatible_ResolvesConfigSku_ViaSkuSuffixStripping()
+        {
+            // "410006-501-001" not in DB and not in any AlternateId field.
+            // Suffix stripping: "410006-501" → not found; "410006" → found.
+            var baseProduct = new Product { Id = 1, Sku = "410006", Category = "Unknown" };
+
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync("410006-501-001"))
+                .ReturnsAsync((Product?)null);
+            _productServiceMock
+                .Setup(x => x.FindByAlternateIdAsync("410006-501-001"))
+                .ReturnsAsync((Product?)null);
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync("410006-501"))
+                .ReturnsAsync((Product?)null); // first strip attempt fails
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync("410006"))
+                .ReturnsAsync(baseProduct); // second strip succeeds
+
+            var result = await _service.GetCompatibleProductsAsync("410006-501-001");
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("410006", result.Product!.Sku);
+        }
+
+        [TestMethod]
+        public async Task GetCompatible_ResolvesConfigSku_WithSingleSuffixStrip()
+        {
+            // "SB-100-RED" → "SB-100" → found immediately on first strip.
+            var baseProduct = new Product { Id = 1, Sku = "SB-100", Category = "Unknown" };
+
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync("SB-100-RED"))
+                .ReturnsAsync((Product?)null);
+            _productServiceMock
+                .Setup(x => x.FindByAlternateIdAsync("SB-100-RED"))
+                .ReturnsAsync((Product?)null);
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync("SB-100"))
+                .ReturnsAsync(baseProduct);
+
+            var result = await _service.GetCompatibleProductsAsync("SB-100-RED");
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("SB-100", result.Product!.Sku);
+        }
+
+        [TestMethod]
+        public async Task GetCompatible_Returns404_WhenAllResolutionStrategiesFail()
+        {
+            // Neither exact, nor AlternateId, nor any suffix strip resolves the SKU.
+            _productServiceMock
+                .Setup(x => x.GetBySkuAsync(It.IsAny<string>()))
+                .ReturnsAsync((Product?)null);
+            _productServiceMock
+                .Setup(x => x.FindByAlternateIdAsync(It.IsAny<string>()))
+                .ReturnsAsync((Product?)null);
+
+            var result = await _service.GetCompatibleProductsAsync("TOTALLY-UNKNOWN-SKU");
+
+            Assert.IsFalse(result.Success);
+            Assert.IsNotNull(result.ErrorMessage);
+        }
     }
 }

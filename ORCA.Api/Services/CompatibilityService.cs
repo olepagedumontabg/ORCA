@@ -32,6 +32,26 @@ public class CompatibilityService : ICompatibilityService
 
         var product = await _productService.GetBySkuAsync(sku);
 
+        // Not found by exact SKU — try a reverse AlternateId lookup.
+        // Some products are browsed by their sellable/configuration SKU on the website
+        // (e.g. "410006-501-001"), which may be stored as an AlternateId on the base
+        // product record ("410006") rather than as its own row in the DB.
+        if (product == null)
+        {
+            product = await _productService.FindByAlternateIdAsync(sku);
+            if (product != null)
+                _logger.LogInformation("Resolved {ConfigSku} → base product {BaseSku} via alternate ID", sku, product.Sku);
+        }
+
+        // Still not found — try stripping the configuration suffix progressively.
+        // e.g. "410006-501-001" → "410006-501" → "410006"
+        if (product == null)
+        {
+            product = await TryFindByStrippedSkuAsync(sku);
+            if (product != null)
+                _logger.LogInformation("Resolved {ConfigSku} → base product {BaseSku} via suffix stripping", sku, product.Sku);
+        }
+
         if (product == null)
         {
             return new CompatibilityResultDto
@@ -647,4 +667,21 @@ public class CompatibilityService : ICompatibilityService
     }
 
     private record OverrideSet(HashSet<string> Whitelisted, HashSet<string> Blacklisted);
+
+    /// <summary>
+    /// Progressively strips trailing "-xxx" segments from a configuration SKU to find
+    /// the matching base product. For example, "410006-501-001" tries "410006-501"
+    /// then "410006", returning the first one found in the DB.
+    /// </summary>
+    private async Task<Product?> TryFindByStrippedSkuAsync(string sku)
+    {
+        var candidate = sku;
+        while (candidate.Contains('-'))
+        {
+            candidate = candidate[..candidate.LastIndexOf('-')];
+            var found = await _productService.GetBySkuAsync(candidate);
+            if (found != null) return found;
+        }
+        return null;
+    }
 }
