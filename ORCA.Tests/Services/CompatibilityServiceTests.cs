@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using ORCA.Api.Services;
 using ORCA.Api.Services.Interface;
+using ORCA.Api.Domain.Constants;
 using ORCA.Api.Domain.Entities;
 using ORCA.Api.DTOs;
 using ORCA.Api.Data;
@@ -212,13 +213,13 @@ namespace ORCA.Tests.Services
         [TestMethod]
         public async Task GetCompatible_AppliesBrandFilter()
         {
-            var product = new Product { Id = 1, Sku = "ABC", Category = "Doors" };
+            var product = new Product { Id = 1, Sku = "ABC", Category = CompatibilityConstants.Categories.ShowerBases };
 
             var compatibleProduct = new Product
             {
                 Id = 2,
                 Sku = "DEF",
-                Category = "Doors",
+                Category = CompatibilityConstants.Categories.ShowerDoors,
                 Brand = "MAAX"
             };
 
@@ -236,13 +237,18 @@ namespace ORCA.Tests.Services
                 {
                     new CompatibilityCategoryResult
                     {
-                        Category = "Doors",
+                        Category = CompatibilityConstants.Categories.ShowerDoors,
                         Products = new List<CompatibleProductDto>
                         {
                             new CompatibleProductDto
                             {
                                 Sku = "DEF",
                                 Brand = "MAAX"
+                            },
+                            new CompatibleProductDto
+                            {
+                                Sku = "GHI",
+                                Brand = "OTHER"
                             }
                         }
                     }
@@ -250,6 +256,8 @@ namespace ORCA.Tests.Services
 
             var result = await _service.GetCompatibleProductsAsync("ABC", brandFilter: "MAAX");
 
+            Assert.IsTrue(result.Success);
+            Assert.IsTrue(result.Compatibles.Any());
             Assert.IsTrue(result.Compatibles.All(c => c.Products.All(p => p.Brand == "MAAX")));
         }
 
@@ -260,8 +268,8 @@ namespace ORCA.Tests.Services
         [TestMethod]
         public async Task ComputeCompatibilities_SavesResults()
         {
-            var product = new Product { Id = 1, Sku = "ABC", Category = "Doors" };
-            var compatible = new Product { Id = 2, Sku = "DEF", Category = "Doors" };
+            var product = new Product { Id = 1, Sku = "ABC", Category = CompatibilityConstants.Categories.ShowerBases };
+            var compatible = new Product { Id = 2, Sku = "DEF", Category = CompatibilityConstants.Categories.ShowerDoors };
 
             _db.Products.AddRange(product, compatible);
             await _db.SaveChangesAsync();
@@ -280,7 +288,7 @@ namespace ORCA.Tests.Services
                 {
                     new CompatibilityCategoryResult
                     {
-                        Category = "Doors",
+                        Category = CompatibilityConstants.Categories.ShowerDoors,
                         Products = new List<CompatibleProductDto>
                         {
                             new CompatibleProductDto
@@ -304,8 +312,8 @@ namespace ORCA.Tests.Services
         [TestMethod]
         public async Task GetCompatible_AppliesBlacklistOverride()
         {
-            var product = new Product { Id = 1, Sku = "ABC", Category = "Doors" };
-            var compatible = new Product { Id = 2, Sku = "DEF", Category = "Doors" };
+            var product = new Product { Id = 1, Sku = "ABC", Category = CompatibilityConstants.Categories.ShowerBases };
+            var compatible = new Product { Id = 2, Sku = "DEF", Category = CompatibilityConstants.Categories.ShowerDoors };
 
             _db.Products.AddRange(product, compatible);
 
@@ -332,7 +340,7 @@ namespace ORCA.Tests.Services
                 {
                     new CompatibilityCategoryResult
                     {
-                        Category = "Doors",
+                        Category = CompatibilityConstants.Categories.ShowerDoors,
                         Products = new List<CompatibleProductDto>
                         {
                             new CompatibleProductDto { Sku = "DEF" }
