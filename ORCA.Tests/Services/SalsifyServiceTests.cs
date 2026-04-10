@@ -201,7 +201,11 @@ public class SalsifyServiceTests
 
         await InvokeRunSyncAsync(service, sync.Id, "http://test/feed");
 
-        compatMock.Verify(c => c.ComputeCompatibilitiesAsync("SKU1"), Times.Once);
+        compatMock.Verify(
+            c => c.BulkComputeCompatibilitiesAsync(
+                It.Is<IEnumerable<string>>(skus => skus.Contains("SKU1")),
+                It.IsAny<Func<int, Task>>()),
+            Times.Once);
     }
 
     [TestMethod]
