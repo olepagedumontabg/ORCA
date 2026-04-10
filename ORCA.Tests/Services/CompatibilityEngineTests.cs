@@ -520,4 +520,219 @@ public class CompatibilityEngineTests
 
         Assert.IsNotNull(result);
     }
+
+    // --------------------------------------------------
+    // 🚫 INCOMPATIBILITY REASON TESTS
+    // --------------------------------------------------
+
+    [TestMethod]
+    public void ShowerBase_ReasonDoorsCantFit_Blocks_DoorMatching()
+    {
+        var engine = CreateEngine();
+
+        var baseProduct = CreateProduct(
+            "BASE1",
+            CompatibilityConstants.Categories.ShowerBases,
+            attributes: "{\"Max Door Width\": 30, \"Installation\": \"alcove\", \"Reason Doors Can't Fit\": \"Opening is too narrow\"}",
+            series: "A");
+
+        var door = CreateProduct(
+            "DOOR1",
+            CompatibilityConstants.Categories.ShowerDoors,
+            attributes: "{\"Minimum Width\": 20, \"Maximum Width\": 40}",
+            series: "A");
+
+        var result = engine.FindCompatibleProducts(baseProduct,
+            new() { { CompatibilityConstants.Categories.ShowerDoors, new() { door } } });
+
+        var doorResult = result.FirstOrDefault(r => r.Category == "Shower Doors");
+        Assert.IsNotNull(doorResult, "Expected a Shower Doors result entry");
+        Assert.AreEqual("Opening is too narrow", doorResult.IncompatibilityReason);
+        Assert.AreEqual(0, doorResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void ShowerBase_ReasonWallsCantFit_Blocks_WallMatching()
+    {
+        var engine = CreateEngine();
+
+        var baseProduct = CreateProduct(
+            "BASE1",
+            CompatibilityConstants.Categories.ShowerBases,
+            attributes: "{\"Max Door Width\": 30, \"Installation\": \"alcove\", \"Reason Walls Can't Fit\": \"Not designed for wall panels\"}",
+            series: "A");
+
+        var wall = CreateProduct(
+            "WALL1",
+            CompatibilityConstants.Categories.Walls,
+            attributes: "{\"Type\": \"alcove shower\"}",
+            series: "A",
+            nominal: "60x32");
+
+        var result = engine.FindCompatibleProducts(baseProduct,
+            new() { { CompatibilityConstants.Categories.Walls, new() { wall } } });
+
+        var wallResult = result.FirstOrDefault(r => r.Category == "Walls");
+        Assert.IsNotNull(wallResult, "Expected a Walls result entry");
+        Assert.AreEqual("Not designed for wall panels", wallResult.IncompatibilityReason);
+        Assert.AreEqual(0, wallResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void ShowerBase_BothReasons_Blocks_DoorsAndWalls_Independently()
+    {
+        var engine = CreateEngine();
+
+        var baseProduct = CreateProduct(
+            "BASE1",
+            CompatibilityConstants.Categories.ShowerBases,
+            attributes: "{\"Max Door Width\": 30, \"Installation\": \"alcove\", \"Reason Doors Can't Fit\": \"No door fits\", \"Reason Walls Can't Fit\": \"No wall fits\"}",
+            series: "A");
+
+        var result = engine.FindCompatibleProducts(baseProduct, new());
+
+        var doorResult = result.FirstOrDefault(r => r.Category == "Shower Doors");
+        var wallResult = result.FirstOrDefault(r => r.Category == "Walls");
+
+        Assert.IsNotNull(doorResult, "Expected a Shower Doors incompatibility entry");
+        Assert.AreEqual("No door fits", doorResult.IncompatibilityReason);
+        Assert.AreEqual(0, doorResult.Products.Count);
+
+        Assert.IsNotNull(wallResult, "Expected a Walls incompatibility entry");
+        Assert.AreEqual("No wall fits", wallResult.IncompatibilityReason);
+        Assert.AreEqual(0, wallResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void Bathtub_ReasonDoorsCantFit_Blocks_TubDoorMatching()
+    {
+        var engine = CreateEngine();
+
+        var tub = CreateProduct(
+            "TUB1",
+            CompatibilityConstants.Categories.Bathtubs,
+            attributes: "{\"Max Door Width\": 60, \"Installation\": \"Alcove\", \"Reason Doors Can't Fit\": \"Apron front prevents door installation\"}",
+            series: "A");
+
+        var door = CreateProduct(
+            "DOOR1",
+            CompatibilityConstants.Categories.TubDoors,
+            attributes: "{\"Minimum Width\": 50, \"Maximum Width\": 70}",
+            series: "A");
+
+        var result = engine.FindCompatibleProducts(tub,
+            new() { { CompatibilityConstants.Categories.TubDoors, new() { door } } });
+
+        var doorResult = result.FirstOrDefault(r => r.Category == "Tub Doors");
+        Assert.IsNotNull(doorResult, "Expected a Tub Doors result entry");
+        Assert.AreEqual("Apron front prevents door installation", doorResult.IncompatibilityReason);
+        Assert.AreEqual(0, doorResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void Bathtub_ReasonWallsCantFit_Blocks_WallMatching()
+    {
+        var engine = CreateEngine();
+
+        var tub = CreateProduct(
+            "TUB1",
+            CompatibilityConstants.Categories.Bathtubs,
+            attributes: "{\"Max Door Width\": 60, \"Installation\": \"Alcove\", \"Reason Walls Can't Fit\": \"Irregular shape incompatible with wall kits\"}",
+            series: "A");
+
+        var wall = CreateProduct(
+            "WALL1",
+            CompatibilityConstants.Categories.Walls,
+            attributes: "{\"Type\": \"tub\"}",
+            series: "A",
+            nominal: "60x32");
+
+        var result = engine.FindCompatibleProducts(tub,
+            new() { { CompatibilityConstants.Categories.Walls, new() { wall } } });
+
+        var wallResult = result.FirstOrDefault(r => r.Category == "Walls");
+        Assert.IsNotNull(wallResult, "Expected a Walls result entry");
+        Assert.AreEqual("Irregular shape incompatible with wall kits", wallResult.IncompatibilityReason);
+        Assert.AreEqual(0, wallResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void Shower_ReasonDoorsCantFit_Blocks_ShowerDoorMatching()
+    {
+        var engine = CreateEngine();
+
+        var shower = CreateProduct(
+            "SHOWER1",
+            CompatibilityConstants.Categories.Showers,
+            attributes: "{\"Max Door Width\": 30, \"Max Door Height\": 80, \"Installation\": \"Alcove\", \"Reason Doors Can't Fit\": \"Integrated glass panel, no door needed\"}",
+            series: "A");
+
+        var door = CreateProduct(
+            "DOOR1",
+            CompatibilityConstants.Categories.ShowerDoors,
+            attributes: "{\"Minimum Width\": 20, \"Maximum Width\": 40, \"Maximum Height\": 78}",
+            series: "A");
+
+        var result = engine.FindCompatibleProducts(shower,
+            new() { { CompatibilityConstants.Categories.ShowerDoors, new() { door } } });
+
+        var doorResult = result.FirstOrDefault(r => r.Category == "Shower Doors");
+        Assert.IsNotNull(doorResult, "Expected a Shower Doors result entry");
+        Assert.AreEqual("Integrated glass panel, no door needed", doorResult.IncompatibilityReason);
+        Assert.AreEqual(0, doorResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void TubShower_ReasonDoorsCantFit_Blocks_TubDoorMatching()
+    {
+        var engine = CreateEngine();
+
+        var tubShower = CreateProduct(
+            "TUBSHOWER1",
+            CompatibilityConstants.Categories.TubShowers,
+            attributes: "{\"Max Door Width\": 60, \"Max Door Height\": 80, \"Reason Doors Can't Fit\": \"Built-in curtain rod, no door compatible\"}",
+            series: "A");
+
+        var door = CreateProduct(
+            "DOOR1",
+            CompatibilityConstants.Categories.TubDoors,
+            attributes: "{\"Minimum Width\": 50, \"Maximum Width\": 70, \"Maximum Height\": 78}",
+            series: "A");
+
+        var result = engine.FindCompatibleProducts(tubShower,
+            new() { { CompatibilityConstants.Categories.TubDoors, new() { door } } });
+
+        var doorResult = result.FirstOrDefault(r => r.Category == "Tub Doors");
+        Assert.IsNotNull(doorResult, "Expected a Tub Doors result entry");
+        Assert.AreEqual("Built-in curtain rod, no door compatible", doorResult.IncompatibilityReason);
+        Assert.AreEqual(0, doorResult.Products.Count);
+    }
+
+    [TestMethod]
+    public void ReasonDoorsCantFit_WhitespaceOnly_Does_Not_Block_DoorMatching()
+    {
+        var engine = CreateEngine();
+
+        var baseProduct = CreateProduct(
+            "BASE1",
+            CompatibilityConstants.Categories.ShowerBases,
+            attributes: "{\"Max Door Width\": 30, \"Installation\": \"alcove\", \"Reason Doors Can't Fit\": \"   \"}",
+            series: "A");
+
+        var door = CreateProduct(
+            "DOOR1",
+            CompatibilityConstants.Categories.ShowerDoors,
+            attributes: "{\"Minimum Width\": 20, \"Maximum Width\": 40}",
+            series: "A");
+
+        var result = engine.FindCompatibleProducts(baseProduct,
+            new() { { CompatibilityConstants.Categories.ShowerDoors, new() { door } } });
+
+        var doorResult = result.FirstOrDefault(r => r.Category == "Shower Doors");
+        // Whitespace-only reason must not block — door should appear in compatible products
+        Assert.IsTrue(doorResult == null || string.IsNullOrWhiteSpace(doorResult.IncompatibilityReason),
+            "Whitespace-only reason should not trigger incompatibility");
+        if (doorResult != null)
+            Assert.IsTrue(doorResult.Products.Count > 0, "Door should be listed as compatible");
+    }
 }
