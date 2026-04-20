@@ -78,15 +78,23 @@ public class OverrideController : ControllerBase
         if (!compatExists)
             return BadRequest(new { success = false, error = $"Product not found: {compatSku}" });
 
-        // Check for duplicate — treat the pair as unordered since override semantics are symmetric.
-        // (A→B, whitelist) and (B→A, whitelist) are the same logical rule.
-        var duplicate = await _db.CompatibilityOverrides.AnyAsync(o =>
-            o.OverrideType == type &&
-            ((o.BaseSku == baseSku && o.CompatibleSku == compatSku) ||
-             (o.BaseSku == compatSku && o.CompatibleSku == baseSku)));
+        // Check for any existing override for this pair (unordered, any type).
+        // A pair can only have one override at a time — having both a whitelist and blacklist
+        // for the same pair would create ambiguous behavior. Delete the existing entry first.
+        var existing = await _db.CompatibilityOverrides
+            .Where(o => (o.BaseSku == baseSku && o.CompatibleSku == compatSku) ||
+                        (o.BaseSku == compatSku && o.CompatibleSku == baseSku))
+            .Select(o => new { o.OverrideType })
+            .FirstOrDefaultAsync();
 
-        if (duplicate)
-            return Conflict(new { success = false, error = $"A {type} override for {baseSku} ↔ {compatSku} already exists" });
+        if (existing != null)
+        {
+            var existingType = existing.OverrideType;
+            if (existingType == type)
+                return Conflict(new { success = false, error = $"A {type} override for {baseSku} ↔ {compatSku} already exists" });
+            else
+                return Conflict(new { success = false, error = $"An override for {baseSku} ↔ {compatSku} already exists as {existingType}. Delete it first before adding a {type} override." });
+        }
 
         var entry = new CompatibilityOverride
         {
