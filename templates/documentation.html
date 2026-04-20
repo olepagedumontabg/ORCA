@@ -81,12 +81,13 @@
                     <a href="#base-url"        class="toc-link">2. Base URL &amp; Format</a>
                     <a href="#endpoints-products"    class="toc-link">3. Products</a>
                     <a href="#endpoints-compat"      class="toc-link">4. Compatibility</a>
+                    <a href="#endpoints-overrides"   class="toc-link">5. Overrides</a>
                 </div>
                 <div>
-                    <a href="#endpoints-salsify"     class="toc-link">5. Salsify / Data Sync</a>
-                    <a href="#endpoints-utility"     class="toc-link">6. Utility</a>
-                    <a href="#compat-logic"           class="toc-link">7. How Compatibility Works</a>
-                    <a href="#data-flow"              class="toc-link">8. Data Flow</a>
+                    <a href="#endpoints-salsify"     class="toc-link">6. Salsify / Data Sync</a>
+                    <a href="#endpoints-utility"     class="toc-link">7. Utility</a>
+                    <a href="#compat-logic"           class="toc-link">8. How Compatibility Works</a>
+                    <a href="#data-flow"              class="toc-link">9. Data Flow</a>
                 </div>
             </div>
         </div>
@@ -304,10 +305,120 @@ Accept:       application/json</div>
             </div>
         </div>
 
-        <!-- 5. Salsify / Data Sync -->
+        <!-- 5. Overrides -->
+        <div id="endpoints-overrides" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">5. Overrides</h2>
+            </div>
+            <div class="section-body space-y-5">
+                <p class="text-sm text-gray-600">
+                    Overrides let administrators force two SKUs to always be compatible (whitelist) or never compatible (blacklist),
+                    regardless of what the standard compatibility rules compute. Overrides are bidirectional — they apply whether
+                    you query A&rarr;B or B&rarr;A.
+                </p>
+
+                <!-- GET /api/overrides -->
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/overrides</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">List all compatibility overrides. Optionally filter by a specific SKU.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>sku</code></td><td>string</td><td>No</td><td>Return only overrides where <code>base_sku</code> or <code>compatible_sku</code> matches this value (case-insensitive)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/overrides?sku=100959
+
+{
+  "success": true,
+  "count": 2,
+  "overrides": [
+    {
+      "id": 1,
+      "base_sku": "100959",
+      "compatible_sku": "700A36N",
+      "override_type": "whitelist",
+      "reason": "Confirmed compatible by engineering",
+      "created_at": "2026-04-01T09:00:00Z"
+    },
+    {
+      "id": 2,
+      "base_sku": "100959",
+      "compatible_sku": "ABC999",
+      "override_type": "blacklist",
+      "reason": null,
+      "created_at": "2026-04-02T14:30:00Z"
+    }
+  ]
+}</div>
+                </div>
+
+                <!-- POST /api/overrides -->
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/overrides</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Create a new whitelist or blacklist override. Both SKUs must exist in the product database. A SKU pair can only have one active override at a time — delete the existing entry before adding a different type.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>base_sku</code></td><td>string</td><td>Yes</td><td>First SKU in the pair (stored uppercase)</td></tr>
+                            <tr><td><code>compatible_sku</code></td><td>string</td><td>Yes</td><td>Second SKU in the pair (stored uppercase)</td></tr>
+                            <tr><td><code>override_type</code></td><td>string</td><td>Yes</td><td><code>"whitelist"</code> to force compatibility, or <code>"blacklist"</code> to block it</td></tr>
+                            <tr><td><code>reason</code></td><td>string</td><td>No</td><td>Optional human-readable note explaining the override</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">POST /api/overrides
+Content-Type: application/json
+
+{ "base_sku": "100959", "compatible_sku": "700A36N", "override_type": "whitelist", "reason": "Confirmed by engineering" }
+
+{
+  "success": true,
+  "message": "whitelist override created: 100959 \u2194 700A36N",
+  "override": {
+    "id": 1,
+    "base_sku": "100959",
+    "compatible_sku": "700A36N",
+    "override_type": "whitelist",
+    "reason": "Confirmed by engineering",
+    "created_at": "2026-04-01T09:00:00Z"
+  }
+}</div>
+                </div>
+
+                <!-- DELETE /api/overrides/{id} -->
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-delete">DELETE</span>
+                        <span class="endpoint-path">/api/overrides/{id}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Remove an override by its database ID. Returns a confirmation message including the deleted pair and type.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Path param</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>id</code></td><td>int</td><td>The numeric ID of the override to delete (returned by GET or POST)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">DELETE /api/overrides/1
+
+{
+  "success": true,
+  "message": "Override 1 deleted (whitelist: 100959 \u2194 700A36N)"
+}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 6. Salsify / Data Sync -->
         <div id="endpoints-salsify" class="section-card">
             <div class="section-header">
-                <h2 class="text-lg font-semibold text-gray-900">5. Salsify / Data Sync</h2>
+                <h2 class="text-lg font-semibold text-gray-900">6. Salsify / Data Sync</h2>
             </div>
             <div class="section-body space-y-5 text-sm text-gray-600">
                 <p>
@@ -376,10 +487,10 @@ Accept:       application/json</div>
             </div>
         </div>
 
-        <!-- 6. Utility -->
+        <!-- 7. Utility -->
         <div id="endpoints-utility" class="section-card">
             <div class="section-header">
-                <h2 class="text-lg font-semibold text-gray-900">6. Utility</h2>
+                <h2 class="text-lg font-semibold text-gray-900">7. Utility</h2>
             </div>
             <div class="section-body space-y-5">
 
@@ -425,10 +536,10 @@ Accept:       application/json</div>
             </div>
         </div>
 
-        <!-- 7. How Compatibility Works -->
+        <!-- 8. How Compatibility Works -->
         <div id="compat-logic" class="section-card">
             <div class="section-header">
-                <h2 class="text-lg font-semibold text-gray-900">7. How Compatibility Works</h2>
+                <h2 class="text-lg font-semibold text-gray-900">8. How Compatibility Works</h2>
             </div>
             <div class="section-body text-sm text-gray-600 space-y-4 leading-relaxed">
                 <p>
@@ -488,10 +599,10 @@ Accept:       application/json</div>
             </div>
         </div>
 
-        <!-- 8. Data Flow -->
+        <!-- 9. Data Flow -->
         <div id="data-flow" class="section-card">
             <div class="section-header">
-                <h2 class="text-lg font-semibold text-gray-900">8. Data Flow</h2>
+                <h2 class="text-lg font-semibold text-gray-900">9. Data Flow</h2>
             </div>
             <div class="section-body text-sm text-gray-600 space-y-3 leading-relaxed">
                 <p>Here is how data moves through the system from Salsify to a compatibility result:</p>
