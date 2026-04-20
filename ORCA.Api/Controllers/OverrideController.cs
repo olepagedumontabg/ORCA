@@ -78,11 +78,12 @@ public class OverrideController : ControllerBase
         if (!compatExists)
             return BadRequest(new { success = false, error = $"Product not found: {compatSku}" });
 
-        // Check for duplicate
+        // Check for duplicate — treat the pair as unordered since override semantics are symmetric.
+        // (A→B, whitelist) and (B→A, whitelist) are the same logical rule.
         var duplicate = await _db.CompatibilityOverrides.AnyAsync(o =>
-            o.BaseSku == baseSku &&
-            o.CompatibleSku == compatSku &&
-            o.OverrideType == type);
+            o.OverrideType == type &&
+            ((o.BaseSku == baseSku && o.CompatibleSku == compatSku) ||
+             (o.BaseSku == compatSku && o.CompatibleSku == baseSku)));
 
         if (duplicate)
             return Conflict(new { success = false, error = $"A {type} override for {baseSku} ↔ {compatSku} already exists" });
