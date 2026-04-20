@@ -35,7 +35,7 @@ public class SearchController : ControllerBase
             .OrderBy(p => p.Sku.ToLower().StartsWith(query) ? 0 : 1)
             .ThenBy(p => p.Sku)
             .Take(20)
-            .Select(p => new { p.Sku, p.ProductName })
+            .Select(p => new { p.Sku, p.ProductName, p.Category })
             .ToListAsync();
 
         return Ok(new SuggestResponse
@@ -45,7 +45,8 @@ public class SearchController : ControllerBase
                 .Select(m => string.IsNullOrWhiteSpace(m.ProductName)
                     ? m.Sku
                     : $"{m.Sku} - {m.ProductName}")
-                .ToList()
+                .ToList(),
+            Categories = matches.Select(m => m.Category ?? string.Empty).ToList()
         });
     }
 }
@@ -57,4 +58,7 @@ public class SuggestResponse
 
     [JsonPropertyName("displaySuggestions")]
     public List<string> DisplaySuggestions { get; set; } = new();
+
+    [JsonPropertyName("categories")]
+    public List<string> Categories { get; set; } = new();
 }

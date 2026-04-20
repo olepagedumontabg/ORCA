@@ -60,20 +60,24 @@
             box-shadow: 0 4px 12px rgba(0,0,0,.1);
             max-height: 220px;
             overflow-y: auto;
-            z-index: 100;
+            z-index: 1000;
         }
         .sku-dropdown li {
             padding: 8px 12px;
             font-size: 0.85rem;
             cursor: pointer;
             list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
             border-bottom: 1px solid #f3f4f6;
         }
         .sku-dropdown li:last-child { border-bottom: none; }
         .sku-dropdown li:hover,
         .sku-dropdown li.active { background: #EEF2FF; }
         .sku-dropdown .sku-part { font-weight: 700; font-family: monospace; color: #001A70; }
-        .sku-dropdown .name-part { color: #4B5563; margin-left: 6px; }
+        .sku-dropdown .name-part { color: #4B5563; font-size: 0.82rem; }
+        .sku-dropdown .cat-part  { color: #9CA3AF; font-size: 0.75rem; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -255,11 +259,12 @@
                 const data = await res.json();
                 const display = data.displaySuggestions || data.suggestions || [];
                 const raw = data.suggestions || [];
-                renderDropdown(dropId, display, raw, input);
+                const cats = data.categories || [];
+                renderDropdown(dropId, display, raw, cats, input);
             } catch (_) { hideDropdown(dropId); }
         }
 
-        function renderDropdown(dropId, display, raw, input) {
+        function renderDropdown(dropId, display, raw, cats, input) {
             const ul = document.getElementById(dropId);
             const state = dropdownForId(dropId);
             state.idx = -1;
@@ -268,10 +273,11 @@
                 const parts = d.match(/^(.*?)(?:\s+-\s+(.*))?$/);
                 const sku = parts[1] || d;
                 const name = parts[2] || '';
+                const cat = cats[i] || '';
                 return `<li data-sku="${escapeHtml(raw[i] || sku)}" data-idx="${i}"
                     onmousedown="pickSku(event,'${input.id}','${dropId}')"
                     onmouseover="highlightItem('${dropId}',${i})">
-                    <span class="sku-part">${escapeHtml(sku)}</span>${name ? `<span class="name-part">— ${escapeHtml(name)}</span>` : ''}
+                    <span class="sku-part">${escapeHtml(sku)}</span>${name ? `<span class="name-part">${escapeHtml(name)}</span>` : ''}${cat ? `<span class="cat-part">${escapeHtml(cat)}</span>` : ''}
                 </li>`;
             }).join('');
             ul.classList.remove('hidden');
