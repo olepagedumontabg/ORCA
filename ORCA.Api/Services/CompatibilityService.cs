@@ -415,11 +415,13 @@ public class CompatibilityService : ICompatibilityService
             });
         }
 
-        return byCategory.Select(kvp => new CompatibilityCategoryResult
+        var precomputedResults = byCategory.Select(kvp => new CompatibilityCategoryResult
         {
             Category = kvp.Key,
             Products = kvp.Value
         }).ToList();
+
+        return PruneOrphanedReturnPanels(precomputedResults);
     }
 
     private async Task<List<CompatibilityCategoryResult>> ComputeOnDemandAsync(Product product)
@@ -604,6 +606,39 @@ public class CompatibilityService : ICompatibilityService
                 .Where(p => !overrides.Blacklisted.Contains(p.Sku))
                 .ToList();
         }
+
+        // A Return Panel is only valid when paired with a same-family Shower Door.
+        // After blacklisting a door, prune any panels whose family has no surviving door.
+        return PruneOrphanedReturnPanels(results);
+    }
+
+    /// <summary>
+    /// Removes Return Panels that have no surviving Shower Door in the same family.
+    /// Panels are only meaningful when a compatible door of the same family exists.
+    /// </summary>
+    private static List<CompatibilityCategoryResult> PruneOrphanedReturnPanels(
+        List<CompatibilityCategoryResult> results)
+    {
+        var panelCat = results.FirstOrDefault(r =>
+            r.Category == CompatibilityConstants.Categories.ReturnPanels);
+
+        if (panelCat == null || panelCat.Products.Count == 0)
+            return results;
+
+        var doorCat = results.FirstOrDefault(r =>
+            r.Category == CompatibilityConstants.Categories.ShowerDoors);
+
+        var survivingDoorFamilies = doorCat?.Products
+            .Where(d => !string.IsNullOrEmpty(d.Family))
+            .Select(d => d.Family!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase)
+            ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        panelCat.Products = panelCat.Products
+            .Where(p => !string.IsNullOrEmpty(p.Family)
+                        && survivingDoorFamilies.Contains(p.Family!))
+            .ToList();
+
         return results;
     }
 
