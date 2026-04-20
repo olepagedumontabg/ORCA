@@ -46,6 +46,34 @@
         .toast-success { background: #065F46; }
         .toast-error   { background: #991B1B; }
         .toast.hiding  { opacity: 0; }
+
+        .sku-wrap { position: relative; }
+        .sku-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .sku-dropdown li {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            list-style: none;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .sku-dropdown li:last-child { border-bottom: none; }
+        .sku-dropdown li:hover,
+        .sku-dropdown li.active { background: #EEF2FF; }
+        .sku-dropdown .sku-part { font-weight: 700; font-family: monospace; color: #001A70; }
+        .sku-dropdown .name-part { color: #4B5563; margin-left: 6px; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
@@ -100,17 +128,23 @@
                 <i class="fas fa-plus-circle mr-2 text-primary"></i>Add Override
             </h2>
             <form id="addForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                <div>
+                <div class="sku-wrap">
                     <label class="block text-sm font-medium text-gray-700 mb-1" for="baseSku">Base SKU <span class="text-red-500">*</span></label>
                     <input type="text" id="baseSku" placeholder="e.g. 100959"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                        required autocomplete="off">
+                        required autocomplete="off"
+                        oninput="onSkuInput(this,'baseDropdown')"
+                        onkeydown="onSkuKeydown(event,'baseDropdown')">
+                    <ul id="baseDropdown" class="sku-dropdown hidden"></ul>
                 </div>
-                <div>
+                <div class="sku-wrap">
                     <label class="block text-sm font-medium text-gray-700 mb-1" for="compatSku">Compatible SKU <span class="text-red-500">*</span></label>
                     <input type="text" id="compatSku" placeholder="e.g. 220333"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-                        required autocomplete="off">
+                        required autocomplete="off"
+                        oninput="onSkuInput(this,'compatDropdown')"
+                        onkeydown="onSkuKeydown(event,'compatDropdown')">
+                    <ul id="compatDropdown" class="sku-dropdown hidden"></ul>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1" for="overrideType">Type <span class="text-red-500">*</span></label>
@@ -200,6 +234,100 @@
     </footer>
 
     <script>
+        /* ── SKU Autocomplete ── */
+        const _ac = { base: { timer: null, idx: -1 }, compat: { timer: null, idx: -1 } };
+
+        function dropdownForId(dropId) {
+            return _ac[dropId === 'baseDropdown' ? 'base' : 'compat'];
+        }
+
+        function onSkuInput(input, dropId) {
+            const state = dropdownForId(dropId);
+            clearTimeout(state.timer);
+            const q = input.value.trim();
+            if (q.length < 2) { hideDropdown(dropId); return; }
+            state.timer = setTimeout(() => fetchSuggestions(q, input, dropId), 180);
+        }
+
+        async function fetchSuggestions(q, input, dropId) {
+            try {
+                const res = await fetch('/suggest?q=' + encodeURIComponent(q));
+                const data = await res.json();
+                const display = data.displaySuggestions || data.suggestions || [];
+                const raw = data.suggestions || [];
+                renderDropdown(dropId, display, raw, input);
+            } catch (_) { hideDropdown(dropId); }
+        }
+
+        function renderDropdown(dropId, display, raw, input) {
+            const ul = document.getElementById(dropId);
+            const state = dropdownForId(dropId);
+            state.idx = -1;
+            if (!display.length) { hideDropdown(dropId); return; }
+            ul.innerHTML = display.map((d, i) => {
+                const parts = d.match(/^(.*?)(?:\s+-\s+(.*))?$/);
+                const sku = parts[1] || d;
+                const name = parts[2] || '';
+                return `<li data-sku="${escapeHtml(raw[i] || sku)}" data-idx="${i}"
+                    onmousedown="pickSku(event,'${input.id}','${dropId}')"
+                    onmouseover="highlightItem('${dropId}',${i})">
+                    <span class="sku-part">${escapeHtml(sku)}</span>${name ? `<span class="name-part">— ${escapeHtml(name)}</span>` : ''}
+                </li>`;
+            }).join('');
+            ul.classList.remove('hidden');
+        }
+
+        function hideDropdown(dropId) {
+            const ul = document.getElementById(dropId);
+            if (ul) ul.classList.add('hidden');
+        }
+
+        function highlightItem(dropId, idx) {
+            const ul = document.getElementById(dropId);
+            const items = ul.querySelectorAll('li');
+            items.forEach((li, i) => li.classList.toggle('active', i === idx));
+            dropdownForId(dropId).idx = idx;
+        }
+
+        function pickSku(e, inputId, dropId) {
+            e.preventDefault();
+            const sku = e.currentTarget.dataset.sku;
+            document.getElementById(inputId).value = sku;
+            hideDropdown(dropId);
+        }
+
+        function onSkuKeydown(e, dropId) {
+            const ul = document.getElementById(dropId);
+            if (ul.classList.contains('hidden')) return;
+            const state = dropdownForId(dropId);
+            const items = ul.querySelectorAll('li');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                state.idx = Math.min(state.idx + 1, items.length - 1);
+                highlightItem(dropId, state.idx);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                state.idx = Math.max(state.idx - 1, 0);
+                highlightItem(dropId, state.idx);
+            } else if (e.key === 'Enter' && state.idx >= 0) {
+                e.preventDefault();
+                const sku = items[state.idx].dataset.sku;
+                const inputId = dropId === 'baseDropdown' ? 'baseSku' : 'compatSku';
+                document.getElementById(inputId).value = sku;
+                hideDropdown(dropId);
+            } else if (e.key === 'Escape') {
+                hideDropdown(dropId);
+            }
+        }
+
+        document.addEventListener('click', e => {
+            ['baseDropdown','compatDropdown'].forEach(id => {
+                const wrap = document.getElementById(id)?.closest('.sku-wrap');
+                if (wrap && !wrap.contains(e.target)) hideDropdown(id);
+            });
+        });
+
+        /* ── Overrides list ── */
         let _allOverrides = [];
 
         function escapeHtml(str) {
@@ -341,6 +469,8 @@
                 document.getElementById('baseSku').value = '';
                 document.getElementById('compatSku').value = '';
                 document.getElementById('reason').value = '';
+                hideDropdown('baseDropdown');
+                hideDropdown('compatDropdown');
                 await loadOverrides();
             } catch (err) {
                 showToast('Request failed: ' + err.message, 'error');
