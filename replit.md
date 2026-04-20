@@ -54,6 +54,9 @@ Preferred communication style: Simple, everyday language.
 | POST | `/api/salsify/webhook?key=SECRET` | Salsify publication webhook |
 | GET | `/api/salsify/status` | Sync status history |
 | POST | `/api/salsify/cleanup` | Remove old sync records |
+| GET | `/api/overrides` | List all overrides (optional `?sku=` filter) |
+| POST | `/api/overrides` | Create a whitelist or blacklist override |
+| DELETE | `/api/overrides/{id}` | Delete an override by ID |
 
 ### Project Structure
 ```
@@ -81,10 +84,11 @@ ORCA.Api/
 
 ### Frontend
 Static HTML/CSS/JS files are served directly by the C# app:
-- `templates/` — HTML pages (index, sync-history, documentation) served by `HomeController`
+- `templates/` — HTML pages (index, sync-history, overrides, documentation) served by `HomeController`
 - `static/` — CSS, JS, images served at `/static/` via `PhysicalFileProvider`
 - Swagger UI available at `/swagger` (interactive API explorer)
 - Human-readable API docs at `/documentation`
+- Override management UI at `/overrides` — add/remove whitelist and blacklist overrides
 
 ### Notes
 - All Python source files (`app.py`, `main.py`, `models.py`, `services/`, `logic/`) have been removed. The project is 100% C#.

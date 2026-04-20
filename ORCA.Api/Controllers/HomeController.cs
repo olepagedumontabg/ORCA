@@ -42,4 +42,7 @@ public class HomeController : ControllerBase
 
     [HttpGet("/documentation")]
     public ContentResult Documentation() => ServeTemplate("documentation.html");
+
+    [HttpGet("/overrides")]
+    public ContentResult Overrides() => ServeTemplate("overrides.html");
 }

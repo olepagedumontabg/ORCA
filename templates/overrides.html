@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compatibility Overrides — Bathroom Compatibility Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#001A70',
+                        'text-dark': '#2A314C',
+                        'text-light': '#4B5563'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .badge-whitelist { background-color: #D1FAE5; color: #065F46; }
+        .badge-blacklist { background-color: #FEE2E2; color: #991B1B; }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,.15);
+            transition: opacity 0.4s ease;
+        }
+        .toast-success { background: #065F46; }
+        .toast-error   { background: #991B1B; }
+        .toast.hiding  { opacity: 0; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 h-20">
+        <div class="container mx-auto px-4 h-full">
+            <div class="flex items-center justify-between h-full">
+                <a href="/" class="flex items-center">
+                    <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
+                </a>
+                <nav class="flex space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-primary transition">Home</a>
+                    <a href="/sync-history" class="text-gray-600 hover:text-primary transition">Sync History</a>
+                    <a href="/overrides" class="text-primary font-semibold">Overrides</a>
+                    <a href="/documentation" class="text-gray-600 hover:text-primary transition">API Docs</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+
+        <!-- Page heading -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text-dark mb-2">Compatibility Overrides</h1>
+            <p class="text-text-light">Manually force or prevent compatibility between two products, overriding the calculated rules.</p>
+        </div>
+
+        <!-- Legend cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border-l-4 border-green-500 p-5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="badge badge-whitelist">whitelist</span>
+                    <h3 class="font-semibold text-gray-900">Whitelist</h3>
+                </div>
+                <p class="text-sm text-text-light">Forces two products to appear as compatible, even if the rules engine did not match them.</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border-l-4 border-red-500 p-5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="badge badge-blacklist">blacklist</span>
+                    <h3 class="font-semibold text-gray-900">Blacklist</h3>
+                </div>
+                <p class="text-sm text-text-light">Prevents two products from appearing as compatible, even if the rules engine matched them.</p>
+            </div>
+        </div>
+
+        <!-- Add override form -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <h2 class="text-lg font-semibold text-text-dark mb-4">
+                <i class="fas fa-plus-circle mr-2 text-primary"></i>Add Override
+            </h2>
+            <form id="addForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="baseSku">Base SKU <span class="text-red-500">*</span></label>
+                    <input type="text" id="baseSku" placeholder="e.g. 100959"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                        required autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="compatSku">Compatible SKU <span class="text-red-500">*</span></label>
+                    <input type="text" id="compatSku" placeholder="e.g. 220333"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                        required autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="overrideType">Type <span class="text-red-500">*</span></label>
+                    <select id="overrideType"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
+                        <option value="whitelist">Whitelist</option>
+                        <option value="blacklist">Blacklist</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="reason">Reason (optional)</label>
+                    <input type="text" id="reason" placeholder="Why this override?"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                        maxlength="255" autocomplete="off">
+                </div>
+                <div>
+                    <button type="submit" id="addBtn"
+                        class="w-full bg-primary hover:bg-blue-900 text-white font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                        <i class="fas fa-plus"></i>Add Override
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Filter + table -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Table header / filter bar -->
+            <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h2 class="text-lg font-semibold text-text-dark">
+                    Current Overrides
+                    <span id="overrideCount" class="ml-2 text-sm font-normal text-text-light"></span>
+                </h2>
+                <div class="flex gap-3 items-center">
+                    <input type="text" id="filterSku" placeholder="Filter by SKU..."
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none w-48"
+                        oninput="applyFilter()">
+                    <button onclick="clearFilter()"
+                        class="text-sm text-text-light hover:text-text-dark transition px-2 py-2" title="Clear filter">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                    <button onclick="loadOverrides()"
+                        class="text-sm text-primary hover:text-blue-900 font-medium transition flex items-center gap-1" title="Refresh">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="tableLoading" class="text-center py-12">
+                <i class="fas fa-spinner fa-spin text-primary text-3xl mb-3"></i>
+                <p class="text-gray-500">Loading overrides...</p>
+            </div>
+
+            <!-- Empty state -->
+            <div id="emptyState" class="hidden text-center py-12">
+                <i class="fas fa-shield-alt text-gray-300 text-5xl mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">No overrides yet</h3>
+                <p class="text-gray-500 text-sm">Use the form above to add your first whitelist or blacklist override.</p>
+            </div>
+
+            <!-- Table -->
+            <div id="tableWrap" class="hidden overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base SKU</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compatible SKU</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
+        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
+            <p>&copy; 2025 American Bath Group. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        let _allOverrides = [];
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('en-CA', {
+                timeZone: 'UTC', hour12: false,
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            }).replace(',', '') + ' UTC';
+        }
+
+        function renderRow(o) {
+            const badgeClass = o.override_type === 'whitelist' ? 'badge-whitelist' : 'badge-blacklist';
+            return `<tr id="row-${o.id}">
+                <td class="px-6 py-3 text-sm text-gray-500">#${o.id}</td>
+                <td class="px-6 py-3 text-sm font-mono font-semibold text-text-dark">${escapeHtml(o.base_sku)}</td>
+                <td class="px-6 py-3 text-sm font-mono font-semibold text-text-dark">${escapeHtml(o.compatible_sku)}</td>
+                <td class="px-6 py-3"><span class="badge ${badgeClass}">${escapeHtml(o.override_type)}</span></td>
+                <td class="px-6 py-3 text-sm text-text-light max-w-xs truncate" title="${escapeHtml(o.reason)}">${escapeHtml(o.reason) || '<span class="text-gray-300">—</span>'}</td>
+                <td class="px-6 py-3 text-sm text-gray-500">${formatDate(o.created_at)}</td>
+                <td class="px-6 py-3">
+                    <button onclick="deleteOverride(${o.id})"
+                        class="text-red-500 hover:text-red-700 transition text-sm font-medium flex items-center gap-1">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </td>
+            </tr>`;
+        }
+
+        function applyFilter() {
+            const q = document.getElementById('filterSku').value.trim().toUpperCase();
+            const filtered = q
+                ? _allOverrides.filter(o => o.base_sku.includes(q) || o.compatible_sku.includes(q))
+                : _allOverrides;
+
+            const body = document.getElementById('tableBody');
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400 text-sm">No overrides match "${escapeHtml(q)}"</td></tr>`;
+            } else {
+                body.innerHTML = filtered.map(renderRow).join('');
+            }
+            document.getElementById('overrideCount').textContent =
+                filtered.length === _allOverrides.length
+                    ? `(${_allOverrides.length})`
+                    : `(${filtered.length} of ${_allOverrides.length})`;
+        }
+
+        function clearFilter() {
+            document.getElementById('filterSku').value = '';
+            applyFilter();
+        }
+
+        async function loadOverrides() {
+            document.getElementById('tableLoading').classList.remove('hidden');
+            document.getElementById('tableWrap').classList.add('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/overrides');
+                const data = await res.json();
+                _allOverrides = data.overrides || [];
+
+                document.getElementById('tableLoading').classList.add('hidden');
+
+                if (_allOverrides.length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    document.getElementById('overrideCount').textContent = '(0)';
+                } else {
+                    document.getElementById('tableWrap').classList.remove('hidden');
+                    applyFilter();
+                }
+            } catch (e) {
+                document.getElementById('tableLoading').classList.add('hidden');
+                showToast('Failed to load overrides: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteOverride(id) {
+            if (!confirm('Delete this override?')) return;
+            try {
+                const res = await fetch(`/api/overrides/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.error || 'Delete failed', 'error');
+                    return;
+                }
+                showToast(data.message || 'Override deleted', 'success');
+                _allOverrides = _allOverrides.filter(o => o.id !== id);
+                if (_allOverrides.length === 0) {
+                    document.getElementById('tableWrap').classList.add('hidden');
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    document.getElementById('overrideCount').textContent = '(0)';
+                } else {
+                    const row = document.getElementById('row-' + id);
+                    if (row) row.remove();
+                    applyFilter();
+                }
+            } catch (e) {
+                showToast('Delete failed: ' + e.message, 'error');
+            }
+        }
+
+        document.getElementById('addForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('addBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+            const body = {
+                base_sku: document.getElementById('baseSku').value.trim(),
+                compatible_sku: document.getElementById('compatSku').value.trim(),
+                override_type: document.getElementById('overrideType').value,
+                reason: document.getElementById('reason').value.trim() || null
+            };
+
+            try {
+                const res = await fetch('/api/overrides', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showToast(data.error || 'Could not add override', 'error');
+                    return;
+                }
+
+                showToast(data.message || 'Override added', 'success');
+                document.getElementById('baseSku').value = '';
+                document.getElementById('compatSku').value = '';
+                document.getElementById('reason').value = '';
+                await loadOverrides();
+            } catch (err) {
+                showToast('Request failed: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus"></i>Add Override';
+            }
+        });
+
+        let _toastTimer = null;
+        function showToast(msg, type) {
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                document.body.appendChild(t);
+            }
+            t.className = `toast toast-${type}`;
+            t.textContent = msg;
+            t.style.opacity = '1';
+            if (_toastTimer) clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => {
+                t.classList.add('hiding');
+                setTimeout(() => { t.style.opacity = '0'; }, 400);
+            }, 3500);
+        }
+
+        loadOverrides();
+    </script>
+</body>
+</html>
