@@ -36,10 +36,17 @@ public class OverrideController : ControllerBase
             {
                 o.Id,
                 o.BaseSku,
+                BaseProductName = _db.Products
+                    .Where(p => p.Sku == o.BaseSku)
+                    .Select(p => p.ProductName)
+                    .FirstOrDefault(),
                 o.CompatibleSku,
+                CompatibleProductName = _db.Products
+                    .Where(p => p.Sku == o.CompatibleSku)
+                    .Select(p => p.ProductName)
+                    .FirstOrDefault(),
                 o.OverrideType,
-                o.Reason,
-                o.CreatedAt
+                o.Reason
             })
             .ToListAsync();
 
