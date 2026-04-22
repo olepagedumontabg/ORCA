@@ -77,7 +77,7 @@ public class HomeController : ControllerBase
         }
 
         // Authenticated but missing the required role → 403 page
-        if (!User.IsInRole("override-admin"))
+        if (!User.IsInRole("ORCA Admin"))
         {
             Response.StatusCode = 403;
             return Content(System.IO.File.ReadAllText(Path.Combine(TemplatesDir, "403.html")), "text/html");
