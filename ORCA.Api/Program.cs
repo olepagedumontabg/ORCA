@@ -100,9 +100,9 @@ builder.Services
                 var identity = ctx.Principal?.Identity as ClaimsIdentity;
                 if (identity == null) return Task.CompletedTask;
 
-                // Auth0 Post Login Action sets roles using the custom namespace:
-                // https://medallion.americanbathgroup.com/roles → ["override-admin"]
-                var rolesClaim = "https://medallion.americanbathgroup.com/roles";
+                // Auth0 Post Login Action sets roles using the Auth0 domain as the namespace.
+                // Claim name: https://{AUTH0_DOMAIN}/roles → ["override-admin"]
+                var rolesClaim = $"https://{auth0Domain}/roles";
                 var rolesJson = identity.FindFirst(rolesClaim)?.Value;
                 if (!string.IsNullOrEmpty(rolesJson))
                 {
