@@ -100,9 +100,9 @@ builder.Services
                 var identity = ctx.Principal?.Identity as ClaimsIdentity;
                 if (identity == null) return Task.CompletedTask;
 
-                // Auth0 Post Login Action sets roles using the Auth0 domain as the namespace.
-                // Claim name: https://{AUTH0_DOMAIN}/roles → ["override-admin"]
-                var rolesClaim = $"https://{auth0Domain}/roles";
+                // Auth0 Post Login Action sets roles using the ORCA app URL as the namespace.
+                // Claim name: https://orca-ABG-Web-ops.replit.app/roles → ["ORCA Admin"]
+                var rolesClaim = "https://orca-ABG-Web-ops.replit.app/roles";
                 var rolesJson = identity.FindFirst(rolesClaim)?.Value;
                 if (!string.IsNullOrEmpty(rolesJson))
                 {
