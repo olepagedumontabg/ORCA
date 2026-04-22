@@ -9,31 +9,13 @@ namespace ORCA.Api.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly IConfiguration _config;
-
-    public AuthController(IConfiguration config)
-    {
-        _config = config;
-    }
-
-    private bool Auth0Enabled =>
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_DOMAIN")) &&
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_ID")) &&
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_SECRET"));
-
     /// <summary>
     /// GET /account/login
-    /// Initiates Auth0 login flow, returning the user to returnUrl after success.
+    /// Initiates Auth0 login flow. After successful login, the user is returned to returnUrl.
     /// </summary>
     [HttpGet("/account/login")]
     public async Task Login([FromQuery] string returnUrl = "/overrides")
     {
-        if (!Auth0Enabled)
-        {
-            Response.Redirect("/");
-            return;
-        }
-
         var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
             .WithRedirectUri(returnUrl)
             .Build();
@@ -43,17 +25,11 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// GET /account/logout
-    /// Signs the user out locally and then from Auth0.
+    /// Signs the user out locally and then redirects to Auth0 to clear the Auth0 session.
     /// </summary>
     [HttpGet("/account/logout")]
     public async Task Logout()
     {
-        if (!Auth0Enabled)
-        {
-            Response.Redirect("/");
-            return;
-        }
-
         var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
             .WithRedirectUri("/")
             .Build();
@@ -64,7 +40,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// GET /api/me
-    /// Returns basic info about the currently authenticated user, or 401 if not logged in.
+    /// Returns the currently authenticated user's email and roles, or 401 if not logged in.
     /// </summary>
     [HttpGet("/api/me")]
     public IActionResult Me()
@@ -74,7 +50,7 @@ public class AuthController : ControllerBase
 
         var email = User.FindFirst(ClaimTypes.Email)?.Value
                  ?? User.FindFirst("email")?.Value
-                 ?? User.Identity.Name
+                 ?? User.Identity?.Name
                  ?? "Unknown";
 
         var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray();

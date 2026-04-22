@@ -1,10 +1,16 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ORCA.Api.Data;
 using ORCA.Api.Domain.Entities;
+using System.Security.Claims;
 
 namespace ORCA.Api.Controllers;
 
+/// <summary>
+/// Manages compatibility overrides. All endpoints require Auth0 login and the 'override-admin' role.
+/// API endpoints return JSON 401/403 (not HTML redirects) so the browser-side JS receives clean errors.
+/// </summary>
 [ApiController]
 public class OverrideController : ControllerBase
 {
@@ -15,24 +21,27 @@ public class OverrideController : ControllerBase
         _db = db;
     }
 
-    private bool Auth0Enabled =>
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_DOMAIN")) &&
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_ID")) &&
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_SECRET"));
-
+    /// <summary>
+    /// Checks authentication + role for API endpoints and returns a JSON error result when
+    /// the check fails. Returns null when the caller is authorised to proceed.
+    /// This replaces attribute-based auth because ASP.NET's default challenge handler
+    /// issues an HTML redirect (302) rather than a JSON 401 for cookie-authenticated API routes.
+    /// </summary>
     private IActionResult? RequireOverrideAdmin()
     {
-        if (!Auth0Enabled) return null;
         if (User?.Identity?.IsAuthenticated != true)
-            return Unauthorized(new { success = false, error = "Authentication required" });
+            return Unauthorized(new { success = false, error = "Authentication required. Please log in at /overrides." });
+
         if (!User.IsInRole("override-admin"))
-            return StatusCode(403, new { success = false, error = "The 'override-admin' role is required" });
+            return StatusCode(403, new { success = false, error = "The 'override-admin' role is required to manage overrides." });
+
         return null;
     }
 
     /// <summary>
     /// GET /api/overrides
     /// List all compatibility overrides. Optionally filter by ?sku= to show only overrides for a given SKU.
+    /// Requires: authenticated + override-admin role.
     /// </summary>
     [HttpGet("api/overrides")]
     public async Task<IActionResult> List([FromQuery] string? sku = null)
@@ -75,6 +84,7 @@ public class OverrideController : ControllerBase
     /// POST /api/overrides
     /// Create a new whitelist or blacklist override.
     /// Body: { baseSku, compatibleSku, overrideType ("whitelist"|"blacklist"), reason? }
+    /// Requires: authenticated + override-admin role.
     /// </summary>
     [HttpPost("api/overrides")]
     public async Task<IActionResult> Create([FromBody] CreateOverrideRequest request)
@@ -151,6 +161,7 @@ public class OverrideController : ControllerBase
     /// <summary>
     /// DELETE /api/overrides/{id}
     /// Remove an override by its database ID.
+    /// Requires: authenticated + override-admin role.
     /// </summary>
     [HttpDelete("api/overrides/{id:int}")]
     public async Task<IActionResult> Delete(int id)

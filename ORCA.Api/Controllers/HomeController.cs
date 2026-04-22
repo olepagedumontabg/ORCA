@@ -14,11 +14,6 @@ public class HomeController : ControllerBase
         _env = env;
     }
 
-    private bool Auth0Enabled =>
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_DOMAIN")) &&
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_ID")) &&
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_SECRET"));
-
     private string TemplatesDir
     {
         get
@@ -56,17 +51,6 @@ public class HomeController : ControllerBase
         return Content(html, "text/html");
     }
 
-    private ContentResult ServeTemplatePublic(string filename)
-    {
-        var path = Path.Combine(TemplatesDir, filename);
-        if (!System.IO.File.Exists(path))
-            return Content($"<h1>404 - {filename} not found</h1>", "text/html");
-        var html = System.IO.File.ReadAllText(path);
-        html = html.Replace("{{USER_EMAIL}}", "");
-        html = html.Replace("{{USER_SECTION_STYLE}}", "display:none");
-        return Content(html, "text/html");
-    }
-
     [HttpGet("/")]
     public ContentResult Index() => ServeTemplate("index.html");
 
@@ -76,14 +60,16 @@ public class HomeController : ControllerBase
     [HttpGet("/documentation")]
     public ContentResult Documentation() => ServeTemplate("documentation.html");
 
+    /// <summary>
+    /// GET /overrides
+    /// Protected: requires Auth0 login + the 'override-admin' role.
+    /// Unauthenticated users are redirected to Auth0.
+    /// Authenticated users without the role see a 403 page.
+    /// </summary>
     [HttpGet("/overrides")]
-    public async Task<IActionResult> Overrides()
+    public IActionResult Overrides()
     {
-        // If Auth0 is not yet configured, serve the page without any auth gate.
-        if (!Auth0Enabled)
-            return ServeTemplatePublic("overrides.html");
-
-        // Unauthenticated → redirect to Auth0 login, return here afterwards
+        // Unauthenticated → redirect to Auth0 login, returning here afterwards
         if (User?.Identity?.IsAuthenticated != true)
         {
             var props = new AuthenticationProperties { RedirectUri = "/overrides" };
@@ -94,7 +80,7 @@ public class HomeController : ControllerBase
         if (!User.IsInRole("override-admin"))
             return Content(System.IO.File.ReadAllText(Path.Combine(TemplatesDir, "403.html")), "text/html");
 
-        // Authenticated + correct role → serve page with email injected
+        // Authenticated + correct role → serve page with user email injected
         var email = User.FindFirst(ClaimTypes.Email)?.Value
                  ?? User.FindFirst("email")?.Value
                  ?? User.Identity?.Name

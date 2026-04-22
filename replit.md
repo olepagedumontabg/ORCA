@@ -92,12 +92,67 @@ Static HTML/CSS/JS files are served directly by the C# app:
 - `templates/403.html` — role-denied page shown to authenticated users without the `override-admin` role
 
 ### Auth0 Authentication
-- **Secrets required**: `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`
-- **Protected routes**: `GET /overrides` (page), `GET/POST/DELETE /api/overrides` (API)
-- **Required role**: `override-admin` — must be assigned in Auth0 User Management → Roles
-- **Role claim mapping**: Auth0 Post Login Action must inject roles as `https://{AUTH0_DOMAIN}/roles` in the ID token; `Program.cs` maps this to `ClaimTypes.Role`
-- **Fallback**: If secrets are not set, the app starts without auth gates (safe for dev without Auth0 configured)
-- **New endpoints**: `GET /account/login`, `GET /account/logout`, `GET /api/me`
+
+**Protected routes** (require login + `override-admin` role):
+- `GET /overrides` — the Overrides UI page
+- `GET /api/overrides` — list overrides
+- `POST /api/overrides` — create an override
+- `DELETE /api/overrides/{id}` — delete an override
+
+**Auth endpoints** (public):
+- `GET /account/login` — initiates Auth0 login, redirects back to `/overrides`
+- `GET /account/logout` — signs out locally + from Auth0
+- `GET /api/me` — returns authenticated user's email and roles (JSON)
+
+**Required secrets** (app will not start without all three):
+- `AUTH0_DOMAIN` — e.g. `your-tenant.us.auth0.com`
+- `AUTH0_CLIENT_ID` — from your Auth0 Regular Web Application settings
+- `AUTH0_CLIENT_SECRET` — from your Auth0 Regular Web Application settings
+
+#### Auth0 Dashboard Setup (one-time)
+
+**Step 1 — Create a Regular Web Application**
+1. Auth0 Dashboard → Applications → Create Application
+2. Name: `ORCA Overrides` (or similar), Type: **Regular Web Applications** → Create
+3. Go to the **Settings** tab; copy the Client ID and Client Secret into Replit Secrets
+
+**Step 2 — Configure Application URIs**
+In the Settings tab → Application URIs, add (for both dev and prod):
+- **Allowed Callback URLs**: `https://<your-dev-url>/callback, https://<your-prod-url>/callback`
+- **Allowed Logout URLs**: `https://<your-dev-url>, https://<your-prod-url>`
+- **Allowed Web Origins**: `https://<your-dev-url>, https://<your-prod-url>`
+- Click **Save Changes**
+
+**Step 3 — Create the `override-admin` role**
+1. Auth0 Dashboard → User Management → Roles → Create Role
+2. Name: `override-admin`, Description: `Can manage compatibility overrides`
+3. Click **Create**
+
+**Step 4 — Create a Post Login Action to inject roles into the ID token**
+1. Actions → Library → Build Custom
+2. Name: `Add Roles to Token`, Trigger: **Login / Post Login**, Runtime: Node 18
+3. Replace the default code with:
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  const roles = event.authorization?.roles || [];
+  // Must match the namespace used in Program.cs: https://{AUTH0_DOMAIN}/roles
+  api.idToken.setCustomClaim('https://' + event.secrets.AUTH0_DOMAIN + '/roles', roles);
+};
+```
+4. Click the **Secrets** icon (🔒) → Add Secret:
+   - Key: `AUTH0_DOMAIN` — Value: your Auth0 domain (e.g. `abg-prod.us.auth0.com`)
+5. Click **Deploy**
+
+**Step 5 — Add Action to Login flow**
+1. Actions → Flows → Login
+2. Drag your `Add Roles to Token` action between Start and Complete
+3. Click **Apply**
+
+**Step 6 — Assign the role to users**
+1. User Management → Users → click a user → **Roles** tab
+2. Assign Roles → select `override-admin` → Assign
+
+**Role claim mapping**: The `Program.cs` `OnTicketReceived` handler reads the namespaced claim `https://{AUTH0_DOMAIN}/roles` (a JSON array) and maps each value to `ClaimTypes.Role`, enabling `User.IsInRole("override-admin")` checks.
 
 ### Notes
 - All Python source files (`app.py`, `main.py`, `models.py`, `services/`, `logic/`) have been removed. The project is 100% C#.

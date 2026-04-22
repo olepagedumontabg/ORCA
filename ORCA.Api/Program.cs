@@ -69,59 +69,53 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(xmlPath);
 });
 
-// ---------- Auth0 ----------
+// ---------- Auth0 (required — fail-closed if not configured) ----------
 var auth0Domain = Environment.GetEnvironmentVariable("AUTH0_DOMAIN") ?? "";
 var auth0ClientId = Environment.GetEnvironmentVariable("AUTH0_CLIENT_ID") ?? "";
 var auth0ClientSecret = Environment.GetEnvironmentVariable("AUTH0_CLIENT_SECRET") ?? "";
-var auth0Enabled = !string.IsNullOrEmpty(auth0Domain)
-                && !string.IsNullOrEmpty(auth0ClientId)
-                && !string.IsNullOrEmpty(auth0ClientSecret);
 
-if (auth0Enabled)
+if (string.IsNullOrEmpty(auth0Domain) || string.IsNullOrEmpty(auth0ClientId) || string.IsNullOrEmpty(auth0ClientSecret))
 {
-    builder.Services
-        .AddAuth0WebAppAuthentication(options =>
+    // Fail startup hard — the Overrides section must never be unprotected.
+    throw new InvalidOperationException(
+        "Auth0 is required but not configured. " +
+        "Set the AUTH0_DOMAIN, AUTH0_CLIENT_ID, and AUTH0_CLIENT_SECRET secrets " +
+        "in the Replit Secrets panel before starting the application.");
+}
+
+builder.Services
+    .AddAuth0WebAppAuthentication(options =>
+    {
+        options.Domain = auth0Domain;
+        options.ClientId = auth0ClientId;
+        options.ClientSecret = auth0ClientSecret;
+        options.Scope = "openid profile email";
+
+        // Map the Auth0 namespaced roles claim to ClaimTypes.Role so that
+        // User.IsInRole("override-admin") works as expected.
+        options.OpenIdConnectEvents = new Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectEvents
         {
-            options.Domain = auth0Domain;
-            options.ClientId = auth0ClientId;
-            options.ClientSecret = auth0ClientSecret;
-            options.Scope = "openid profile email";
-
-            // Map the Auth0 namespaced roles claim to ClaimTypes.Role
-            // This runs after the token is received and the identity is built.
-            options.OpenIdConnectEvents = new Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectEvents
+            OnTicketReceived = ctx =>
             {
-                OnTicketReceived = ctx =>
+                var identity = ctx.Principal?.Identity as ClaimsIdentity;
+                if (identity == null) return Task.CompletedTask;
+
+                // Auth0 Post Login Actions publish roles as a namespaced JSON-array claim.
+                // Example: https://abg-prod.us.auth0.com/roles → ["override-admin"]
+                var rolesClaim = $"https://{auth0Domain}/roles";
+                var rolesJson = identity.FindFirst(rolesClaim)?.Value;
+                if (!string.IsNullOrEmpty(rolesJson))
                 {
-                    var identity = ctx.Principal?.Identity as ClaimsIdentity;
-                    if (identity == null) return Task.CompletedTask;
-
-                    // Auth0 Post Login Actions publish roles as a namespaced claim array
-                    var rolesClaim = $"https://{auth0Domain}/roles";
-                    var rolesJson = identity.FindFirst(rolesClaim)?.Value;
-                    if (!string.IsNullOrEmpty(rolesJson))
-                    {
-                        // The value arrives as a JSON array string: ["override-admin","viewer"]
-                        var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(rolesJson);
-                        if (roles != null)
-                        {
-                            foreach (var role in roles)
-                                identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                        }
-                    }
-
-                    return Task.CompletedTask;
+                    var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(rolesJson);
+                    if (roles != null)
+                        foreach (var role in roles)
+                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
                 }
-            };
-        });
-}
-else
-{
-    // When Auth0 is not yet configured, add a minimal cookie auth scheme so
-    // the app can still start without exceptions from [Authorize] attributes.
-    builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-        .AddCookie();
-}
+
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 // ---------- Controllers ----------
 builder.Services.AddControllers()
@@ -185,6 +179,6 @@ app.UseSwaggerUI(options =>
 });
 app.MapControllers();
 
-app.Logger.LogInformation("ORCA API starting on port {Port} | Auth0: {Auth0}", port, auth0Enabled ? "enabled" : "disabled (secrets not set)");
+app.Logger.LogInformation("ORCA API starting on port {Port} with Auth0 enabled (domain: {Domain})", port, auth0Domain);
 
 app.Run();
