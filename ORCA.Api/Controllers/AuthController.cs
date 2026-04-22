@@ -16,6 +16,10 @@ public class AuthController : ControllerBase
     [HttpGet("/account/login")]
     public async Task Login([FromQuery] string returnUrl = "/overrides")
     {
+        // Validate returnUrl to prevent open-redirect attacks — only allow local paths
+        if (string.IsNullOrEmpty(returnUrl) || !Url.IsLocalUrl(returnUrl))
+            returnUrl = "/overrides";
+
         var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
             .WithRedirectUri(returnUrl)
             .Build();

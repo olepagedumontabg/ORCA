@@ -78,7 +78,10 @@ public class HomeController : ControllerBase
 
         // Authenticated but missing the required role → 403 page
         if (!User.IsInRole("override-admin"))
+        {
+            Response.StatusCode = 403;
             return Content(System.IO.File.ReadAllText(Path.Combine(TemplatesDir, "403.html")), "text/html");
+        }
 
         // Authenticated + correct role → serve page with user email injected
         var email = User.FindFirst(ClaimTypes.Email)?.Value
