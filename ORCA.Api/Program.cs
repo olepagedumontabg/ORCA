@@ -92,8 +92,12 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
 
-// ---------- Static files (serve ../static/ at /static/) ----------
-var staticPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "static"));
+// ---------- Static files (serve /static/) ----------
+// Production (published): static/ is copied alongside the DLL
+var staticPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "static"));
+if (!Directory.Exists(staticPath))
+    // Development: DLL is 4 levels deep inside ORCA.Api/bin/…
+    staticPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "static"));
 if (!Directory.Exists(staticPath))
     staticPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "static"));
 

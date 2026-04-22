@@ -16,12 +16,18 @@ public class HomeController : ControllerBase
     {
         get
         {
-            var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "templates"));
-            if (!Directory.Exists(path))
-                path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "templates"));
-            if (!Directory.Exists(path))
-                path = Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "templates"));
-            return path;
+            // Production (published): templates/ is copied alongside the DLL
+            var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "templates"));
+            if (Directory.Exists(path)) return path;
+
+            // Development: DLL is 4 levels deep inside ORCA.Api/bin/…
+            path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "templates"));
+            if (Directory.Exists(path)) return path;
+
+            path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "templates"));
+            if (Directory.Exists(path)) return path;
+
+            return Path.GetFullPath(Path.Combine(_env.ContentRootPath, "..", "templates"));
         }
     }
 

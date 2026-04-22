@@ -8,6 +8,16 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
+  <!-- Copy templates/ and static/ into the publish output so the deployed app can find them -->
+  <ItemGroup>
+    <Content Include="..\templates\**\*" CopyToPublishDirectory="PreserveNewest">
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\static\**\*" CopyToPublishDirectory="PreserveNewest">
+      <Link>static\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
