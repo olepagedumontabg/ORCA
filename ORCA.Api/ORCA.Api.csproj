@@ -30,6 +30,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+    <PackageReference Include="Auth0.AspNetCore.Authentication" Version="1.5.0" />
   </ItemGroup>
 
 </Project>
