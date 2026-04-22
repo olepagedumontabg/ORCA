@@ -80,7 +80,7 @@ ORCA.Api/
 
 - **Salsify PIM**: Webhook at `POST /api/salsify/webhook?key=SALSIFY_WEBHOOK_SECRET`; publishes Excel to S3; C# downloads and syncs automatically in background
 - **PostgreSQL**: Neon-hosted, accessed via `DATABASE_URL` environment variable
-- **NuGet Packages**: Npgsql.EntityFrameworkCore.PostgreSQL, ClosedXML, Swashbuckle.AspNetCore, Microsoft.EntityFrameworkCore.Design
+- **NuGet Packages**: Npgsql.EntityFrameworkCore.PostgreSQL, ClosedXML, Swashbuckle.AspNetCore, Microsoft.EntityFrameworkCore.Design, Auth0.AspNetCore.Authentication
 
 ### Frontend
 Static HTML/CSS/JS files are served directly by the C# app:
@@ -88,7 +88,16 @@ Static HTML/CSS/JS files are served directly by the C# app:
 - `static/` — CSS, JS, images served at `/static/` via `PhysicalFileProvider`
 - Swagger UI available at `/swagger` (interactive API explorer)
 - Human-readable API docs at `/documentation`
-- Override management UI at `/overrides` — add/remove whitelist and blacklist overrides
+- Override management UI at `/overrides` — add/remove whitelist and blacklist overrides (protected by Auth0 login + `override-admin` role)
+- `templates/403.html` — role-denied page shown to authenticated users without the `override-admin` role
+
+### Auth0 Authentication
+- **Secrets required**: `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`
+- **Protected routes**: `GET /overrides` (page), `GET/POST/DELETE /api/overrides` (API)
+- **Required role**: `override-admin` — must be assigned in Auth0 User Management → Roles
+- **Role claim mapping**: Auth0 Post Login Action must inject roles as `https://{AUTH0_DOMAIN}/roles` in the ID token; `Program.cs` maps this to `ClaimTypes.Role`
+- **Fallback**: If secrets are not set, the app starts without auth gates (safe for dev without Auth0 configured)
+- **New endpoints**: `GET /account/login`, `GET /account/logout`, `GET /api/me`
 
 ### Notes
 - All Python source files (`app.py`, `main.py`, `models.py`, `services/`, `logic/`) have been removed. The project is 100% C#.
