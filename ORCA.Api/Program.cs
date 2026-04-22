@@ -104,13 +104,26 @@ builder.Services
                 // Auth0 Post Login Action sets roles using the ORCA app URL as the namespace.
                 // Claim name: https://orca-ABG-Web-ops.replit.app/roles → ["ORCA Admin"]
                 var rolesClaim = "https://orca-ABG-Web-ops.replit.app/roles";
-                var rolesJson = identity.FindFirst(rolesClaim)?.Value;
-                if (!string.IsNullOrEmpty(rolesJson))
+                var roleClaims = identity.FindAll(rolesClaim).ToList();
+                foreach (var rc in roleClaims)
                 {
-                    var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(rolesJson);
-                    if (roles != null)
-                        foreach (var role in roles)
-                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                    if (rc.Value.TrimStart().StartsWith("["))
+                    {
+                        // Auth0 sent a JSON array — deserialize it
+                        try
+                        {
+                            var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(rc.Value);
+                            if (parsed != null)
+                                foreach (var role in parsed)
+                                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                        }
+                        catch { /* ignore malformed JSON */ }
+                    }
+                    else
+                    {
+                        // OIDC middleware already split the array into individual claims
+                        identity.AddClaim(new Claim(ClaimTypes.Role, rc.Value));
+                    }
                 }
 
                 return Task.CompletedTask;

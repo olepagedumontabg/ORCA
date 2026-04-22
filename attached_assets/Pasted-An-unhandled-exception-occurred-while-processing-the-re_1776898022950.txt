@@ -1,0 +1,31 @@
+An unhandled exception occurred while processing the request.
+JsonReaderException: 'D' is an invalid end of a number. Expected a delimiter. LineNumber: 0 | BytePositionInLine: 1.
+System.Text.Json.ThrowHelper.ThrowJsonReaderException(ref Utf8JsonReader json, ExceptionResource resource, byte nextByte, ReadOnlySpan<byte> bytes)
+
+JsonException: 'D' is an invalid end of a number. Expected a delimiter. Path: $ | LineNumber: 0 | BytePositionInLine: 1.
+System.Text.Json.ThrowHelper.ReThrowWithPath(ref ReadStack state, JsonReaderException ex)
+
+Stack Query Cookies Headers Routing
+JsonReaderException: 'D' is an invalid end of a number. Expected a delimiter. LineNumber: 0 | BytePositionInLine: 1.
+System.Text.Json.ThrowHelper.ThrowJsonReaderException(ref Utf8JsonReader json, ExceptionResource resource, byte nextByte, ReadOnlySpan<byte> bytes)
+System.Text.Json.Utf8JsonReader.TryGetNumber(ReadOnlySpan<byte> data, out int consumed)
+System.Text.Json.Utf8JsonReader.ReadFirstToken(byte first)
+System.Text.Json.Utf8JsonReader.ReadSingleSegment()
+System.Text.Json.Utf8JsonReader.Read()
+System.Text.Json.Serialization.JsonConverter<T>.ReadCore(ref Utf8JsonReader reader, JsonSerializerOptions options, ref ReadStack state)
+
+Show raw exception details
+JsonException: 'D' is an invalid end of a number. Expected a delimiter. Path: $ | LineNumber: 0 | BytePositionInLine: 1.
+System.Text.Json.ThrowHelper.ReThrowWithPath(ref ReadStack state, JsonReaderException ex)
+System.Text.Json.Serialization.JsonConverter<T>.ReadCore(ref Utf8JsonReader reader, JsonSerializerOptions options, ref ReadStack state)
+System.Text.Json.JsonSerializer.ReadFromSpan<TValue>(ReadOnlySpan<byte> utf8Json, JsonTypeInfo<TValue> jsonTypeInfo, Nullable<int> actualByteCount)
+System.Text.Json.JsonSerializer.ReadFromSpan<TValue>(ReadOnlySpan<char> json, JsonTypeInfo<TValue> jsonTypeInfo)
+Program+<>c.<<Main>$>b__0_8(TicketReceivedContext ctx) in Program.cs
++
+                    var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(rolesJson);
+Auth0.AspNetCore.Authentication.OpenIdConnectEventsFactory+<>c__DisplayClass1_0<T>+<<ProxyEvent>b__0>d.MoveNext()
+Microsoft.AspNetCore.Authentication.RemoteAuthenticationHandler<TOptions>.HandleRequestAsync()
+Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+
+Show raw exception details
