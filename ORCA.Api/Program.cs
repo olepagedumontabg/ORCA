@@ -157,6 +157,28 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
 
+// ---------- Startup: recover stuck syncs ----------
+// Any sync left in "running" state means the app crashed or was restarted mid-sync.
+// Mark them failed so the status page doesn't show them as in-progress forever.
+using (var startupScope = app.Services.CreateScope())
+{
+    var startupDb = startupScope.ServiceProvider.GetRequiredService<OrcaDbContext>();
+    var stuckSyncs = await startupDb.SyncStatuses
+        .Where(s => s.Status == "running")
+        .ToListAsync();
+    if (stuckSyncs.Count > 0)
+    {
+        foreach (var s in stuckSyncs)
+        {
+            s.Status = "failed";
+            s.CompletedAt = DateTime.UtcNow;
+            s.ErrorMessage = "Sync interrupted by application restart.";
+        }
+        await startupDb.SaveChangesAsync();
+        app.Logger.LogWarning("Marked {Count} interrupted sync(s) as failed on startup", stuckSyncs.Count);
+    }
+}
+
 // ---------- Static files (serve /static/) ----------
 var staticPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "static"));
 if (!Directory.Exists(staticPath))

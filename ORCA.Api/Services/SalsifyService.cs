@@ -174,6 +174,7 @@ public class SalsifyService : ISalsifyService
         var existingSkus = existingProductsMap.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var excelSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var excelCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var changedSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         int added = 0, updated = 0;
@@ -193,6 +194,7 @@ public class SalsifyService : ISalsifyService
 
             int skuCol = headers.First(h => h.Value == "Unique ID").Key;
 
+            excelCategories.Add(category);
             _logger.LogInformation("Syncing category: {Category}", category);
 
             foreach (var row in worksheet.RowsUsed().Skip(1))
@@ -252,11 +254,18 @@ public class SalsifyService : ISalsifyService
             await db.SaveChangesAsync();
         }
 
-        var toDeleteSkus = existingSkus.Except(excelSkus).ToList();
+        // Only delete products whose category appeared in this feed.
+        // A partial feed (e.g. Bathtubs only) must never wipe categories it didn't cover.
+        var toDeleteSkus = existingProductsMap
+            .Where(kvp => excelCategories.Contains(kvp.Value.Category) && !excelSkus.Contains(kvp.Key))
+            .Select(kvp => kvp.Key)
+            .ToList();
         int deleted = 0;
         if (toDeleteSkus.Count > 0)
         {
-            _logger.LogInformation("Removing {Count} products no longer in Excel", toDeleteSkus.Count);
+            _logger.LogInformation(
+                "Removing {Count} products absent from feed (categories covered: {Categories})",
+                toDeleteSkus.Count, string.Join(", ", excelCategories));
             var stale = await db.Products
                 .Where(p => toDeleteSkus.Contains(p.Sku))
                 .ToListAsync();
