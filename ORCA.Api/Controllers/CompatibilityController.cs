@@ -19,7 +19,7 @@ public class CompatibilityController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/compatible/{sku}?category=Walls&amp;brand=MAAX&amp;limit=100
+    /// GET /api/compatible/{sku}?category=Walls&amp;brand=MAAX
     /// Get compatible products for a SKU (matches Python API route).
     /// </summary>
     [HttpGet("api/compatible/{sku}")]

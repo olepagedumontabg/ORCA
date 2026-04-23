@@ -247,10 +247,9 @@ Accept:       application/json</div>
                         <tbody>
                             <tr><td><code>category</code></td><td>string</td><td>—</td><td>Return only this category (e.g. <code>Walls</code>)</td></tr>
                             <tr><td><code>brand</code></td><td>string</td><td>—</td><td>Return only this brand</td></tr>
-                            <tr><td><code>limit</code></td><td>int</td><td>100</td><td>Max results per category</td></tr>
                         </tbody>
                     </table>
-                    <div class="code-block">GET /api/compatible/100959?category=Shower+Doors&limit=10
+                    <div class="code-block">GET /api/compatible/100959?category=Shower+Doors
 
 {
   "success": true,
@@ -279,11 +278,10 @@ Accept:       application/json</div>
                             <tr><td><code>sku</code></td><td>string</td><td>Yes</td><td>Source SKU to find compatibles for</td></tr>
                             <tr><td><code>category</code></td><td>string</td><td>No</td><td>Filter results to this category</td></tr>
                             <tr><td><code>brand</code></td><td>string</td><td>No</td><td>Filter results to this brand</td></tr>
-                            <tr><td><code>limit</code></td><td>int</td><td>No</td><td>Max results per category (default 100)</td></tr>
                         </tbody>
                     </table>
                     <div class="code-block">POST /api/compatibility/search
-{ "sku": "100959", "category": "Walls", "brand": "MAAX", "limit": 20 }</div>
+{ "sku": "100959", "category": "Walls", "brand": "MAAX" }</div>
                 </div>
 
                 <div class="endpoint-block">

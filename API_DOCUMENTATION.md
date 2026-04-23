@@ -134,7 +134,6 @@ Get all products compatible with a specific SKU. Supports multi-SKU lookup with 
 - `unique_id` (query parameter, optional): Unique product ID (lowest priority)
 - `category` (query parameter, optional): Filter results by category (e.g., "Shower Doors", "Walls")
 - `brand` (query parameter, optional): Filter results by brand name (case-insensitive, e.g., "MAAX", "Neptune")
-- `limit` (query parameter, optional): Limit results per category (default: 100)
 
 **Multi-SKU Lookup Priority**:
 The system searches for a product match in the following order:
@@ -212,11 +211,6 @@ curl "https://your-app.replit.app/api/compatible/FB03060M?brand=MAAX"
 # Combine filters - only MAAX walls
 curl "https://your-app.replit.app/api/compatible/FB03060M?brand=MAAX&category=Walls"
 
-# Filter by brand with limit
-curl "https://your-app.replit.app/api/compatible/FB03060M?brand=Neptune&limit=10"
-
-# Limit results to 5 per category
-curl "https://your-app.replit.app/api/compatible/FB03060M?limit=5"
 ```
 
 **Response Fields**:
@@ -232,8 +226,6 @@ curl "https://your-app.replit.app/api/compatible/FB03060M?limit=5"
     - `glass_thickness`: Glass thickness for doors (e.g., "8mm")
     - `door_type`: Door type for doors (e.g., "Pivot", "Sliding")
 
-  - `total_count`: Total number of compatible products in this category (if truncated)
-  - `truncated`: True if results were limited
 - `incompatibility_reasons`: Reasons why certain categories have no matches
 - `total_categories`: Total number of categories with compatible products
 - `data_source`: Data source used (`database` or `excel`)
@@ -406,7 +398,7 @@ if (data.success) {
 curl https://your-app.replit.app/api/health
 
 # Get compatible products with pretty printing
-curl -s "https://your-app.replit.app/api/compatible/FB03060M?limit=5" | jq .
+curl -s "https://your-app.replit.app/api/compatible/FB03060M" | jq .
 
 # Get all categories
 curl -s https://your-app.replit.app/api/categories | jq '.categories[] | .name'
