@@ -160,6 +160,26 @@
                 </div>
             </div>
             
+            <!-- Configuration picker -->
+            <div x-show="showConfigPicker" x-cloak class="py-8 max-w-3xl mx-auto">
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1">Select a Configuration</h3>
+                    <p class="text-gray-500 text-sm">This product has multiple configurations — choose one to find compatible products.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <template x-for="config in configurations" :key="config.sku">
+                        <button
+                            @click="selectConfiguration(config.sku)"
+                            class="bg-white border border-gray-200 rounded-lg p-4 text-left hover:border-primary hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <div class="font-mono text-sm font-semibold text-primary mb-1" x-text="config.sku"></div>
+                            <div class="text-xs text-gray-600 truncate" x-text="config.name || ''"></div>
+                            <div x-show="config.nominalDimensions" class="text-xs text-gray-400 mt-1" x-text="config.nominalDimensions"></div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
             <!-- Results layout container -->
             <div x-show="(compatibleProducts.length > 0 || (productDetails && hasSearched)) && !errorMessage" x-cloak>
                 <!-- Hero section for results page -->
