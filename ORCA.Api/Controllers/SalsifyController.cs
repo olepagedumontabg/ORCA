@@ -18,12 +18,13 @@ public class SalsifyController : ControllerBase
     }
 
     /// <summary>
-    /// POST /api/salsify/webhook?key=SECRET
+    /// POST /api/salsify/webhook
     /// Receive a Salsify publication webhook and trigger a background data sync.
+    /// Authenticate by passing the secret in the X-Salsify-Secret header.
     /// </summary>
     [HttpPost("webhook")]
     public async Task<IActionResult> Webhook(
-        [FromQuery] string? key,
+        [FromHeader(Name = "X-Salsify-Secret")] string? key,
         [FromBody] SalsifyWebhookPayload? payload)
     {
         var webhookSecret = Environment.GetEnvironmentVariable("SALSIFY_WEBHOOK_SECRET");
@@ -35,7 +36,7 @@ public class SalsifyController : ControllerBase
 
         if (key != webhookSecret)
         {
-            _logger.LogWarning("Invalid webhook key from {Ip}", HttpContext.Connection.RemoteIpAddress);
+            _logger.LogWarning("Invalid webhook secret from {Ip}", HttpContext.Connection.RemoteIpAddress);
             return Unauthorized(new { success = false, error = "Unauthorized" });
         }
 

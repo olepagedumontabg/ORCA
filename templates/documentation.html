@@ -428,10 +428,11 @@ Content-Type: application/json
                 <div class="endpoint-block">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="method-badge method-post">POST</span>
-                        <span class="endpoint-path">/api/salsify/webhook?key=SECRET</span>
+                        <span class="endpoint-path">/api/salsify/webhook</span>
                     </div>
-                    <p class="mb-3">Receives a Salsify publication event. The <code>key</code> query parameter must match the <code>SALSIFY_WEBHOOK_SECRET</code> environment variable. Only processes publications with status <code>completed</code>.</p>
-                    <div class="code-block">POST /api/salsify/webhook?key=your-secret
+                    <p class="mb-3">Receives a Salsify publication event. Pass the <code>SALSIFY_WEBHOOK_SECRET</code> value in the <code>X-Salsify-Secret</code> request header. Only processes publications with status <code>completed</code>.</p>
+                    <div class="code-block">POST /api/salsify/webhook
+X-Salsify-Secret: your-secret
 {
   "publication_status": "completed",
   "product_feed_url": "https://s3.amazonaws.com/.../export.xlsx",
