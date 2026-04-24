@@ -25,14 +25,17 @@ public class SearchController : ControllerBase
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return Ok(new SuggestResponse());
 
-        var query = q.Trim().ToLower();
+        // SKUs are stored uppercase — compare against an uppercased query so PostgreSQL
+        // can use the existing B-tree index on sku (LOWER(sku) LIKE '%q%' bypasses it).
+        var skuQuery = q.Trim().ToUpperInvariant();
+        var nameQuery = q.Trim().ToLowerInvariant();
 
         var matches = await _db.Products
             .AsNoTracking()
             .Where(p =>
-                p.Sku.ToLower().Contains(query) ||
-                (p.ProductName != null && p.ProductName.ToLower().Contains(query)))
-            .OrderBy(p => p.Sku.ToLower().StartsWith(query) ? 0 : 1)
+                p.Sku.StartsWith(skuQuery) ||
+                (p.ProductName != null && p.ProductName.ToLower().Contains(nameQuery)))
+            .OrderBy(p => p.Sku.StartsWith(skuQuery) ? 0 : 1)
             .ThenBy(p => p.Sku)
             .Take(20)
             .Select(p => new { p.Sku, p.ProductName, p.Category })
