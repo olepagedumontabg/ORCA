@@ -94,4 +94,33 @@ public class ProductService : IProductService
                 (p.AlternateId2 != null && p.AlternateId2.ToUpperInvariant() == upper) ||
                 (p.AlternateId3 != null && p.AlternateId3.ToUpperInvariant() == upper));
     }
+
+    public async Task<List<ProductDto>> GetConfigurationsAsync(string baseSku)
+    {
+        var prefix = baseSku.Trim().ToUpperInvariant();
+        if (prefix.Contains('-'))
+            prefix = prefix[..prefix.IndexOf('-')];
+
+        return await _db.Products
+            .AsNoTracking()
+            .Where(p => p.Sku.StartsWith(prefix + "-"))
+            .OrderBy(p => p.Sku)
+            .Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Sku = p.Sku,
+                Name = p.ProductName,
+                Brand = p.Brand,
+                Series = p.Series,
+                Family = p.Family,
+                Category = p.Category,
+                ImageUrl = p.ImageUrl,
+                ProductPageUrl = p.ProductPageUrl,
+                NominalDimensions = p.NominalDimensions,
+                AlternateId1 = p.AlternateId1,
+                AlternateId2 = p.AlternateId2,
+                AlternateId3 = p.AlternateId3
+            })
+            .ToListAsync();
+    }
 }

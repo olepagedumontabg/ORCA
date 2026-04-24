@@ -33,8 +33,9 @@ public class SearchController : ControllerBase
         var matches = await _db.Products
             .AsNoTracking()
             .Where(p =>
-                p.Sku.StartsWith(skuQuery) ||
-                (p.ProductName != null && p.ProductName.ToLower().Contains(nameQuery)))
+                !p.Sku.Contains("-") &&
+                (p.Sku.StartsWith(skuQuery) ||
+                 (p.ProductName != null && p.ProductName.ToLower().Contains(nameQuery))))
             .OrderBy(p => p.Sku.StartsWith(skuQuery) ? 0 : 1)
             .ThenBy(p => p.Sku)
             .Take(20)

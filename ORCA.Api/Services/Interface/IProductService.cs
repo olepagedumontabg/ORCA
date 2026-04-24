@@ -17,4 +17,10 @@ public interface IProductService
     /// is stored as an alternate ID on the base product record.
     /// </summary>
     Task<Product?> FindByAlternateIdAsync(string alternateId);
+
+    /// <summary>
+    /// Returns all sellable configuration variants for a base SKU.
+    /// Finds every product whose SKU starts with {baseSku}-, ordered alphabetically.
+    /// </summary>
+    Task<List<ProductDto>> GetConfigurationsAsync(string baseSku);
 }

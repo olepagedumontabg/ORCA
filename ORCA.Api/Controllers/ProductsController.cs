@@ -103,6 +103,32 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// GET /api/product/{sku}/configurations
+    /// Returns all sellable configuration variants for a base SKU.
+    /// Pass the base SKU (e.g. 148006) or any config SKU (e.g. 148006-L-000-002) —
+    /// both resolve to the same base and return the same list.
+    /// Returns an empty array when the product has no split configurations
+    /// (all variants share the same dimensions and are managed at the base level).
+    /// </summary>
+    [HttpGet("api/product/{sku}/configurations")]
+    public async Task<IActionResult> GetConfigurations(string sku)
+    {
+        var baseSku = sku.Trim().ToUpperInvariant();
+        if (baseSku.Contains('-'))
+            baseSku = baseSku[..baseSku.IndexOf('-')];
+
+        var configurations = await _productService.GetConfigurationsAsync(baseSku);
+
+        return Ok(new
+        {
+            success = true,
+            baseSku,
+            hasConfigurations = configurations.Count > 0,
+            configurations
+        });
+    }
+
     private static object MapProduct(ORCA.Api.Domain.Entities.Product product) => new
     {
         product.Id,
