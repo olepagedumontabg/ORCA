@@ -16,11 +16,6 @@ function compatibilityApp() {
         incompatibilityReasons: {},
         mobileFiltersOpen: false,
 
-        // Configuration picker state
-        configurations: [],
-        showConfigPicker: false,
-        configBaseSku: '',
-        
         // On initialization, fix the filter panel width
         init() {
             // Initial fix for filter panel width
@@ -496,13 +491,10 @@ function compatibilityApp() {
         },
         
         /**
-         * Clear search input, suggestions, and configuration picker
+         * Clear search input and suggestions
          */
         clearSearch() {
             this.searchInput = '';
-            this.showConfigPicker = false;
-            this.configurations = [];
-            this.configBaseSku = '';
             this.closeSuggestions();
         },
         
@@ -673,8 +665,8 @@ function compatibilityApp() {
             this.searchInput = extractedSku;
             this.closeSuggestions();
 
-            // Auto-trigger the configuration check so the user doesn't need to press Search
-            this.checkConfigurations(extractedSku);
+            // Auto-trigger the search so the user doesn't need to press Search
+            this.searchSku(extractedSku);
         },
         
         /**
@@ -780,7 +772,7 @@ function compatibilityApp() {
         },
         
         /**
-         * Submit the search form — check for configurations before running compatibility search
+         * Submit the search form
          */
         submitSearch() {
             if (!this.searchInput.trim()) {
@@ -790,48 +782,9 @@ function compatibilityApp() {
 
             this.showSuggestions = false;
             this.closeSuggestions();
-            this.checkConfigurations(this.searchInput.trim());
+            this.searchSku(this.searchInput.trim());
         },
 
-        /**
-         * Fetch configurations for a base SKU.
-         * If configurations exist show the picker; otherwise search directly.
-         */
-        checkConfigurations(sku) {
-            this.isLoading = true;
-            this.errorMessage = '';
-            this.showConfigPicker = false;
-
-            fetch(`/api/product/${encodeURIComponent(sku)}/configurations`)
-                .then(r => r.json())
-                .then(data => {
-                    this.isLoading = false;
-                    if (data.hasConfigurations) {
-                        this.configurations = data.configurations;
-                        this.configBaseSku = data.baseSku;
-                        this.showConfigPicker = true;
-                        this.hasSearched = false;
-                        this.compatibleProducts = [];
-                        this.productDetails = null;
-                    } else {
-                        this.searchSku(sku);
-                    }
-                })
-                .catch(() => {
-                    this.isLoading = false;
-                    this.searchSku(sku); // fallback: search directly if endpoint fails
-                });
-        },
-
-        /**
-         * Called when the user picks a specific configuration from the picker
-         */
-        selectConfiguration(configSku) {
-            this.showConfigPicker = false;
-            this.searchInput = configSku;
-            this.searchSku(configSku);
-        },
-        
         /**
          * Search for a specific SKU
          * @param {string} sku - The SKU to search for
