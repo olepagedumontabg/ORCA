@@ -4,20 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bathroom Compatibility Finder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#001A70',
-                        'text-dark': '#2A314C',
-                        'text-light': '#4B5563'
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="/static/css/tailwind.css">
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
@@ -171,7 +158,13 @@
                     <i class="fas fa-search text-3xl"></i>
                 </div>
                 <h3 class="text-lg font-semibold text-text-dark mb-1">Start by searching for a product</h3>
-                <p class="text-gray-500 max-w-md mx-auto">Enter a SKU or product name above to see every compatible bathroom product in the catalog.</p>
+                <p class="text-gray-500 max-w-md mx-auto mb-4">Enter a SKU or product name above to see every compatible bathroom product in the catalog.</p>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <span class="text-xs text-gray-400 uppercase tracking-wide">Try</span>
+                    <button type="button" @click="searchInput='420000'; submitSearch()" class="example-chip text-sm font-mono bg-white border border-gray-300 hover:border-primary hover:text-primary text-text-dark px-3 py-1 rounded-full transition">420000</button>
+                    <button type="button" @click="searchInput='100959'; submitSearch()" class="example-chip text-sm font-mono bg-white border border-gray-300 hover:border-primary hover:text-primary text-text-dark px-3 py-1 rounded-full transition">100959</button>
+                    <button type="button" @click="searchInput='220333'; submitSearch()" class="example-chip text-sm font-mono bg-white border border-gray-300 hover:border-primary hover:text-primary text-text-dark px-3 py-1 rounded-full transition">220333</button>
+                </div>
             </div>
 
             <!-- Loading skeleton — shown while a search is in flight -->
