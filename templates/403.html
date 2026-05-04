@@ -18,13 +18,14 @@
                 </a>
                 <nav class="hidden md:flex space-x-6 items-center">
                     <a href="/" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Home</a>
-                    <a href="/sync-history" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
-                    <a href="/overrides" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
-                    <a href="/documentation" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
-                    <a href="/account/logout"
-                        class="ml-2 text-sm text-gray-500 hover:text-red-600 transition flex items-center gap-1">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                    <a href="/sync-history"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
+                    <a href="/overrides"{{STYLE_EDITOR}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
+                    <a href="/documentation"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
+                    <span class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
+                        <i class="fas fa-user-circle text-primary"></i>
+                        <span class="text-gray-600 font-medium">{{USER_EMAIL}}</span>
+                        <a href="/account/logout" class="text-gray-500 hover:text-red-600 transition flex items-center gap-1 text-sm" title="Log out"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </span>
                 </nav>
                 <button onclick="document.getElementById('mobileNav').classList.toggle('hidden');var i=this.querySelector('i');i.classList.toggle('fa-bars');i.classList.toggle('fa-times');" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
                     <i class="fas fa-bars"></i>
@@ -33,10 +34,14 @@
         </div>
         <nav id="mobileNav" class="hidden md:hidden bg-white border-b border-gray-200 shadow-md">
             <a href="/" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Home</a>
-            <a href="/sync-history" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Sync History</a>
-            <a href="/overrides" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
-            <a href="/documentation" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
-            <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50 border-t border-gray-100"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+            <a href="/sync-history"{{STYLE_ADMIN}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Sync History</a>
+            <a href="/overrides"{{STYLE_EDITOR}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
+            <a href="/documentation"{{STYLE_ADMIN}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
+            <div class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
+                <i class="fas fa-user-circle text-primary"></i>
+                <span class="font-medium truncate">{{USER_EMAIL}}</span>
+            </div>
+            <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
         </nav>
     </header>
 
@@ -48,7 +53,7 @@
             </div>
             <h1 class="text-3xl font-bold text-text-dark mb-3">Access Denied</h1>
             <p class="text-text-light mb-2">
-                Your account does not have the <strong class="font-semibold text-text-dark">ORCA Admin</strong> role required to access this page.
+                {{FORBIDDEN_MESSAGE}}
             </p>
             <p class="text-text-light text-sm mb-8">
                 Contact your administrator to request access.

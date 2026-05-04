@@ -93,16 +93,25 @@ Static HTML/CSS/JS files are served directly by the C# app:
 
 ### Auth0 Authentication
 
-**Protected routes** (require login + `override-admin` role):
-- `GET /overrides` — the Overrides UI page
-- `GET /api/overrides` — list overrides
-- `POST /api/overrides` — create an override
-- `DELETE /api/overrides/{id}` — delete an override
+**All routes are protected** — unauthenticated users are redirected to Auth0 login.
+
+**Role hierarchy** (must be created in Auth0 dashboard):
+| Role | Access |
+|------|--------|
+| `ORCA - Viewer` | Home (`/`) only |
+| `ORCA - Editor` | Home + Overrides |
+| `ORCA - Admin` | All pages (Home, Overrides, Sync History, API Docs) |
+
+**Protected routes**:
+- `GET /` — requires `ORCA - Viewer` (or higher)
+- `GET /overrides` — requires `ORCA - Editor` (or Admin); API endpoints same
+- `GET /sync-history` — requires `ORCA - Admin`
+- `GET /documentation` — requires `ORCA - Admin`
 
 **Auth endpoints** (public):
-- `GET /account/login` — initiates Auth0 login, redirects back to `/overrides`
+- `GET /account/login` — initiates Auth0 login
 - `GET /account/logout` — signs out locally + from Auth0
-- `GET /api/me` — returns authenticated user's email and roles (JSON)
+- `GET /api/me` — returns authenticated user's email, roles, is_editor, is_admin (JSON)
 
 **Required secrets** (app will not start without all three):
 - `AUTH0_DOMAIN` — e.g. `your-tenant.us.auth0.com`

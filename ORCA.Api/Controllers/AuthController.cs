@@ -64,7 +64,8 @@ public class AuthController : ControllerBase
             authenticated = true,
             email,
             roles,
-            is_override_admin = roles.Contains("ORCA Admin")
+            is_editor = roles.Contains("ORCA - Editor") || roles.Contains("ORCA - Admin"),
+            is_admin  = roles.Contains("ORCA - Admin")
         });
     }
 }

@@ -32,8 +32,8 @@ public class OverrideController : ControllerBase
         if (User?.Identity?.IsAuthenticated != true)
             return Unauthorized(new { success = false, error = "Authentication required. Please log in at /overrides." });
 
-        if (!User.IsInRole("ORCA Admin"))
-            return StatusCode(403, new { success = false, error = "The 'ORCA Admin' role is required to manage overrides." });
+        if (!User.IsInRole("ORCA - Editor") && !User.IsInRole("ORCA - Admin"))
+            return StatusCode(403, new { success = false, error = "The 'ORCA - Editor' role (or higher) is required to manage overrides." });
 
         return null;
     }
