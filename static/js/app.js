@@ -806,9 +806,9 @@ function compatibilityApp() {
                 .then(r => r.json())
                 .then(data => {
                     this.isLoading = false;
-                    if (data.hasConfigurations) {
+                    if (data.has_configurations) {
                         this.configurations = data.configurations;
-                        this.configBaseSku = data.baseSku;
+                        this.configBaseSku = data.base_sku;
                         this.showConfigPicker = true;
                         this.hasSearched = false;
                         this.compatibleProducts = [];
