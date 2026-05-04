@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bathroom Compatibility Finder</title>
-    <script>(function(){var w=console.warn;console.warn=function(m){if(typeof m==='string'&&m.indexOf('cdn.tailwindcss.com should not be used in production')!==-1)return;w.apply(console,arguments);};})();</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -224,18 +223,38 @@
                     <template x-for="config in configurations" :key="config.sku">
                         <button
                             @click="selectConfiguration(config.sku)"
-                            class="bg-white border border-gray-200 rounded-lg p-4 text-left hover:border-primary hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary"
+                            class="group bg-white border border-gray-200 rounded-lg p-4 text-left hover:border-primary hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary flex flex-col"
                         >
-                            <div class="font-mono text-sm font-semibold text-primary mb-1" x-text="config.sku"></div>
-                            <div class="text-xs text-gray-600 truncate" x-text="config.name || ''"></div>
-                            <div x-show="config.nominalDimensions" class="text-xs text-gray-400 mt-1" x-text="config.nominalDimensions"></div>
+                            <div x-show="config.nominalDimensions" class="text-lg font-bold text-text-dark leading-tight mb-1" x-text="config.nominalDimensions || ''"></div>
+                            <div x-show="config.category" class="inline-flex items-center self-start text-[10px] uppercase tracking-wide font-semibold bg-blue-50 text-primary px-2 py-0.5 rounded mb-2" x-text="config.category || ''"></div>
+                            <div class="text-xs text-gray-600 line-clamp-2 mb-2" x-text="config.name || ''"></div>
+                            <div class="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between">
+                                <span class="font-mono text-xs text-gray-500" x-text="config.sku"></span>
+                                <span class="text-xs text-primary opacity-0 group-hover:opacity-100 transition"><i class="fas fa-arrow-right"></i></span>
+                            </div>
                         </button>
                     </template>
                 </div>
             </div>
 
+            <!-- No compatible products empty state (search succeeded, product found, but zero matches) -->
+            <div x-show="hasSearched && !errorMessage && !isLoading && productDetails && compatibleProducts.length === 0" x-cloak class="text-center py-16 px-4">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-50 text-amber-500 mb-4">
+                    <i class="fas fa-box-open text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-text-dark mb-1">No compatible products found</h3>
+                <p class="text-gray-500 max-w-md mx-auto mb-1">
+                    We found <span class="font-semibold text-text-dark" x-text="productDetails?.name || productDetails?.sku || 'this product'"></span>,
+                    but nothing in the catalog is currently marked compatible with it.
+                </p>
+                <p class="text-gray-400 text-sm max-w-md mx-auto mb-4">An administrator can add a manual override on the Overrides page if needed.</p>
+                <button type="button" @click="clearSearch()" class="inline-flex items-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                    <i class="fas fa-redo"></i> Try another search
+                </button>
+            </div>
+
             <!-- Results layout container -->
-            <div x-show="(compatibleProducts.length > 0 || (productDetails && hasSearched)) && !errorMessage && !isLoading" x-cloak>
+            <div x-show="compatibleProducts.length > 0 && !errorMessage && !isLoading" x-cloak>
                 <!-- Sticky "viewing X" mini-bar -->
                 <div x-show="productDetails" x-cloak class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm -mx-4 px-4 py-2 mb-4 flex items-center gap-3">
                     <img :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')" :alt="productDetails?.name || ''" class="w-10 h-10 rounded object-cover flex-shrink-0 bg-gray-100">
