@@ -86,13 +86,13 @@ public class ProductService : IProductService
 
     public async Task<Product?> FindByAlternateIdAsync(string alternateId)
     {
-        var upper = alternateId.ToUpperInvariant();
+        var upper = alternateId.ToUpper();
         return await _db.Products
             .AsNoTracking()
             .FirstOrDefaultAsync(p =>
-                (p.AlternateId1 != null && p.AlternateId1.ToUpperInvariant() == upper) ||
-                (p.AlternateId2 != null && p.AlternateId2.ToUpperInvariant() == upper) ||
-                (p.AlternateId3 != null && p.AlternateId3.ToUpperInvariant() == upper));
+                (p.AlternateId1 != null && p.AlternateId1.ToUpper() == upper) ||
+                (p.AlternateId2 != null && p.AlternateId2.ToUpper() == upper) ||
+                (p.AlternateId3 != null && p.AlternateId3.ToUpper() == upper));
     }
 
     public async Task<List<ProductDto>> GetConfigurationsAsync(string baseSku)
