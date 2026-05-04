@@ -8,4 +8,5 @@ public class CompatibilityOverride
     public string OverrideType { get; set; } = string.Empty; // "whitelist" or "blacklist"
     public string? Reason { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
 }

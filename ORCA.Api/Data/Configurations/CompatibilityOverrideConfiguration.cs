@@ -22,6 +22,7 @@ public class CompatibilityOverrideConfiguration : IEntityTypeConfiguration<Compa
         builder.Property(co => co.OverrideType).HasColumnName("override_type").HasMaxLength(20).IsRequired();
         builder.Property(co => co.Reason).HasColumnName("reason");
         builder.Property(co => co.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+        builder.Property(co => co.CreatedBy).HasColumnName("created_by").HasMaxLength(255);
 
         builder.HasIndex(co => new { co.BaseSku, co.CompatibleSku, co.OverrideType })
             .IsUnique()

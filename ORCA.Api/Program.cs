@@ -157,6 +157,14 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
 
+// ---------- Startup: schema migrations ----------
+using (var migScope = app.Services.CreateScope())
+{
+    var migDb = migScope.ServiceProvider.GetRequiredService<OrcaDbContext>();
+    await migDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE compatibility_overrides ADD COLUMN IF NOT EXISTS created_by VARCHAR(255);");
+}
+
 // ---------- Startup: recover stuck syncs ----------
 // Any sync left in "running" state means the app crashed or was restarted mid-sync.
 // Mark them failed so the status page doesn't show them as in-progress forever.

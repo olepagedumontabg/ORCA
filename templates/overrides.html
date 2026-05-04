@@ -230,6 +230,7 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -368,6 +369,7 @@
             const badgeClass = o.override_type === 'whitelist' ? 'badge-whitelist' : 'badge-blacklist';
             const baseName = escapeHtml(o.base_product_name) || '<span class="text-gray-300">—</span>';
             const compatName = escapeHtml(o.compatible_product_name) || '<span class="text-gray-300">—</span>';
+            const addedBy = o.created_by ? escapeHtml(o.created_by) : '<span class="text-gray-300">—</span>';
             return `<tr id="row-${o.id}">
                 <td class="px-4 py-3 text-sm text-gray-500">#${o.id}</td>
                 <td class="px-4 py-3 text-sm font-mono font-semibold text-text-dark whitespace-nowrap">${escapeHtml(o.base_sku)}</td>
@@ -376,6 +378,7 @@
                 <td class="px-4 py-3 text-sm text-text-light">${compatName}</td>
                 <td class="px-4 py-3"><span class="badge ${badgeClass}">${escapeHtml(o.override_type)}</span></td>
                 <td class="px-4 py-3 text-sm text-text-light max-w-xs truncate" title="${escapeHtml(o.reason)}">${escapeHtml(o.reason) || '<span class="text-gray-300">—</span>'}</td>
+                <td class="px-4 py-3 text-sm text-text-light whitespace-nowrap">${addedBy}</td>
                 <td class="px-4 py-3">
                     <button onclick="deleteOverride(${o.id})"
                         class="text-red-500 hover:text-red-700 transition text-sm font-medium flex items-center gap-1">
@@ -393,7 +396,7 @@
 
             const body = document.getElementById('tableBody');
             if (filtered.length === 0) {
-                body.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400 text-sm">No overrides match "${escapeHtml(q)}"</td></tr>`;
+                body.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-400 text-sm">No overrides match "${escapeHtml(q)}"</td></tr>`;
             } else {
                 body.innerHTML = filtered.map(renderRow).join('');
             }

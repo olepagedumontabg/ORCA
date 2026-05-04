@@ -73,7 +73,9 @@ public class OverrideController : ControllerBase
                     .Select(p => p.ProductName)
                     .FirstOrDefault(),
                 o.OverrideType,
-                o.Reason
+                o.Reason,
+                o.CreatedAt,
+                o.CreatedBy
             })
             .ToListAsync();
 
@@ -130,13 +132,18 @@ public class OverrideController : ControllerBase
                 return Conflict(new { success = false, error = $"An override for {baseSku} ↔ {compatSku} already exists as {existingType}. Delete it first before adding a {type} override." });
         }
 
+        var createdBy = User.FindFirst(ClaimTypes.Email)?.Value
+                     ?? User.FindFirst("email")?.Value
+                     ?? User.Identity?.Name;
+
         var entry = new CompatibilityOverride
         {
             BaseSku = baseSku,
             CompatibleSku = compatSku,
             OverrideType = type,
             Reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim(),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = createdBy
         };
 
         _db.CompatibilityOverrides.Add(entry);
