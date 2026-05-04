@@ -21,114 +21,6 @@ function compatibilityApp() {
         showConfigPicker: false,
         configBaseSku: '',
         
-        // On initialization, fix the filter panel width
-        init() {
-            // Initial fix for filter panel width
-            this.fixFilterPanelWidth();
-            
-            // Fix width after DOM loaded
-            document.addEventListener('DOMContentLoaded', () => {
-                this.fixFilterPanelWidth();
-            });
-            
-            // Also fix filter panel width after each search
-            this.$watch('compatibleProducts', () => {
-                // Fix immediately and then again after a short delay
-                this.fixFilterPanelWidth();
-                setTimeout(() => this.fixFilterPanelWidth(), 100);
-                setTimeout(() => this.fixFilterPanelWidth(), 500);
-            });
-            
-            // Fix width when filters change
-            this.$watch('filters', () => {
-                // Fix immediately and then again after a short delay
-                this.fixFilterPanelWidth();
-                setTimeout(() => this.fixFilterPanelWidth(), 100);
-            }, { deep: true });
-            
-            // Fix width on window resize
-            window.addEventListener('resize', () => {
-                this.fixFilterPanelWidth();
-            });
-            
-            // Set an interval to check and fix the width periodically
-            setInterval(() => {
-                if (this.compatibleProducts.length > 0) {
-                    this.fixFilterPanelWidth();
-                }
-            }, 1000);
-        },
-        
-        // Function to enforce fixed width on the filter panel
-        fixFilterPanelWidth() {
-            // Fix the sidebar width - more aggressive approach
-            const sidebar = document.querySelector('.filter-sidebar');
-            if (sidebar) {
-                sidebar.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; flex: 0 0 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
-            }
-            
-            // Fix the sticky container inside sidebar
-            const stickyContainer = document.querySelector('.filter-sidebar > div');
-            if (stickyContainer) {
-                stickyContainer.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
-            }
-            
-            // Fix every filter-related element
-            document.querySelectorAll('.filter-header, .filter-container, .filter-section').forEach(el => {
-                el.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
-            });
-            
-            // Fix the header table and its contents
-            const headerTable = document.querySelector('.filter-header table');
-            if (headerTable) {
-                headerTable.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; border-collapse: collapse !important; border-spacing: 0 !important; padding: 0 !important; margin: 0 !important;";
-                
-                // Set specific width for the first row in the table
-                const headerRow = headerTable.querySelector('tr');
-                if (headerRow) {
-                    headerRow.style.cssText = "width: 260px !important; padding: 0 !important; margin: 0 !important;";
-                }
-                
-                // Set specific widths for the cells
-                const headerCells = headerTable.querySelectorAll('td');
-                if (headerCells.length >= 2) {
-                    headerCells[0].style.cssText = "width: 130px !important; text-align: left !important; padding: 0 0 8px 0 !important; margin: 0 !important;";
-                    headerCells[1].style.cssText = "width: 130px !important; text-align: right !important; padding: 0 0 8px 0 !important; margin: 0 !important;";
-                }
-            }
-        },
-        
-        // Make all filter labels fixed width
-        makeLabelWidthConsistent() {
-            document.querySelectorAll('.filter-label').forEach(label => {
-                Object.assign(label.style, {
-                    width: '190px',
-                    minWidth: '190px',
-                    maxWidth: '190px',
-                    textOverflow: 'ellipsis',
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-block',
-                    fontWeight: 'normal'
-                });
-            });
-            
-            // Also fix the filter groups themselves
-            document.querySelectorAll('.filter-container > div').forEach(group => {
-                Object.assign(group.style, {
-                    width: '260px',
-                    maxWidth: '260px',
-                    overflow: 'hidden',
-                    borderBottom: '1px solid #eaeaea',
-                    paddingBottom: '1rem',
-                    marginBottom: '1rem'
-                });
-                
-                // Add class for styling
-                group.classList.add('filter-section');
-            });
-        },
-        
         // Autocomplete suggestions
         suggestions: [],
         rawSkus: [],         // Array to store the raw SKU values
@@ -195,9 +87,6 @@ function compatibilityApp() {
          * Calculate dynamic filter options and counts based on current selections
          */
         calculateDynamicFilters() {
-            console.log('=== calculateDynamicFilters called ===');
-            console.log('compatibleProducts length:', this.compatibleProducts.length);
-            
             // Reset counts
             this.filterCounts = {
                 series: {},
@@ -252,9 +141,7 @@ function compatibilityApp() {
 
                 if (filterType === 'categories') {
                     // For categories, count products in each category group
-                    console.log('Calculating category counts, compatibleProducts:', this.compatibleProducts);
                     this.compatibleProducts.forEach(category => {
-                        console.log('Processing category:', category.category, 'with', category.products?.length, 'products');
                         if (tempFilters.selectedCategories.length === 0 || 
                             tempFilters.selectedCategories.includes(category.category)) {
                             
@@ -262,15 +149,12 @@ function compatibilityApp() {
                             const matchingProducts = category.products.filter(product => {
                                 return this.filterMatchesProductWithCustomFilters(product, tempFilters);
                             });
-                            
-                            console.log('Category', category.category, 'has', matchingProducts.length, 'matching products');
                             if (matchingProducts.length > 0) {
                                 counts[category.category] = matchingProducts.length;
                                 availableOptions.add(category.category);
                             }
                         }
                     });
-                    console.log('Final category counts:', counts);
                 } else {
                     // For other filter types, process individual products
                     // Apply all OTHER filters except the one we're calculating
@@ -456,7 +340,7 @@ function compatibilityApp() {
          * Initialize the application
          */
         init() {
-            // Add a global click listener to close suggestions when clicking outside
+            // Close suggestion dropdowns on outside click
             document.addEventListener('click', (event) => {
                 const containers = [
                     document.getElementById('suggestionsContainer'),
@@ -750,7 +634,6 @@ function compatibilityApp() {
          */
         selectAndSearch(suggestion, index) {
             // Replaced with selectSuggestion
-            console.warn("selectAndSearch is deprecated - use selectSuggestion instead");
             this.selectSuggestion(suggestion, index);
         },
         
@@ -879,8 +762,6 @@ function compatibilityApp() {
                     
                     // Display results
                     this.productDetails = data.product;
-                    console.log("Product details received:", this.productDetails);
-                    
                     // Process compatible products and extract incompatibility reasons
                     this.compatibleProducts = [];
                     this.incompatibilityReasons = {};
@@ -901,10 +782,6 @@ function compatibilityApp() {
                             this.compatibleProducts.push(category);
                         }
                     });
-                    
-                    console.log("Incompatibility reasons:", this.incompatibilityReasons);
-                    console.log("Full API response data:", data);
-                    console.log("Compatibles array:", data.compatibles);
                     this.filteredCompatibleProducts = [...this.compatibleProducts]; // Initialize filtered results
                     this.currentSku = data.queried_child_sku || sku;
                     this.errorMessage = '';
@@ -1010,13 +887,11 @@ function compatibilityApp() {
          * Apply filters to compatible products
          */
         applyFilters() {
-            console.log("Applying filters:", this.filters);
             // Start with a copy of the original compatible products
             this.filteredCompatibleProducts = JSON.parse(JSON.stringify(this.compatibleProducts));
             
             // Apply category filters if any are selected
             if (this.filters.selectedCategories.length > 0) {
-                console.log("Filtering by categories:", this.filters.selectedCategories);
                 this.filteredCompatibleProducts = this.filteredCompatibleProducts.filter(category => 
                     this.filters.selectedCategories.includes(category.category)
                 );
@@ -1025,9 +900,6 @@ function compatibilityApp() {
             // Apply product-level filters to each category's products
             this.filteredCompatibleProducts.forEach(category => {
                 if (!category.products) return;
-                
-                console.log(`Filtering products in category: ${category.category}`);
-                
                 // Filter the products in this category
                 const originalCount = category.products.length;
                 
@@ -1037,7 +909,6 @@ function compatibilityApp() {
                         // For combo products, use main_product for filtering attributes
                         if (product.main_product) {
                             const matches = this.filterMatchesMainProduct(product.main_product);
-                            console.log(`  Combo product ${product.sku} match: ${matches}`, product.main_product);
                             return matches;
                         }
                         return false;
@@ -1045,11 +916,8 @@ function compatibilityApp() {
                     
                     // Regular product filtering
                     const matches = this.filterMatchesProduct(product);
-                    console.log(`  Regular product ${product.sku} match: ${matches}`, product);
                     return matches;
                 });
-                
-                console.log(`  Category ${category.category}: ${originalCount} products → ${category.products.length} after filtering`);
             });
             
             // Remove empty categories
@@ -1073,13 +941,9 @@ function compatibilityApp() {
          */
         filterMatchesProduct(product) {
             if (!product) return false;
-            
-            console.log("filterMatchesProduct checking product:", product);
-            
             // We shouldn't get combo products here, as they're handled in applyFilters
             // But just in case, we'll handle them properly
             if (this.isComboProduct(product) && product.main_product) {
-                console.log("  Encountered combo product in filterMatchesProduct, forwarding to filterMatchesMainProduct");
                 return this.filterMatchesMainProduct(product.main_product);
             }
             
@@ -1111,7 +975,6 @@ function compatibilityApp() {
             if (this.filters.selectedGlassThicknesses.length > 0) {
                 // Skip glass thickness filtering if the product doesn't have glass_thickness
                 if (!product.glass_thickness) {
-                    console.log(`  Product ${product.sku} has no glass_thickness, skipping filter`);
                     // No glass thickness defined, so this product doesn't match the filter
                     return false;
                 }
@@ -1130,7 +993,6 @@ function compatibilityApp() {
             if (this.filters.selectedDoorTypes.length > 0) {
                 // Skip door type filtering if the product doesn't have a door_type
                 if (!product.door_type) {
-                    console.log(`  Product ${product.sku} has no door_type, skipping filter`);
                     // No door type defined, so this product doesn't match the filter
                     return false;
                 }
@@ -1149,7 +1011,6 @@ function compatibilityApp() {
             if (this.filters.selectedMaterials.length > 0) {
                 // Skip material filtering if the product doesn't have a material
                 if (!product.material) {
-                    console.log(`  Product ${product.sku} has no material, skipping filter`);
                     // No material defined, so this product doesn't match the filter
                     return false;
                 }
@@ -1204,7 +1065,6 @@ function compatibilityApp() {
             if (this.filters.selectedGlassThicknesses.length > 0) {
                 // Skip glass thickness filtering if the product doesn't have glass_thickness
                 if (!mainProduct.glass_thickness) {
-                    console.log(`  Main Product ${mainProduct.sku} has no glass_thickness, skipping filter`);
                     // No glass thickness defined, so this product doesn't match the filter
                     return false;
                 }
@@ -1223,7 +1083,6 @@ function compatibilityApp() {
             if (this.filters.selectedDoorTypes.length > 0) {
                 // Skip door type filtering if the product doesn't have a door_type
                 if (!mainProduct.door_type) {
-                    console.log(`  Main Product ${mainProduct.sku} has no door_type, skipping filter`);
                     // No door type defined, so this product doesn't match the filter
                     return false;
                 }
@@ -1242,7 +1101,6 @@ function compatibilityApp() {
             if (this.filters.selectedMaterials.length > 0) {
                 // Skip material filtering if the product doesn't have a material
                 if (!mainProduct.material) {
-                    console.log(`  Main Product ${mainProduct.sku} has no material, skipping filter`);
                     // No material defined, so this product doesn't match the filter
                     return false;
                 }
@@ -1338,9 +1196,7 @@ function compatibilityApp() {
             this.availableFilters.materials = [...materialSet].filter(m => m).sort();
             
             // Initialize dynamic filters after extracting available options
-            console.log('Before calculateDynamicFilters, availableFilters.categories:', this.availableFilters.categories);
             this.calculateDynamicFilters();
-            console.log('After calculateDynamicFilters, filterCounts.categories:', this.filterCounts.categories);
         },
         
         /**
@@ -1403,13 +1259,6 @@ function compatibilityApp() {
             this.hasGlassFilter = showGlassFilter && this.availableFilters.glassThicknesses.length > 0;
             this.hasDoorsFilter = showDoorTypeFilter && this.availableFilters.doorTypes.length > 0;
             this.hasMaterialFilter = showMaterialFilter && this.availableFilters.materials.length > 0;
-            
-            console.log('Filter visibility set based on categories:', {
-                categories,
-                hasGlassFilter: this.hasGlassFilter,
-                hasDoorsFilter: this.hasDoorsFilter, 
-                hasMaterialFilter: this.hasMaterialFilter
-            });
         },
         
         /**
@@ -1420,19 +1269,15 @@ function compatibilityApp() {
             const header = event.currentTarget;
             const section = header.closest('.filter-section');
             const content = section.querySelector('.filter-checkbox-container');
-            const indicator = header.querySelector('span');
-            
-            // If display style is not yet set, defaulting to visible (empty string)
+            const indicator = header.querySelector('.filter-chevron');
+
             const isCurrentlyHidden = content.style.display === 'none';
-            
             if (isCurrentlyHidden) {
-                // Show the content
                 content.style.display = '';
-                indicator.textContent = '−'; // Minus sign
+                if (indicator) indicator.classList.remove('rotate-180');
             } else {
-                // Hide the content
                 content.style.display = 'none';
-                indicator.textContent = '+'; // Plus sign
+                if (indicator) indicator.classList.add('rotate-180');
             }
         },
         

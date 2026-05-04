@@ -21,6 +21,7 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
     <style>
         [x-cloak] { display: none !important; }
         .alpine-loading { opacity: 0; transition: opacity 0.3s ease-in-out; }
@@ -53,10 +54,10 @@
                     <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
                 </a>
                 <nav class="flex space-x-6">
-                    <a href="/" class="text-primary font-semibold">Home</a>
-                    <a href="/sync-history" class="text-gray-600 hover:text-primary transition">Sync History</a>
-                    <a href="/overrides" class="text-gray-600 hover:text-primary transition">Overrides</a>
-                    <a href="/documentation" class="text-gray-600 hover:text-primary transition">API Docs</a>
+                    <a href="/" class="text-primary font-semibold border-b-2 border-primary pb-1">Home</a>
+                    <a href="/sync-history" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
+                    <a href="/overrides" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
+                    <a href="/documentation" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
                 </nav>
             </div>
         </div>
@@ -66,13 +67,19 @@
     <main class="flex-grow container mx-auto px-4 py-6">
         
         <!-- Hero section for landing page -->
-        <div x-show="!hasSearched" class="text-center mb-8" x-cloak>
+        <div x-show="!hasSearched && !showConfigPicker" class="text-center mb-8" x-cloak>
             <div class="relative rounded-lg overflow-hidden mb-6">
                 <img src="/static/images/hero-image.jpg" alt="Bathroom Products" class="w-full h-64 object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                    <div class="text-white">
+                <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/60 flex items-center justify-center">
+                    <div class="text-white px-4">
                         <h2 class="text-3xl md:text-4xl font-bold mb-2">Find Compatible Bathroom Products</h2>
-                        <p class="text-lg md:text-xl opacity-90">Enter a SKU to discover matching products instantly</p>
+                        <p class="text-lg md:text-xl opacity-90 mb-4">Enter a SKU to discover matching products instantly</p>
+                        <div class="flex flex-wrap items-center justify-center gap-2 mt-3">
+                            <span class="text-xs uppercase tracking-wider opacity-80 mr-1">Try:</span>
+                            <button type="button" class="example-chip" @click="searchInput='420000'; submitSearch()">420000</button>
+                            <button type="button" class="example-chip" @click="searchInput='100959'; submitSearch()">100959</button>
+                            <button type="button" class="example-chip" @click="searchInput='220333'; submitSearch()">220333</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -163,7 +170,9 @@
             <!-- Configuration picker -->
             <div x-show="showConfigPicker" x-cloak class="py-8 max-w-3xl mx-auto">
                 <div class="text-center mb-6">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-1">Select a Configuration</h3>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1">
+                        Configurations of <span class="text-primary font-mono" x-text="configBaseSku"></span>
+                    </h3>
                     <p class="text-gray-500 text-sm">This product has multiple configurations — choose one to find compatible products.</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -182,19 +191,6 @@
 
             <!-- Results layout container -->
             <div x-show="(compatibleProducts.length > 0 || (productDetails && hasSearched)) && !errorMessage" x-cloak>
-                <!-- Hero section for results page -->
-                <div class="text-center mb-8">
-                    <div class="relative rounded-lg overflow-hidden mb-6">
-                        <img src="/static/images/hero-image.jpg" alt="Bathroom Products" class="w-full h-64 object-cover">
-                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                            <div class="text-white">
-                                <h2 class="text-3xl md:text-4xl font-bold mb-2">Find Compatible Bathroom Products</h2>
-                                <p class="text-lg md:text-xl opacity-90">Enter a SKU to discover matching products instantly</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Compact search form positioned above everything -->
                 <div class="mb-6 max-w-3xl mx-auto">
                     <form @submit.prevent="submitSearch" class="space-y-4">
@@ -307,7 +303,7 @@
                                 <!-- Categories filter -->
                                 <div class="filter-section">
                                     <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
-                                        Categories<span class="float-right">−</span>
+                                        Categories<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                                         <template x-for="category in availableFilters.categories" :key="category">
@@ -335,7 +331,7 @@
                                 <!-- Brand filter -->
                                 <div class="filter-section">
                                     <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
-                                        Brands<span class="float-right">−</span>
+                                        Brands<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                                         <template x-for="brand in availableFilters.brands" :key="brand">
@@ -363,7 +359,7 @@
                                 <!-- Series filter -->
                                 <div class="filter-section">
                                     <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
-                                        Series<span class="float-right">−</span>
+                                        Series<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                                         <template x-for="series in availableFilters.series" :key="series">
@@ -391,7 +387,7 @@
                                 <!-- Glass thickness filter -->
                                 <div class="filter-section" x-show="showDynamicFilters.glassThicknesses">
                                     <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
-                                        Glass Thickness<span class="float-right">−</span>
+                                        Glass Thickness<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                                         <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
@@ -419,7 +415,7 @@
                                 <!-- Door type filter -->
                                 <div class="filter-section" x-show="showDynamicFilters.doorTypes">
                                     <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
-                                        Door Type<span class="float-right">−</span>
+                                        Door Type<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                                         <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
@@ -447,7 +443,7 @@
                                 <!-- Material filter -->
                                 <div class="filter-section" x-show="showDynamicFilters.materials">
                                     <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
-                                        Material<span class="float-right">−</span>
+                                        Material<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
                                     </h3>
                                     <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
                                         <template x-for="material in availableFilters.materials" :key="material">
@@ -665,8 +661,9 @@
                                                                 </template>
                                                             </div>
                                                             
-                                                            <!-- Divider line -->
+                                                                            <!-- Divider line + plus badge -->
                                                             <div class="w-px bg-gray-300"></div>
+                                                            <div class="combo-plus-badge">+</div>
                                                             
                                                             <!-- Secondary product image (right half) -->
                                                             <div class="w-1/2 h-full relative">
@@ -733,14 +730,13 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-100 border-t border-gray-200 mt-auto">
-        <div class="container mx-auto px-4 py-4 text-center text-text-light text-sm">
-            <p>Compatibility Finder - Internal Tool</p>
+    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
+        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
+            <p>&copy; 2025 American Bath Group. All rights reserved.</p>
         </div>
     </footer>
 
     <!-- Custom JavaScript -->
     <script src="/static/js/app.js"></script>
-    <script src="/static/js/debug.js"></script>
 </body>
 </html>
