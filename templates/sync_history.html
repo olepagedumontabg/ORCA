@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sync History - Bathroom Compatibility Finder</title>
+    <script>(function(){var w=console.warn;console.warn=function(m){if(typeof m==='string'&&m.indexOf('cdn.tailwindcss.com should not be used in production')!==-1)return;w.apply(console,arguments);};})();</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -54,14 +55,23 @@
                 <a href="/" class="flex items-center">
                     <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
                 </a>
-                <nav class="flex space-x-6">
+                <nav class="hidden md:flex space-x-6">
                     <a href="/" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Home</a>
                     <a href="/sync-history" class="text-primary font-semibold border-b-2 border-primary pb-1">Sync History</a>
                     <a href="/overrides" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
                     <a href="/documentation" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
                 </nav>
+                <button onclick="document.getElementById('mobileNav').classList.toggle('hidden');var i=this.querySelector('i');i.classList.toggle('fa-bars');i.classList.toggle('fa-times');" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
         </div>
+        <nav id="mobileNav" class="hidden md:hidden bg-white border-b border-gray-200 shadow-md">
+            <a href="/" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Home</a>
+            <a href="/sync-history" class="block px-4 py-2 text-primary font-semibold bg-blue-50">Sync History</a>
+            <a href="/overrides" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
+            <a href="/documentation" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
+        </nav>
     </header>
 
     <!-- Main content -->
@@ -164,9 +174,26 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
-        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
-            <p>&copy; 2025 American Bath Group. All rights reserved.</p>
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+            <div>
+                <h4 class="font-semibold text-text-dark mb-3">ORCA Compatibility Finder</h4>
+                <p class="text-gray-600">Find compatible bathroom products across the American Bath Group catalog — just enter a SKU.</p>
+            </div>
+            <div>
+                <h4 class="font-semibold text-text-dark mb-3">Quick Links</h4>
+                <ul class="space-y-1.5">
+                    <li><a href="/" class="text-gray-600 hover:text-primary transition">Home</a></li>
+                    <li><a href="/sync-history" class="text-gray-600 hover:text-primary transition">Sync History</a></li>
+                    <li><a href="/overrides" class="text-gray-600 hover:text-primary transition">Overrides</a></li>
+                    <li><a href="/documentation" class="text-gray-600 hover:text-primary transition">API Documentation</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-text-dark mb-3">Build</h4>
+                <p class="text-gray-600">ASP.NET Core 8 · v1.0.0</p>
+                <p class="text-gray-500 text-xs mt-2">&copy; 2025 American Bath Group. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 

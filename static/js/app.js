@@ -15,6 +15,7 @@ function compatibilityApp() {
         filteredCompatibleProducts: [],
         incompatibilityReasons: {},
         mobileFiltersOpen: false,
+        mobileMenuOpen: false,
 
         // Configuration picker state
         configurations: [],
@@ -1199,6 +1200,19 @@ function compatibilityApp() {
             this.calculateDynamicFilters();
         },
         
+        /**
+         * Total number of active filter selections (used for badge + Clear All disable)
+         */
+        totalActiveFilters() {
+            const f = this.filters;
+            return (f.selectedCategories?.length || 0)
+                 + (f.selectedBrands?.length || 0)
+                 + (f.selectedSeries?.length || 0)
+                 + (f.selectedGlassThicknesses?.length || 0)
+                 + (f.selectedDoorTypes?.length || 0)
+                 + (f.selectedMaterials?.length || 0);
+        },
+
         /**
          * Reset all filters to default values
          */
