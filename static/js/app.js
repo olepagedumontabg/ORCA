@@ -830,7 +830,7 @@ function compatibilityApp() {
 
             this.showSuggestions = false;
             this.closeSuggestions();
-            this.searchSku(this.searchInput.trim());
+            this.checkConfigurations(this.searchInput.trim());
         },
 
         /**
