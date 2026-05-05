@@ -717,7 +717,7 @@ function compatibilityApp() {
             this.closeSuggestions();
 
             // Auto-trigger the search so the user doesn't need to press Search
-            this.searchSku(extractedSku);
+            this.checkConfigurations(extractedSku);
         },
         
         /**
@@ -887,6 +887,10 @@ function compatibilityApp() {
             this.errorMessage = '';
             this.hasSearched = true;
             this.currentSku = sku;
+            this.showConfigPicker = false;
+            this.configurations = [];
+            this.configBaseSku = '';
+            this.configBaseProductName = '';
             
             // Send the search request via ORCA.API
             fetch(`/api/compatible/${encodeURIComponent(sku)}`, {
