@@ -582,7 +582,7 @@ function compatibilityApp() {
                     this.rawSkus = data.suggestions || [];
                     
                     // Use display suggestions (SKU - Product Name) for showing in dropdown
-                    this.suggestions = data.displaySuggestions || this.rawSkus;
+                    this.suggestions = data.display_suggestions || this.rawSkus;
                     
                     // Determine which container to use based on input ID
                     const isCompact = inputId === 'skuInputCompact';
@@ -742,7 +742,7 @@ function compatibilityApp() {
                     this.rawSkus = data.suggestions || [];
                     
                     // Use display suggestions (SKU - Product Name) for showing in dropdown
-                    this.suggestions = data.displaySuggestions || this.rawSkus;
+                    this.suggestions = data.display_suggestions || this.rawSkus;
                     
                     this.showSuggestions = this.suggestions.length > 0;
                 })
