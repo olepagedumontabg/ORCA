@@ -267,7 +267,7 @@
 
         async function fetchSuggestions(q, input, dropId) {
             try {
-                const res = await fetch('/suggest?q=' + encodeURIComponent(q));
+                const res = await fetch('/suggest?q=' + encodeURIComponent(q) + '&exact=true');
                 const data = await res.json();
                 const display = data.displaySuggestions || data.suggestions || [];
                 const raw = data.suggestions || [];

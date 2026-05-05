@@ -18,13 +18,12 @@ public class OverrideService : IOverrideService
     }
 
     // ── SKU resolution ────────────────────────────────────────────────────
-    // The autocomplete suggest endpoint deduplicates config SKUs and returns
-    // the BASE portion (e.g. "420006" for "420006-501-001"). The products table
-    // may only contain config rows, so we must accept a match on either an
-    // exact SKU OR any config variant that starts with "{baseSku}-".
+    // Overrides use EXACT SKU matching. The overrides autocomplete calls
+    // /suggest?exact=true which returns real DB SKUs (no base-SKU stripping),
+    // so the value the user picks will always match a real product row.
 
     private Task<bool> SkuExistsAsync(string sku) =>
-        _db.Products.AnyAsync(p => p.Sku == sku || p.Sku.StartsWith(sku + "-"));
+        _db.Products.AnyAsync(p => p.Sku == sku);
 
     // ── List ──────────────────────────────────────────────────────────────
 
@@ -38,20 +37,32 @@ public class OverrideService : IOverrideService
             query = query.Where(o => o.BaseSku == upper || o.CompatibleSku == upper);
         }
 
-        return await query
+        // Load override rows first, then batch-fetch product names in one query.
+        // Avoids correlated sub-selects that EF Core / Npgsql may not translate.
+        var rows = await query
             .OrderByDescending(o => o.CreatedAt)
-            .Select(o => new OverrideDto(
-                o.Id,
-                o.BaseSku,
-                _db.Products.Where(p => p.Sku == o.BaseSku).Select(p => p.ProductName).FirstOrDefault(),
-                o.CompatibleSku,
-                _db.Products.Where(p => p.Sku == o.CompatibleSku).Select(p => p.ProductName).FirstOrDefault(),
-                o.OverrideType,
-                o.Reason,
-                o.CreatedAt,
-                o.CreatedBy
-            ))
             .ToListAsync();
+
+        var allSkus = rows
+            .SelectMany(r => new[] { r.BaseSku, r.CompatibleSku })
+            .Distinct()
+            .ToList();
+
+        var nameMap = await _db.Products.AsNoTracking()
+            .Where(p => allSkus.Contains(p.Sku))
+            .ToDictionaryAsync(p => p.Sku, p => p.ProductName);
+
+        return rows.Select(r => new OverrideDto(
+            r.Id,
+            r.BaseSku,
+            nameMap.GetValueOrDefault(r.BaseSku),
+            r.CompatibleSku,
+            nameMap.GetValueOrDefault(r.CompatibleSku),
+            r.OverrideType,
+            r.Reason,
+            r.CreatedAt,
+            r.CreatedBy
+        )).ToList();
     }
 
     // ── Create ────────────────────────────────────────────────────────────

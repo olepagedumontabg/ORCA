@@ -18,12 +18,12 @@ public class SearchController : ControllerBase
     /// Returns displaySuggestions in camelCase to match the original API and existing JS.
     /// </summary>
     [HttpGet("/suggest")]
-    public async Task<IActionResult> Suggest([FromQuery] string? q)
+    public async Task<IActionResult> Suggest([FromQuery] string? q, [FromQuery] bool exact = false)
     {
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
             return Ok(new { suggestions = Array.Empty<string>(), displaySuggestions = Array.Empty<string>(), categories = Array.Empty<string>() });
 
-        var result = await _search.SuggestAsync(q);
+        var result = await _search.SuggestAsync(q, exactSkus: exact);
 
         return Ok(new
         {

@@ -13,7 +13,7 @@ public class SearchService : ISearchService
         _db = db;
     }
 
-    public async Task<SearchSuggestResult> SuggestAsync(string query)
+    public async Task<SearchSuggestResult> SuggestAsync(string query, bool exactSkus = false)
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
             return new SearchSuggestResult([], [], []);
@@ -21,8 +21,29 @@ public class SearchService : ISearchService
         var skuQuery  = query.Trim().ToUpperInvariant();
         var nameQuery = query.Trim().ToLowerInvariant();
 
-        // Fetch more raw rows than needed — config SKUs will be stripped to base SKU
-        // and deduplicated, so we need extra headroom.
+        if (exactSkus)
+        {
+            // Return the actual stored SKUs — no base-SKU stripping.
+            // Used by the overrides page so the selected value always matches
+            // a real product row and passes exact-match validation.
+            var exact = await _db.Products
+                .AsNoTracking()
+                .Where(p => p.Sku.StartsWith(skuQuery))
+                .OrderBy(p => p.Sku)
+                .Take(20)
+                .Select(p => new { p.Sku, p.ProductName, p.Category })
+                .ToListAsync();
+
+            return new SearchSuggestResult(
+                Suggestions:        exact.Select(m => m.Sku).ToList(),
+                DisplaySuggestions: exact.Select(m =>
+                    string.IsNullOrWhiteSpace(m.ProductName) ? m.Sku : $"{m.Sku} - {m.ProductName}").ToList(),
+                Categories: exact.Select(m => m.Category ?? string.Empty).ToList()
+            );
+        }
+
+        // Default: fetch more raw rows than needed — config SKUs will be stripped
+        // to base SKU and deduplicated, so we need extra headroom.
         var rawMatches = await _db.Products
             .AsNoTracking()
             .Where(p =>
