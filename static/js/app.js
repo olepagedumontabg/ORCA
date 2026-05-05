@@ -384,11 +384,57 @@ function compatibilityApp() {
          * Clear search input, suggestions, and configuration picker
          */
         clearSearch() {
+            // Reset every piece of state so the page returns to a completely
+            // fresh start — same as a hard reload, but without leaving the page.
             this.searchInput = '';
+            this.isLoading = false;
+            this.hasSearched = false;
+            this.errorMessage = '';
+            this.currentSku = '';
+            this.productDetails = null;
+            this.compatibleProducts = [];
+            this.filteredCompatibleProducts = [];
+            this.incompatibilityReasons = {};
+
+            // Config picker
             this.showConfigPicker = false;
             this.configurations = [];
             this.configBaseSku = '';
+
+            // Autocomplete
             this.closeSuggestions();
+
+            // Filters — reset selections and available options
+            this.filters = {
+                selectedSeries: [],
+                selectedBrands: [],
+                selectedGlassThicknesses: [],
+                selectedDoorTypes: [],
+                selectedCategories: [],
+                selectedMaterials: []
+            };
+            this.availableFilters = {
+                series: [],
+                brands: [],
+                glassThicknesses: ['6mm', '8mm'],
+                doorTypes: ['Sliding', 'Pivot', 'Bypass'],
+                categories: [],
+                materials: []
+            };
+            this.dynamicFilters = {
+                series: [], brands: [], glassThicknesses: [],
+                doorTypes: [], categories: [], materials: []
+            };
+            this.filterCounts = {
+                series: {}, brands: {}, glassThicknesses: {},
+                doorTypes: {}, categories: {}, materials: {}
+            };
+            this.hasGlassFilter = false;
+            this.hasDoorsFilter = false;
+            this.hasMaterialFilter = false;
+
+            // Scroll back to top so the search bar is visible
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         
         /**
