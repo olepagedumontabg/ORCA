@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ORCA.Api.Data;
+using ORCA.Api.Services.Interface;
 
 namespace ORCA.Api.Controllers;
 
@@ -8,37 +7,32 @@ namespace ORCA.Api.Controllers;
 [Route("api/[controller]")]
 public class HealthController : ControllerBase
 {
-    private readonly OrcaDbContext _db;
+    private readonly IHealthService _health;
 
-    public HealthController(OrcaDbContext db)
+    public HealthController(IHealthService health)
     {
-        _db = db;
+        _health = health;
     }
 
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        try
-        {
-            var productCount = await _db.Products.CountAsync();
-            var compatibilityCount = await _db.ProductCompatibilities.CountAsync();
+        var result = await _health.GetAsync();
 
+        if (result.Status == "healthy")
             return Ok(new
             {
-                status = "healthy",
-                productCount,
-                compatibilityCount,
-                timestamp = DateTime.UtcNow
+                status             = result.Status,
+                productCount       = result.ProductCount,
+                compatibilityCount = result.CompatibilityCount,
+                timestamp          = result.Timestamp
             });
-        }
-        catch (Exception ex)
+
+        return Ok(new
         {
-            return Ok(new
-            {
-                status = "unhealthy",
-                error = ex.Message,
-                timestamp = DateTime.UtcNow
-            });
-        }
+            status    = result.Status,
+            error     = result.Error,
+            timestamp = result.Timestamp
+        });
     }
 }

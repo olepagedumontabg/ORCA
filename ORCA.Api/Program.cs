@@ -52,6 +52,9 @@ builder.Services.AddHttpClient<ISalsifyService, SalsifyService>(client =>
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICompatibilityService, CompatibilityService>();
 builder.Services.AddScoped<ICompatibilityEngine, CompatibilityEngine>();
+builder.Services.AddScoped<IOverrideService, OverrideService>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IHealthService, HealthService>();
 
 // ---------- Swagger ----------
 builder.Services.AddEndpointsApiExplorer();
