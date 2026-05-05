@@ -210,7 +210,11 @@
             <div x-show="showConfigPicker" x-cloak class="py-8 max-w-3xl mx-auto">
                 <div class="text-center mb-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-1">
-                        Configurations of <span class="text-primary font-mono" x-text="configBaseSku"></span>
+                        Configurations of
+                        <template x-if="configBaseProductName">
+                            <span x-text="configBaseProductName"></span>
+                        </template>
+                        <span class="text-primary font-mono" x-text="' (' + configBaseSku + ')'"></span>
                     </h3>
                     <p class="text-gray-500 text-sm">This product has multiple configurations — choose one to find compatible products.</p>
                 </div>
@@ -230,7 +234,6 @@
                             </div>
                             <!-- Card body -->
                             <div class="p-4 flex flex-col flex-1">
-                                <div x-show="config.category" class="inline-flex items-center self-start text-[10px] uppercase tracking-wide font-semibold bg-blue-50 text-primary px-2 py-0.5 rounded mb-2" x-text="config.category || ''"></div>
                                 <div class="text-xs text-gray-600 line-clamp-2 mb-2 flex-1" x-text="config.name || ''"></div>
                                 <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
                                     <span class="font-mono text-xs text-gray-500" x-text="config.sku"></span>

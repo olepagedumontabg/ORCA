@@ -22,6 +22,7 @@ function compatibilityApp() {
         configurations: [],
         showConfigPicker: false,
         configBaseSku: '',
+        configBaseProductName: '',
     
         // On initialization, fix the filter panel width
         init() {
@@ -509,6 +510,7 @@ function compatibilityApp() {
             this.showConfigPicker = false;
             this.configurations = [];
             this.configBaseSku = '';
+            this.configBaseProductName = '';
 
             // Autocomplete
 
@@ -849,6 +851,10 @@ function compatibilityApp() {
                     if (data.has_configurations) {
                         this.configurations = data.configurations;
                         this.configBaseSku = data.base_sku;
+                        const firstName = (data.configurations[0]?.name || '');
+                        this.configBaseProductName = firstName.includes(' - ')
+                            ? firstName.split(' - ')[0].trim()
+                            : firstName;
                         this.showConfigPicker = true;
                         this.hasSearched = false;
                         this.compatibleProducts = [];
