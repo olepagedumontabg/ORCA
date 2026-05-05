@@ -17,10 +17,119 @@ function compatibilityApp() {
         mobileFiltersOpen: false,
         mobileMenuOpen: false,
 
+        
         // Configuration picker state
         configurations: [],
         showConfigPicker: false,
         configBaseSku: '',
+    
+        // On initialization, fix the filter panel width
+        init() {
+            // Initial fix for filter panel width
+            this.fixFilterPanelWidth();
+            
+            // Fix width after DOM loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                this.fixFilterPanelWidth();
+            });
+            
+            // Also fix filter panel width after each search
+            this.$watch('compatibleProducts', () => {
+                // Fix immediately and then again after a short delay
+                this.fixFilterPanelWidth();
+                setTimeout(() => this.fixFilterPanelWidth(), 100);
+                setTimeout(() => this.fixFilterPanelWidth(), 500);
+            });
+            
+            // Fix width when filters change
+            this.$watch('filters', () => {
+                // Fix immediately and then again after a short delay
+                this.fixFilterPanelWidth();
+                setTimeout(() => this.fixFilterPanelWidth(), 100);
+            }, { deep: true });
+            
+            // Fix width on window resize
+            window.addEventListener('resize', () => {
+                this.fixFilterPanelWidth();
+            });
+            
+            // Set an interval to check and fix the width periodically
+            setInterval(() => {
+                if (this.compatibleProducts.length > 0) {
+                    this.fixFilterPanelWidth();
+                }
+            }, 1000);
+        },
+        
+        // Function to enforce fixed width on the filter panel
+        fixFilterPanelWidth() {
+            // Fix the sidebar width - more aggressive approach
+            const sidebar = document.querySelector('.filter-sidebar');
+            if (sidebar) {
+                sidebar.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; flex: 0 0 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
+            }
+            
+            // Fix the sticky container inside sidebar
+            const stickyContainer = document.querySelector('.filter-sidebar > div');
+            if (stickyContainer) {
+                stickyContainer.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; margin: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
+            }
+            
+            // Fix every filter-related element
+            document.querySelectorAll('.filter-header, .filter-container, .filter-section').forEach(el => {
+                el.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; padding: 0 !important; box-sizing: border-box !important; overflow: hidden !important;";
+            });
+            
+            // Fix the header table and its contents
+            const headerTable = document.querySelector('.filter-header table');
+            if (headerTable) {
+                headerTable.style.cssText = "width: 260px !important; min-width: 260px !important; max-width: 260px !important; border-collapse: collapse !important; border-spacing: 0 !important; padding: 0 !important; margin: 0 !important;";
+                
+                // Set specific width for the first row in the table
+                const headerRow = headerTable.querySelector('tr');
+                if (headerRow) {
+                    headerRow.style.cssText = "width: 260px !important; padding: 0 !important; margin: 0 !important;";
+                }
+                
+                // Set specific widths for the cells
+                const headerCells = headerTable.querySelectorAll('td');
+                if (headerCells.length >= 2) {
+                    headerCells[0].style.cssText = "width: 130px !important; text-align: left !important; padding: 0 0 8px 0 !important; margin: 0 !important;";
+                    headerCells[1].style.cssText = "width: 130px !important; text-align: right !important; padding: 0 0 8px 0 !important; margin: 0 !important;";
+                }
+            }
+        },
+        
+        // Make all filter labels fixed width
+        makeLabelWidthConsistent() {
+            document.querySelectorAll('.filter-label').forEach(label => {
+                Object.assign(label.style, {
+                    width: '190px',
+                    minWidth: '190px',
+                    maxWidth: '190px',
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block',
+                    fontWeight: 'normal'
+                });
+            });
+            
+            // Also fix the filter groups themselves
+            document.querySelectorAll('.filter-container > div').forEach(group => {
+                Object.assign(group.style, {
+                    width: '260px',
+                    maxWidth: '260px',
+                    overflow: 'hidden',
+                    borderBottom: '1px solid #eaeaea',
+                    paddingBottom: '1rem',
+                    marginBottom: '1rem'
+                });
+                
+                // Add class for styling
+                group.classList.add('filter-section');
+            });
+        },
         
         // Autocomplete suggestions
         suggestions: [],
@@ -381,7 +490,7 @@ function compatibilityApp() {
         },
         
         /**
-         * Clear search input, suggestions, and configuration picker
+         * Clear search input and suggestions
          */
         clearSearch() {
             // Reset every piece of state so the page returns to a completely
@@ -402,6 +511,7 @@ function compatibilityApp() {
             this.configBaseSku = '';
 
             // Autocomplete
+
             this.closeSuggestions();
 
             // Filters — reset selections and available options
@@ -604,8 +714,8 @@ function compatibilityApp() {
             this.searchInput = extractedSku;
             this.closeSuggestions();
 
-            // Auto-trigger the configuration check so the user doesn't need to press Search
-            this.checkConfigurations(extractedSku);
+            // Auto-trigger the search so the user doesn't need to press Search
+            this.searchSku(extractedSku);
         },
         
         /**
@@ -710,7 +820,7 @@ function compatibilityApp() {
         },
         
         /**
-         * Submit the search form — check for configurations before running compatibility search
+         * Submit the search form
          */
         submitSearch() {
             if (!this.searchInput.trim()) {
@@ -720,7 +830,7 @@ function compatibilityApp() {
 
             this.showSuggestions = false;
             this.closeSuggestions();
-            this.checkConfigurations(this.searchInput.trim());
+            this.searchSku(this.searchInput.trim());
         },
 
         /**
