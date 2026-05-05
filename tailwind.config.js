@@ -16,6 +16,9 @@ module.exports = {
         'text-dark': '#2A314C',
         'text-light': '#4B5563',
       },
+      fontFamily: {
+        sans: ['"Open Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
     },
   },
   plugins: [],
