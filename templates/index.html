@@ -218,14 +218,24 @@
                     <template x-for="config in configurations" :key="config.sku">
                         <button
                             @click="selectConfiguration(config.sku)"
-                            class="group bg-white border border-gray-200 rounded-lg p-4 text-left hover:border-primary hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary flex flex-col"
+                            class="group bg-white border border-gray-200 rounded-lg overflow-hidden text-left hover:border-primary hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary flex flex-col"
                         >
-                            <div x-show="config.nominalDimensions" class="text-lg font-bold text-text-dark leading-tight mb-1" x-text="config.nominalDimensions || ''"></div>
-                            <div x-show="config.category" class="inline-flex items-center self-start text-[10px] uppercase tracking-wide font-semibold bg-blue-50 text-primary px-2 py-0.5 rounded mb-2" x-text="config.category || ''"></div>
-                            <div class="text-xs text-gray-600 line-clamp-2 mb-2" x-text="config.name || ''"></div>
-                            <div class="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between">
-                                <span class="font-mono text-xs text-gray-500" x-text="config.sku"></span>
-                                <span class="text-xs text-primary opacity-0 group-hover:opacity-100 transition"><i class="fas fa-arrow-right"></i></span>
+                            <!-- Product image -->
+                            <div class="w-full aspect-square bg-gray-100 overflow-hidden">
+                                <img
+                                    :src="config.image_url || getPlaceholderImage(config.name || '')"
+                                    :alt="config.name || config.sku"
+                                    class="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                                >
+                            </div>
+                            <!-- Card body -->
+                            <div class="p-4 flex flex-col flex-1">
+                                <div x-show="config.category" class="inline-flex items-center self-start text-[10px] uppercase tracking-wide font-semibold bg-blue-50 text-primary px-2 py-0.5 rounded mb-2" x-text="config.category || ''"></div>
+                                <div class="text-xs text-gray-600 line-clamp-2 mb-2 flex-1" x-text="config.name || ''"></div>
+                                <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+                                    <span class="font-mono text-xs text-gray-500" x-text="config.sku"></span>
+                                    <span class="text-xs text-primary opacity-0 group-hover:opacity-100 transition"><i class="fas fa-arrow-right"></i></span>
+                                </div>
                             </div>
                         </button>
                     </template>
