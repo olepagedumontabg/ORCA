@@ -106,7 +106,7 @@ builder.Services
 
                 // Auth0 Post Login Action sets roles using the ORCA app URL as the namespace.
                 // Claim name: https://orca-ABG-Web-ops.replit.app/roles → ["ORCA Admin"]
-                var rolesClaim = "https://orca-ABG-Web-ops.replit.app/roles";
+                var rolesClaim = "https://abg-prod.us.auth0.com/roles";
                 var roleClaims = identity.FindAll(rolesClaim).ToList();
                 foreach (var rc in roleClaims)
                 {
