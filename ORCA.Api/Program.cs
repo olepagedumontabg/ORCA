@@ -95,22 +95,18 @@ builder.Services
         options.ClientSecret = auth0ClientSecret;
         options.Scope = "openid profile email";
 
-        // Standard callback path per ABG Auth0 integration guide
-        options.CallbackPath = "/api/callback";
-
         options.OpenIdConnectEvents = new Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectEvents
         {
-            // Intercept access_denied errors (domain restriction Action fired) before
-            // the default error handler can produce a crash page. Redirect to the home
-            // page with a query param so the frontend can show a friendly message
-            // without triggering another login redirect loop.
+            // Intercept domain restriction denials before the default error handler.
+            // Only triggered when the per-app Auth0 Action explicitly rejects the user
+            // with error_description=restricted_domain (wrong email domain).
+            // Redirect to a friendly page WITHOUT touching Auth0 again — avoids loop.
             OnRemoteFailure = ctx =>
             {
-                var error = ctx.Request.Query["error"].ToString();
-                var isAccessDenied = error == "access_denied"
-                    || (ctx.Failure?.Message?.Contains("access_denied") == true);
+                var description = ctx.Request.Query["error_description"].ToString();
+                var isDomainRestriction = description == "restricted_domain";
 
-                if (isAccessDenied)
+                if (isDomainRestriction)
                 {
                     ctx.Response.Redirect("/?auth_error=domain_restriction");
                     ctx.HandleResponse();
