@@ -1,0 +1,57 @@
+{
+  "idTokenClaims": {
+    "sid": "HVcJg9v7MZrL1YpuexS7TYQAQtOre42E",
+    "globalRoles": [
+      "3DSOURCE_CLOUDINARY",
+      "Combined Builder Spec",
+      "Ecommerce - Users",
+      "Maax Partners Portal - Customer",
+      "Maax Partners Portal - Sales Rep",
+      "Neptune Partners Portal - Customer",
+      "Neptune Partners Portal - Sales Rep",
+      "ORCA - Admin",
+      "Partner Portal - Users",
+      "Partners Portal - Admin Manager",
+      "Partners Portal - Admin Reviewer",
+      "password-admin",
+      "QR Medallion Admin"
+    ],
+    "nickname": "olepagedumont",
+    "name": "olepagedumont@americanbathgroup.com",
+    "picture": "https://s.gravatar.com/avatar/5378a8d426d2430e550131ae173b5c69?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fol.png",
+    "updated_at": "2026-05-07T23:03:43.276Z",
+    "email": "olepagedumont@americanbathgroup.com",
+    "email_verified": true,
+    "iss": "https://abg-prod.us.auth0.com/",
+    "aud": "nelfKN27vSxPhlmG2oTfCRAi4SGYQhpn",
+    "sub": "auth0|63580909f76fc1e9e4094b2a",
+    "iat": 1778195024,
+    "exp": 1778231024,
+    "nonce": "KgCYvdTQVZrYlNmdY2ewz8SY_nWVhGLaWJ1XxUHmgzA"
+  },
+  "user": {
+    "sid": "HVcJg9v7MZrL1YpuexS7TYQAQtOre42E",
+    "globalRoles": [
+      "3DSOURCE_CLOUDINARY",
+      "Combined Builder Spec",
+      "Ecommerce - Users",
+      "Maax Partners Portal - Customer",
+      "Maax Partners Portal - Sales Rep",
+      "Neptune Partners Portal - Customer",
+      "Neptune Partners Portal - Sales Rep",
+      "ORCA - Admin",
+      "Partner Portal - Users",
+      "Partners Portal - Admin Manager",
+      "Partners Portal - Admin Reviewer",
+      "password-admin",
+      "QR Medallion Admin"
+    ],
+    "nickname": "olepagedumont",
+    "name": "olepagedumont@americanbathgroup.com",
+    "picture": "https://s.gravatar.com/avatar/5378a8d426d2430e550131ae173b5c69?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fol.png",
+    "updated_at": "2026-05-07T23:03:43.276Z",
+    "email": "olepagedumont@americanbathgroup.com",
+    "email_verified": true,
+    "sub": "auth0|63580909f76fc1e9e4094b2a"
+  }
+}

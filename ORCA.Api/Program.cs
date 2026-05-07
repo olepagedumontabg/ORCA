@@ -115,25 +115,38 @@ builder.Services
                 return Task.CompletedTask;
             },
 
-            // Map the Auth0 globalRoles claim to ClaimTypes.Role so User.IsInRole() works.
-            // The tenant-level Action injects all roles as a JSON array under "globalRoles".
-            // Each app filters for its own prefixed roles (e.g. "ORCA - Admin") server-side.
+            // Map Auth0 globalRoles → ClaimTypes.Role so User.IsInRole() works.
+            // The OIDC middleware splits JSON array claims into multiple individual claims,
+            // so we use FindAll(). We also handle the case where a single claim holds a
+            // JSON array string, for forward-compatibility.
             OnTicketReceived = ctx =>
             {
                 var identity = ctx.Principal?.Identity as ClaimsIdentity;
                 if (identity == null) return Task.CompletedTask;
 
-                var rc = identity.FindFirst("globalRoles");
-                if (rc == null) return Task.CompletedTask;
-
-                try
+                foreach (var rc in identity.FindAll("globalRoles").ToList())
                 {
-                    var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(rc.Value);
-                    if (roles != null)
-                        foreach (var role in roles)
-                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                    var val = rc.Value?.Trim();
+                    if (string.IsNullOrEmpty(val)) continue;
+
+                    if (val.StartsWith("["))
+                    {
+                        // JSON array string — deserialize and add each role
+                        try
+                        {
+                            var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(val);
+                            if (roles != null)
+                                foreach (var role in roles)
+                                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                        }
+                        catch { /* ignore malformed JSON */ }
+                    }
+                    else
+                    {
+                        // Plain string — each claim is already one role
+                        identity.AddClaim(new Claim(ClaimTypes.Role, val));
+                    }
                 }
-                catch { /* ignore malformed JSON */ }
 
                 return Task.CompletedTask;
             }
