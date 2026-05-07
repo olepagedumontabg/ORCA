@@ -115,32 +115,25 @@ builder.Services
                 return Task.CompletedTask;
             },
 
-            // Map the Auth0 roles claim to ClaimTypes.Role so User.IsInRole() works.
+            // Map the Auth0 globalRoles claim to ClaimTypes.Role so User.IsInRole() works.
+            // The tenant-level Action injects all roles as a JSON array under "globalRoles".
+            // Each app filters for its own prefixed roles (e.g. "ORCA - Admin") server-side.
             OnTicketReceived = ctx =>
             {
                 var identity = ctx.Principal?.Identity as ClaimsIdentity;
                 if (identity == null) return Task.CompletedTask;
 
-                var rolesClaim = "https://abg-prod.us.auth0.com/roles";
-                var roleClaims = identity.FindAll(rolesClaim).ToList();
-                foreach (var rc in roleClaims)
+                var rc = identity.FindFirst("globalRoles");
+                if (rc == null) return Task.CompletedTask;
+
+                try
                 {
-                    if (rc.Value.TrimStart().StartsWith("["))
-                    {
-                        try
-                        {
-                            var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(rc.Value);
-                            if (parsed != null)
-                                foreach (var role in parsed)
-                                    identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                        }
-                        catch { /* ignore malformed JSON */ }
-                    }
-                    else
-                    {
-                        identity.AddClaim(new Claim(ClaimTypes.Role, rc.Value));
-                    }
+                    var roles = System.Text.Json.JsonSerializer.Deserialize<string[]>(rc.Value);
+                    if (roles != null)
+                        foreach (var role in roles)
+                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
                 }
+                catch { /* ignore malformed JSON */ }
 
                 return Task.CompletedTask;
             }
