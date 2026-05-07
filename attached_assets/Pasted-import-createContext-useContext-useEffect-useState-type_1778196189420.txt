@@ -1,0 +1,145 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+export interface AuthUser {
+  sub: string;
+  name: string | null;
+  email: string | null;
+  picture: string | null;
+  roles: string[];
+}
+
+export const OWL_VIEWER = "OWL - Viewer";
+export const OWL_EDITOR = "OWL - Editor";
+export const OWL_ADMIN  = "OWL - Admin";
+
+type AuthState =
+  | { status: "loading" }
+  | { status: "unauthenticated" }
+  | { status: "domain-denied" }
+  | { status: "no-access"; user: AuthUser }
+  | { status: "authenticated"; user: AuthUser };
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  /** true for Editor OR Admin (Admin inherits all write permissions) */
+  isEditor: boolean;
+  /** true only for Admin */
+  isAdmin: boolean;
+  isInRole: (role: string) => boolean;
+  logoutUrl: string;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+const API_PREFIX = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>({ status: "loading" });
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("auth_error") === "domain_restriction") {
+      setState({ status: "domain-denied" });
+      return;
+    }
+
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    const loginUrl = `${API_PREFIX}/api/login?returnTo=${returnTo}`;
+
+    fetch(`${API_PREFIX}/api/auth/me`, { credentials: "include" })
+      .then(async (res) => {
+        if (res.status === 401) {
+          setState({ status: "unauthenticated" });
+          window.location.replace(loginUrl);
+          return;
+        }
+        if (res.ok) {
+          const user: AuthUser = await res.json();
+          const hasOwlRole =
+            user.roles.includes(OWL_VIEWER) ||
+            user.roles.includes(OWL_EDITOR) ||
+            user.roles.includes(OWL_ADMIN);
+          setState(hasOwlRole ? { status: "authenticated", user } : { status: "no-access", user });
+        } else {
+          setState({ status: "unauthenticated" });
+        }
+      })
+      .catch(() => setState({ status: "unauthenticated" }));
+  }, []);
+
+  const user = state.status === "authenticated" || state.status === "no-access" ? state.user : null;
+  const isAdmin  = user?.roles.includes(OWL_ADMIN) ?? false;
+  const isEditor = isAdmin || (user?.roles.includes(OWL_EDITOR) ?? false);
+
+  if (state.status === "domain-denied") {
+    return <DomainDenied />;
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading: state.status === "loading",
+        isAuthenticated: state.status === "authenticated",
+        isEditor,
+        isAdmin,
+        isInRole: (role) => user?.roles.includes(role) ?? false,
+        logoutUrl: `${API_PREFIX}/api/logout`,
+      }}
+    >
+      {state.status === "no-access"
+        ? <AccessDenied user={state.user} logoutUrl={`${API_PREFIX}/api/logout`} />
+        : children}
+    </AuthContext.Provider>
+  );
+}
+
+function DomainDenied() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-background p-6">
+      <div className="max-w-sm w-full text-center space-y-4">
+        <div className="text-4xl select-none">🔒</div>
+        <h1 className="text-xl font-semibold">Access Restricted</h1>
+        <p className="text-sm text-muted-foreground">
+          Your email domain is not authorized to access OWL. Access is limited to
+          authorized ABG company accounts.
+        </p>
+        <a
+          href={`${API_PREFIX}/api/login`}
+          className="inline-block mt-2 text-sm underline text-muted-foreground hover:text-foreground"
+        >
+          Try a different account
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function AccessDenied({ user, logoutUrl }: { user: AuthUser; logoutUrl: string }) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-background p-6">
+      <div className="max-w-sm w-full text-center space-y-4">
+        <div className="text-4xl select-none">🔒</div>
+        <h1 className="text-xl font-semibold">Access Denied</h1>
+        <p className="text-sm text-muted-foreground">
+          Your account (<strong>{user.email ?? user.name ?? user.sub}</strong>) does not have
+          an OWL role assigned. Please contact your administrator.
+        </p>
+        <a
+          href={logoutUrl}
+          className="inline-block mt-2 text-sm underline text-muted-foreground hover:text-foreground"
+        >
+          Sign out
+        </a>
+      </div>
+    </div>
+  );
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
+}
