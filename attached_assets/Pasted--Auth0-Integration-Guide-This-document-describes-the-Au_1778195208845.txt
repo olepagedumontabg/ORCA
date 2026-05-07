@@ -1,0 +1,252 @@
+# Auth0 Integration Guide
+
+This document describes the Auth0 authentication and authorization pattern used across ABG Replit applications. It is framework-agnostic — adapt the implementation details to your stack of choice.
+
+---
+
+## Tenant
+
+**Tenant domain:** `abg-prod.us.auth0.com`
+
+All ABG apps share this single tenant. Each app registers as its own **Application** within it.
+
+---
+
+## 1. Auth0 Application Setup
+
+In the Auth0 dashboard, create a **Regular Web Application** for each app.
+
+### Settings to configure
+
+| Setting | Value |
+|---|---|
+| Allowed Callback URLs | `https://<your-app-domain>/api/callback` |
+| Allowed Logout URLs | `https://<your-app-domain>` |
+| Allowed Web Origins | `https://<your-app-domain>` |
+
+> For Replit apps, `<your-app-domain>` is typically `<repl-slug>.<username>.replit.dev` during development and your `.replit.app` domain in production. Register both.
+
+### Credentials you will need
+
+From the application's **Settings** tab, copy:
+
+- **Client ID** — public identifier for the app
+- **Client Secret** — kept server-side only, never exposed to the browser
+
+Store these as environment secrets (not in source code).
+
+---
+
+## 2. Roles Setup
+
+Auth0 roles are managed under **User Management → Roles**.
+
+### Naming convention
+
+Use a consistent prefix to namespace roles per app, so one user's token can carry roles for multiple apps without ambiguity:
+
+```
+<APP NAME> - <Role>
+```
+
+**Examples:**
+```
+OWL - Viewer
+OWL - Editor
+OWL - Admin
+
+ORCA - Viewer
+ORCA - Admin
+```
+
+### Assigning roles to users
+
+1. Go to **User Management → Users**
+2. Open the user
+3. Go to the **Roles** tab
+4. Assign one role per app (or none if the user should not have access)
+
+A user should only ever hold one role per app. Design your role hierarchy so that higher roles inherit all permissions of lower ones — check for the highest role on the server, not for every role individually.
+
+---
+
+## 3. How Roles Reach the Application
+
+Roles assigned in Auth0 are **not** automatically included in the ID token. A Login Action is required to inject them.
+
+### Where roles appear in the token
+
+There is an existing tenant-level Action that injects all of a user's Auth0 roles into the ID token under the claim key:
+
+```
+globalRoles
+```
+
+This is an array of strings, e.g.:
+
+```json
+{
+  "globalRoles": [
+    "OWL - Viewer",
+    "ORCA - Admin",
+    "Some Other App - Editor"
+  ]
+}
+```
+
+**Your app reads this claim and filters for its own prefix.** You do not need to inject roles yourself — the existing Action already handles this.
+
+---
+
+## 4. Login Actions
+
+Actions run during the Auth0 Login flow and can modify the token or deny access. They are configured under **Actions → Flows → Login**.
+
+### Action 1 — Global roles injection (already exists, do not modify)
+
+This tenant-level Action populates `globalRoles` in the ID token for all apps. It is already deployed and in the Login flow. You do not need to create or touch it.
+
+### Action 2 — Per-app domain restriction (create one per app)
+
+Each app that should be restricted to ABG email domains must have its own domain-restriction Action. This prevents users outside the approved domains from logging in, even if they have an account in the tenant.
+
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  const targetAppId = '<YOUR_AUTH0_CLIENT_ID>';
+
+  if (event.client.client_id === targetAppId) {
+    const allowedDomains = [
+      'americanbathgroup.com',
+      'maax.com',
+      'produitsneptune.com',
+      'americanstandard-bootz.com'
+    ];
+
+    const emailDomain = (event.user.email || "").split('@')[1]?.toLowerCase();
+
+    if (!emailDomain || !allowedDomains.includes(emailDomain)) {
+      return api.access.deny('access_denied', 'restricted_domain');
+    }
+  }
+};
+```
+
+**Key points:**
+- The `client_id` guard ensures this restriction only applies to your app, not to every app on the tenant.
+- The `error_description` value `'restricted_domain'` (or `'access_denied'` if Auth0 normalizes it) is what your app receives in the callback URL when access is denied.
+- After creating the Action, **deploy it** (Save alone is not enough) and add it to the **Login flow** in the Actions dashboard.
+
+---
+
+## 5. Environment Variables
+
+Your server needs the following secrets at runtime:
+
+| Variable | Description |
+|---|---|
+| `AUTH0_CLIENT_ID` | The Client ID from your Auth0 application |
+| `AUTH0_CLIENT_SECRET` | The Client Secret from your Auth0 application |
+| `SESSION_SECRET` | A long random string used to sign/encrypt the session cookie |
+
+Generate a session secret with:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+---
+
+## 6. Authentication Flow
+
+```
+User visits app
+  → Server checks session cookie
+    → No session: redirect to Auth0 login page
+  → User authenticates at Auth0
+    → Domain restriction Action runs
+      → Domain not allowed: redirect back with error=access_denied
+      → Domain allowed: continue
+    → Global roles Action runs: injects globalRoles into ID token
+  → Auth0 redirects to /api/callback with auth code
+  → Server exchanges code for tokens, creates session
+  → User is redirected to original destination
+```
+
+---
+
+## 7. Reading Roles on the Server
+
+After the session is established, the ID token claims are available in the session. Extract roles like this (pseudocode):
+
+```
+claims = session.idTokenClaims
+roles  = claims["globalRoles"] ?? []           // array of strings
+```
+
+Then filter for your app's roles:
+
+```
+hasAccess = roles includes any of your app's role names
+isAdmin   = roles includes "<APP> - Admin"
+isEditor  = roles includes "<APP> - Editor" OR isAdmin
+```
+
+Apply access checks on every protected API request — never trust the client to self-report the role.
+
+---
+
+## 8. Handling the Access Denied Error
+
+When the domain restriction Action fires, Auth0 redirects to your callback URL with:
+
+```
+/api/callback?error=access_denied&error_description=...
+```
+
+Your server's callback handler will receive this as an error. Intercept it before it reaches the default error handler and redirect the user to a friendly "Access Restricted" page in your frontend.
+
+```
+if error.code == "access_denied":
+    redirect to /?auth_error=domain_restriction
+```
+
+In your frontend, detect the `auth_error=domain_restriction` query parameter on page load and display a styled error screen instead of attempting to authenticate (which would create an infinite redirect loop back to Auth0).
+
+---
+
+## 9. Role-based UI and API Guards
+
+### Server-side (authoritative)
+
+Every API route that mutates data or returns sensitive information must check the role server-side. Middleware pattern:
+
+```
+requireAccess  → user must have at least one app role
+requireEditor  → user must have Editor or Admin role
+requireAdmin   → user must have Admin role
+```
+
+Return **403 Forbidden** if the role check fails. Never rely on the frontend to enforce access.
+
+### Client-side (UX only)
+
+Read roles from the `/api/auth/me` endpoint (which your server populates from the session). Use them to:
+
+- Hide write controls from read-only users
+- Hide admin sections from non-admins
+- Show meaningful error messages
+
+Client-side role checks are for UX only. The server is the source of truth.
+
+---
+
+## 10. Auth0 Dashboard Quick Reference
+
+| Task | Location |
+|---|---|
+| Create/edit application | Applications → Applications |
+| Manage roles | User Management → Roles |
+| Assign roles to a user | User Management → Users → [user] → Roles |
+| Create/edit an Action | Actions → Library |
+| Deploy an Action | Actions → Library → [action] → Deploy button |
+| Add Action to Login flow | Actions → Flows → Login |
+| View logs | Monitoring → Logs |

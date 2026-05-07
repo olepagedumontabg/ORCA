@@ -105,9 +105,56 @@ public class HomeController : ControllerBase
     [HttpGet("/")]
     public IActionResult Index()
     {
+        // Check for domain restriction error BEFORE the auth check.
+        // If we redirect to Auth0 here, the restriction fires again → infinite loop.
+        if (Request.Query["auth_error"] == "domain_restriction")
+            return ServeDomainRestriction();
+
         var deny = RequireViewer("/");
         if (deny != null) return deny;
         return ServeTemplate("index.html");
+    }
+
+    private IActionResult ServeDomainRestriction()
+    {
+        Response.StatusCode = 403;
+        return Content(@"<!DOCTYPE html>
+<html lang=""en"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Access Restricted — Bathroom Compatibility Finder</title>
+    <link rel=""stylesheet"" href=""/static/css/tailwind.css"">
+    <link rel=""stylesheet"" href=""https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"">
+</head>
+<body class=""bg-gray-50 min-h-screen flex flex-col"">
+    <header class=""bg-white shadow-sm border-b border-gray-200 h-20"">
+        <div class=""container mx-auto px-4 h-full flex items-center"">
+            <a href=""/"" class=""flex items-center"">
+                <img src=""/static/images/abg-logo-header.svg"" alt=""ABG Logo"" class=""h-6 w-auto"">
+            </a>
+        </div>
+    </header>
+    <main class=""flex-grow flex items-center justify-center"">
+        <div class=""text-center max-w-md px-4"">
+            <div class=""inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-6"">
+                <i class=""fas fa-ban text-red-500 text-3xl""></i>
+            </div>
+            <h1 class=""text-3xl font-bold text-gray-900 mb-3"">Access Restricted</h1>
+            <p class=""text-gray-600 mb-2"">
+                Your email address is not authorised to access this application.
+            </p>
+            <p class=""text-gray-400 text-sm mb-8"">
+                Access is limited to ABG email domains. Contact your administrator if you believe this is an error.
+            </p>
+            <a href=""/account/logout""
+               class=""inline-flex items-center justify-center gap-2 bg-primary hover:bg-blue-900 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition"">
+                <i class=""fas fa-sign-out-alt""></i> Sign out
+            </a>
+        </div>
+    </main>
+</body>
+</html>", "text/html");
     }
 
     /// <summary>GET /sync-history — requires ORCA - Admin</summary>

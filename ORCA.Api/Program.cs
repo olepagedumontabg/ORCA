@@ -95,24 +95,42 @@ builder.Services
         options.ClientSecret = auth0ClientSecret;
         options.Scope = "openid profile email";
 
-        // Map the Auth0 namespaced roles claim to ClaimTypes.Role so that
-        // User.IsInRole("override-admin") works as expected.
+        // Standard callback path per ABG Auth0 integration guide
+        options.CallbackPath = "/api/callback";
+
         options.OpenIdConnectEvents = new Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectEvents
         {
+            // Intercept access_denied errors (domain restriction Action fired) before
+            // the default error handler can produce a crash page. Redirect to the home
+            // page with a query param so the frontend can show a friendly message
+            // without triggering another login redirect loop.
+            OnRemoteFailure = ctx =>
+            {
+                var error = ctx.Request.Query["error"].ToString();
+                var isAccessDenied = error == "access_denied"
+                    || (ctx.Failure?.Message?.Contains("access_denied") == true);
+
+                if (isAccessDenied)
+                {
+                    ctx.Response.Redirect("/?auth_error=domain_restriction");
+                    ctx.HandleResponse();
+                }
+
+                return Task.CompletedTask;
+            },
+
+            // Map the Auth0 roles claim to ClaimTypes.Role so User.IsInRole() works.
             OnTicketReceived = ctx =>
             {
                 var identity = ctx.Principal?.Identity as ClaimsIdentity;
                 if (identity == null) return Task.CompletedTask;
 
-                // Auth0 Post Login Action sets roles using the ORCA app URL as the namespace.
-                // Claim name: https://orca-ABG-Web-ops.replit.app/roles → ["ORCA Admin"]
                 var rolesClaim = "https://abg-prod.us.auth0.com/roles";
                 var roleClaims = identity.FindAll(rolesClaim).ToList();
                 foreach (var rc in roleClaims)
                 {
                     if (rc.Value.TrimStart().StartsWith("["))
                     {
-                        // Auth0 sent a JSON array — deserialize it
                         try
                         {
                             var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(rc.Value);
@@ -124,7 +142,6 @@ builder.Services
                     }
                     else
                     {
-                        // OIDC middleware already split the array into individual claims
                         identity.AddClaim(new Claim(ClaimTypes.Role, rc.Value));
                     }
                 }

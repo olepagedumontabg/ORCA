@@ -43,9 +43,10 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/me
+    /// GET /api/auth/me  (also available as /api/me for backward compatibility)
     /// Returns the currently authenticated user's email and roles, or 401 if not logged in.
     /// </summary>
+    [HttpGet("/api/auth/me")]
     [HttpGet("/api/me")]
     public IActionResult Me()
     {
