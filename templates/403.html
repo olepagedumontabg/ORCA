@@ -3,74 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Denied — Bathroom Compatibility Finder</title>
+    <title>Access Denied — ORCA</title>
     <link rel="stylesheet" href="/static/css/tailwind.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200 h-20">
-        <div class="container mx-auto px-4 h-full">
-            <div class="flex items-center justify-between h-full">
-                <a href="/" class="flex items-center">
-                    <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
-                </a>
-                <nav class="hidden md:flex space-x-6 items-center">
-                    <a href="/" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Home</a>
-                    <a href="/sync-history"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
-                    <a href="/overrides"{{STYLE_EDITOR}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
-                    <a href="/documentation"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
-                    <span class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
-                        <i class="fas fa-user-circle text-primary"></i>
-                        <span class="text-gray-600 font-medium">{{USER_EMAIL}}</span>
-                        <a href="/account/logout" class="text-gray-500 hover:text-red-600 transition flex items-center gap-1 text-sm" title="Log out"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                    </span>
-                </nav>
-                <button onclick="document.getElementById('mobileNav').classList.toggle('hidden');var i=this.querySelector('i');i.classList.toggle('fa-bars');i.classList.toggle('fa-times');" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-        <nav id="mobileNav" class="hidden md:hidden bg-white border-b border-gray-200 shadow-md">
-            <a href="/" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Home</a>
-            <a href="/sync-history"{{STYLE_ADMIN}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Sync History</a>
-            <a href="/overrides"{{STYLE_EDITOR}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
-            <a href="/documentation"{{STYLE_ADMIN}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
-            <div class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
-                <i class="fas fa-user-circle text-primary"></i>
-                <span class="font-medium truncate">{{USER_EMAIL}}</span>
-            </div>
-            <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
-        </nav>
-    </header>
-
-    <!-- Main content -->
-    <main class="flex-grow flex items-center justify-center">
-        <div class="text-center max-w-md px-4">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-6">
-                <i class="fas fa-lock text-red-500 text-3xl"></i>
-            </div>
-            <h1 class="text-3xl font-bold text-text-dark mb-3">Access Denied</h1>
-            <p class="text-text-light mb-2">
-                {{FORBIDDEN_MESSAGE}}
-            </p>
-            <p class="text-text-light text-sm mb-8">
-                Contact your administrator to request access.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="/"
-                    class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-blue-900 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition">
-                    <i class="fas fa-home"></i> Go Home
-                </a>
-                <a href="/account/logout"
-                    class="inline-flex items-center justify-center gap-2 border border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 font-semibold px-6 py-2.5 rounded-lg text-sm transition">
-                    <i class="fas fa-sign-out-alt"></i> Log Out
-                </a>
-            </div>
-        </div>
-    </main>
-
-
+<body class="bg-stone-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-sm w-full text-center space-y-4">
+        <div class="text-4xl select-none">🔒</div>
+        <h1 class="text-xl font-semibold text-gray-900">Access Denied</h1>
+        <p class="text-sm text-gray-500">
+            Your account (<strong class="text-gray-700">{{USER_EMAIL}}</strong>) does not have an ORCA role assigned.
+            Please contact your administrator.
+        </p>
+        <a href="/account/logout"
+           class="inline-block mt-2 text-sm underline text-gray-400 hover:text-gray-700 transition">
+            Sign out
+        </a>
+    </div>
 </body>
 </html>
