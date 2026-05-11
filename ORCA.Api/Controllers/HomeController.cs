@@ -123,6 +123,7 @@ public class HomeController : ControllerBase
 <head>
     <meta charset=""UTF-8"">
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <link rel=""icon"" type=""image/png"" href=""https://res.cloudinary.com/american-bath-group/image/upload/v1628517134/abg-graphics/logos/abg/abg-logos/png/star-icon-blue.png"">
     <title>Access Restricted — ORCA</title>
     <link rel=""stylesheet"" href=""/static/css/tailwind.css"">
 </head>
