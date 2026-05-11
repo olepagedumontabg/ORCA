@@ -101,6 +101,14 @@ public class HomeController : ControllerBase
 
     // ── Routes ──────────────────────────────────────────────────────────────
 
+    /// <summary>GET /robots.txt — disallow all crawlers (internal app)</summary>
+    [HttpGet("/robots.txt")]
+    public ContentResult RobotsTxt()
+    {
+        Response.Headers["Content-Type"] = "text/plain";
+        return Content("User-agent: *\nDisallow: /\n", "text/plain");
+    }
+
     /// <summary>GET /  — requires ORCA - Viewer (or higher)</summary>
     [HttpGet("/")]
     public IActionResult Index()

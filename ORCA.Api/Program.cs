@@ -185,6 +185,13 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
 
+// ---------- No-index header (internal app — block all search crawlers) ----------
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
+    await next();
+});
+
 // ---------- Startup: schema migrations ----------
 using (var migScope = app.Services.CreateScope())
 {
