@@ -103,10 +103,16 @@ builder.Services
             // Redirect to a friendly page WITHOUT touching Auth0 again — avoids loop.
             OnRemoteFailure = ctx =>
             {
-                var description = ctx.Request.Query["error_description"].ToString();
-                var isDomainRestriction = description == "restricted_domain";
+                // Auth0 sends error=access_denied when the per-app domain restriction
+                // Action rejects the user. The error_description varies by tenant config
+                // (may be 'access_denied', 'restricted_domain', or a custom message).
+                // Catch any access_denied and redirect to a friendly page instead of
+                // letting ASP.NET throw an unhandled OpenIdConnectProtocolException.
+                var error = ctx.Request.Query["error"].ToString();
+                if (string.IsNullOrEmpty(error) && ctx.Failure != null)
+                    error = ctx.Failure.Message.Contains("access_denied") ? "access_denied" : "";
 
-                if (isDomainRestriction)
+                if (error == "access_denied")
                 {
                     ctx.Response.Redirect("/?auth_error=domain_restriction");
                     ctx.HandleResponse();
