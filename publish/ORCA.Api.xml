@@ -1,0 +1,381 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ORCA.Api</name>
+    </assembly>
+    <members>
+        <member name="M:ORCA.Api.Controllers.AuthController.Login(System.String)">
+            <summary>
+            GET /account/login
+            Initiates Auth0 login flow. After successful login, the user is returned to returnUrl.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.AuthController.Logout">
+            <summary>
+            GET /account/logout
+            Signs the user out locally and then redirects to Auth0 to clear the Auth0 session.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.AuthController.Me">
+            <summary>
+            GET /api/auth/me  (also available as /api/me for backward compatibility)
+            Returns the currently authenticated user's email and roles, or 401 if not logged in.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.CompatibilityController.GetCompatible(System.String,System.String,System.String,System.String)">
+            <summary>
+            GET /api/compatible/{sku}?category=Walls&amp;brand=MAAX
+            Get compatible products for a SKU (matches Python API route).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.CompatibilityController.ComputeAll">
+            <summary>
+            POST /api/compute-compatibilities
+            Trigger a global recompute of all pre-computed compatibility matches.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.CompatibilityController.GetCategories">
+            <summary>
+            GET /api/categories
+            Get all product categories (matches Python API route).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.CompatibilityController.Search(ORCA.Api.DTOs.CompatibilitySearchRequest)">
+            <summary>
+            POST /api/compatibility/search
+            Search for compatible products with filters.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.CompatibilityController.Compute(System.String)">
+            <summary>
+            POST /api/compatibility/compute/{sku}
+            Force recomputation of compatibility for a specific product.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.CompatibilityController.GetCompatibilityCategories">
+            <summary>
+            GET /api/compatibility/categories
+            Get all product categories (original C# route).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.HomeController.RequireViewer(System.String)">
+            <summary>
+            Ensures the request is authenticated and carries at least the Viewer role.
+            Returns a Challenge (login redirect) when unauthenticated,
+            a 403 response when the minimum role is missing, or null when access is granted.
+            </summary>
+        </member>
+        <member name="P:ORCA.Api.Controllers.HomeController.UserEmail">
+            <summary>
+            Resolves the authenticated user's display email.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.HomeController.InjectRoleTokens(System.String)">
+            <summary>
+            Replaces the role-visibility tokens in a template with the correct inline style
+            for the authenticated user, so the server controls which nav links are rendered.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.HomeController.Index">
+            <summary>GET /  — requires ORCA - Viewer (or higher)</summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.HomeController.SyncHistory">
+            <summary>GET /sync-history — requires ORCA - Admin</summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.HomeController.Documentation">
+            <summary>GET /documentation — requires ORCA - Admin</summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.HomeController.Overrides">
+            <summary>GET /overrides — requires ORCA - Editor (or Admin)</summary>
+        </member>
+        <member name="T:ORCA.Api.Controllers.OverrideController">
+            <summary>
+            Manages compatibility overrides.
+            All endpoints require Auth0 login and the ORCA - Editor (or Admin) role.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.ProductsController.GetAll(System.Int32,System.Int32,System.String)">
+            <summary>
+            GET /api/products?page=1&amp;pageSize=50&amp;category=Shower+Bases
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.ProductsController.GetById(System.Int32)">
+            <summary>
+            GET /api/products/{id}
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.ProductsController.GetBySku(System.String)">
+            <summary>
+            GET /api/product/{sku} — matches Python API route
+            GET /api/products/sku/{sku} — original C# route
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.ProductsController.GetCompatibleById(System.Int32,System.String,System.String,System.String)">
+            <summary>
+            GET /api/products/{id}/compatible?category=Walls&amp;brand=MAAX&amp;limit=50
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.ProductsController.GetCompatibleBySku(System.String,System.String,System.String,System.String)">
+            <summary>
+            GET /api/products/sku/{sku}/compatible?category=Walls&amp;brand=MAAX&amp;limit=50
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.ProductsController.GetConfigurations(System.String)">
+            <summary>
+            GET /api/product/{sku}/configurations
+            Returns all sellable configuration variants for a base SKU.
+            Pass the base SKU (e.g. 148006) or any config SKU (e.g. 148006-L-000-002) —
+            both resolve to the same base and return the same list.
+            Returns an empty array when the product has no split configurations
+            (all variants share the same dimensions and are managed at the base level).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.SalsifyController.Webhook(System.String,ORCA.Api.Controllers.SalsifyWebhookPayload)">
+            <summary>
+            POST /api/salsify/webhook
+            Receive a Salsify publication webhook and trigger a background data sync.
+            Authenticate by passing the secret in the X-Salsify-Secret header.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.SalsifyController.Status(System.Nullable{System.Int32},System.Int32)">
+            <summary>
+            GET /api/salsify/status?limit=10&amp;sync_id=123
+            Get status of recent Salsify syncs.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.SalsifyController.Cleanup(System.Int32)">
+            <summary>
+            POST /api/salsify/cleanup
+            Remove old sync records.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Controllers.SearchController.Suggest(System.String,System.Boolean)">
+            <summary>
+            GET /suggest?q=... — SKU / product name autocomplete.
+            Returns displaySuggestions in camelCase to match the original API and existing JS.
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.ExclusiveFamilies">
+            <summary>
+            Families that are exclusive: only compatible with themselves.
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.ShowerBaseUtileFamilies">
+            <summary>
+            Families allowed for Utile/Nextile walls when matched with shower bases.
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.BathtubUtileFamilies">
+            <summary>
+            Families allowed for Utile/Nextile walls when matched with bathtubs.
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.ScreenMinGap">
+            <summary>
+            Minimum gap required between fixture width and screen panel width (inches).
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.EnclosureToleranceForward">
+            <summary>
+            Maximum allowed overhang for forward enclosure matching (base → enclosure).
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.EnclosureToleranceReverse">
+            <summary>
+            Maximum allowed overhang for reverse enclosure matching (enclosure → base).
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Domain.Constants.CompatibilityConstants.Categories">
+            <summary>
+            Category names used in the system.
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.ShowerBaseCategoryOrder">
+            <summary>
+            Standard category display ordering for shower base results.
+            </summary>
+        </member>
+        <member name="F:ORCA.Api.Domain.Constants.CompatibilityConstants.BathtubCategoryOrder">
+            <summary>
+            Standard category display ordering for bathtub results.
+            </summary>
+        </member>
+        <member name="P:ORCA.Api.DTOs.CompatibilityCategoryResult.IncompatibilityReason">
+            <summary>
+            If set, indicates why this category has no compatible products.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.CompatibilityEngine">
+            <summary>
+            Routes compatibility computation to the appropriate rule class based on product category.
+            Migrated from logic/compatibility.py find_compatible_products().
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.CompatibilityService.PruneOrphanedReturnPanels(System.Collections.Generic.List{ORCA.Api.DTOs.CompatibilityCategoryResult})">
+            <summary>
+            Removes Return Panels that have no surviving Shower Door in the same family.
+            Panels are only meaningful when a compatible door of the same family exists.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.CompatibilityService.TryFindByStrippedSkuAsync(System.String)">
+            <summary>
+            Progressively strips trailing "-xxx" segments from a configuration SKU to find
+            the matching base product. For example, "410006-501-001" tries "410006-501"
+            then "410006", returning the first one found in the DB.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.ICompatibilityEngine.FindCompatibleProducts(ORCA.Api.Domain.Entities.Product,System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{ORCA.Api.Domain.Entities.Product}})">
+            <summary>
+            Compute compatible products for a given product using business rules.
+            This runs the rule engine against candidate products (on-demand computation).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.ICompatibilityService.GetCompatibleProductsAsync(System.String,System.String,System.String,System.String)">
+            <summary>
+            Get compatible products for a SKU. Uses pre-computed results first,
+            falls back to on-demand computation via the compatibility engine.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.ICompatibilityService.SearchAsync(ORCA.Api.DTOs.CompatibilitySearchRequest)">
+            <summary>
+            Search for compatible products using a structured request.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.ICompatibilityService.ComputeCompatibilitiesAsync(System.String)">
+            <summary>
+            Force recomputation of compatibility for a given SKU.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.ICompatibilityService.BulkComputeCompatibilitiesAsync(System.Collections.Generic.IEnumerable{System.String},System.Func{System.Int32,System.Threading.Tasks.Task})">
+            <summary>
+            Bulk recompute compatibilities for a set of SKUs in a single pass.
+            Loads all products and overrides once, then computes and stores in batch.
+            Returns the number of SKUs processed.
+            onProgress is called every 50 products with the current done count.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IOverrideService.ListAsync(System.String)">
+            <summary>Returns all overrides, optionally filtered by SKU.</summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IOverrideService.CreateAsync(System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Creates a new whitelist or blacklist override.
+            Returns (success, errorMessage, created override or null).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IOverrideService.DeleteAsync(System.Int32)">
+            <summary>Deletes an override by ID. Returns (success, message/error).</summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IOverrideService.ImportAsync(Microsoft.AspNetCore.Http.IFormFile,System.String)">
+            <summary>
+            Bulk-imports overrides from an uploaded XLSX or CSV file.
+            Validates each row (SKU existence, type) and reports per-row errors.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IOverrideService.GetImportTemplateCsv">
+            <summary>Returns the bytes of a ready-to-fill CSV import template.</summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IProductService.FindByAlternateIdAsync(System.String)">
+            <summary>
+            Find a product where any AlternateId field matches the given value (case-insensitive).
+            Used to resolve configuration SKUs to their base product when the config SKU
+            is stored as an alternate ID on the base product record.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.IProductService.GetConfigurationsAsync(System.String)">
+            <summary>
+            Returns all sellable configuration variants for a base SKU.
+            Finds every product whose SKU starts with {baseSku}-, ordered alphabetically.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Interface.ISearchService.SuggestAsync(System.String,System.Boolean)">
+            <summary>
+            Returns autocomplete suggestions for a SKU or product name prefix.
+            When <paramref name="exactSkus"/> is false (default), config SKUs are
+            deduplicated to their base SKU (420006-501-001 → 420006) — suitable
+            for the main product search.
+            When <paramref name="exactSkus"/> is true, actual stored SKUs are
+            returned without any stripping — required for the overrides page so
+            that the value selected is always a real product row.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.Rules.BathtubRules">
+            <summary>
+            Compatibility rules for bathtubs.
+            Migrated from logic/bathtub_compatibility.py.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.Rules.SharedRules">
+            <summary>
+            Centralized compatibility rules used across all product category modules.
+            Migrated from logic/shared_rules.py.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Rules.SharedRules.SeriesCompatible(System.String,System.String,System.String,System.String)">
+            <summary>
+            Check if two series are compatible.
+            Series restrictions have been removed - all series are now compatible.
+            Kept for backward compatibility and future extensibility.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Rules.SharedRules.BrandFamilyMatch(System.String,System.String,System.Collections.Generic.HashSet{System.String})">
+             <summary>
+             Check if two product families are compatible based on business rules.
+            
+             Rules:
+             - Exclusive families (olio, vellamo, interflo, w&amp;b) only match themselves.
+             - Utile/Nextile walls only match specific base families (differs by product type).
+             - All other combinations are compatible.
+             </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Rules.SharedRules.IsScreenCompatible(System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+            <summary>
+            Check if a fixture (base or bathtub) is wide enough for a screen.
+            The gap between fixture width and screen panel width must exceed ScreenMinGap (22 inches).
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Rules.SharedRules.DoorWidthFits(System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+            <summary>
+            Check if a fixture width falls within a door's width range.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Rules.SharedRules.EnclosureDimensionsMatch(System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Decimal)">
+            <summary>
+            Check if a shower base's dimensions match an enclosure within tolerance.
+            The base must be at least as large as the enclosure opening, but not exceed it by more than the tolerance.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.Rules.ShowerBaseRules">
+            <summary>
+            Compatibility rules for shower bases.
+            Migrated from logic/base_compatibility.py.
+            </summary>
+        </member>
+        <member name="M:ORCA.Api.Services.Rules.ShowerBaseRules.FindCompatibleWalls(ORCA.Api.Domain.Entities.Product,System.Collections.Generic.List{ORCA.Api.Domain.Entities.Product},System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Collections.Generic.HashSet{System.String},System.String[],System.Func{System.String,System.Boolean})">
+            <summary>
+            Find compatible walls using nominal match and cut-to-size closest selection.
+            Shared between shower base and bathtub rules.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.Rules.ProductAttributes">
+            <summary>
+            Helper to parse the JSON attributes column from products.
+            Fields like "Max Door Width", "Installation", etc. are stored in this JSON.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.Rules.ShowerRules">
+            <summary>
+            Compatibility rules for showers (full shower units).
+            Migrated from logic/shower_compatibility.py.
+            Matches shower doors by width AND height, alcove installation only.
+            </summary>
+        </member>
+        <member name="T:ORCA.Api.Services.Rules.TubShowerRules">
+            <summary>
+            Compatibility rules for tub/shower combo units.
+            Migrated from logic/tubshower_compatibility.py.
+            Matches tub doors by width AND height (no installation type restriction).
+            </summary>
+        </member>
+    </members>
+</doc>

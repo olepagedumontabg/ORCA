@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/american-bath-group/image/upload/v1628517134/abg-graphics/logos/abg/abg-logos/png/star-icon-blue.png">
+    <title>Bathroom Compatibility Finder</title>
+    <link rel="stylesheet" href="/static/css/tailwind.css">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .alpine-loading { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .alpine-ready { opacity: 1; }
+        
+        /* Custom checkbox styling */
+        input[type="checkbox"] {
+            accent-color: #001A70;
+            border: none !important;
+            outline: none !important;
+        }
+        
+        input[type="checkbox"]:checked {
+            background-color: #001A70 !important;
+            border: none !important;
+        }
+        
+        input[type="checkbox"]:focus {
+            box-shadow: none !important;
+            outline: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col alpine-loading" x-data="compatibilityApp()" x-init="$nextTick(() => $el.classList.add('alpine-ready'))">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 h-20 relative">
+        <div class="container mx-auto px-4 h-full">
+            <div class="flex items-center justify-between h-full">
+                <a href="/" class="flex items-center">
+                    <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
+                </a>
+                <nav class="hidden md:flex space-x-6 items-center">
+                    <a href="/" class="text-primary font-semibold border-b-2 border-primary pb-1">Home</a>
+                    <a href="/sync-history"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
+                    <a href="/overrides"{{STYLE_EDITOR}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
+                    <a href="/documentation"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
+                    <span class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
+                        <i class="fas fa-user-circle text-primary"></i>
+                        <span class="text-gray-600 font-medium">{{USER_EMAIL}}</span>
+                        <a href="/account/logout" class="text-gray-500 hover:text-red-600 transition flex items-center gap-1 text-sm" title="Log out"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </span>
+                </nav>
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
+                    <i class="fas" :class="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile nav drawer -->
+        <div x-show="mobileMenuOpen" x-cloak @click.away="mobileMenuOpen = false" class="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-200 shadow-md z-40">
+            <nav class="flex flex-col py-2">
+                <a href="/" class="px-4 py-2 text-primary font-semibold bg-blue-50">Home</a>
+                <a href="/sync-history"{{STYLE_ADMIN}} class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Sync History</a>
+                <a href="/overrides"{{STYLE_EDITOR}} class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
+                <a href="/documentation"{{STYLE_ADMIN}} class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
+                <div class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
+                    <i class="fas fa-user-circle text-primary"></i>
+                    <span class="font-medium truncate">{{USER_EMAIL}}</span>
+                </div>
+                <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero section — always visible, flush with header, square top corners -->
+    <div class="relative overflow-hidden">
+        <img src="/static/images/hero-image.jpg" alt="Bathroom Products" class="w-full h-64 object-cover">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/60 flex items-center justify-center">
+            <div class="text-white px-4 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">Find Compatible Bathroom Products</h2>
+                <p class="text-lg md:text-xl opacity-90">Enter a SKU to discover matching products instantly</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <main class="flex-grow container mx-auto px-4 py-6">
+        
+        <!-- Search form for landing page -->
+        <div class="mb-6 max-w-3xl mx-auto" x-show="!hasSearched" x-cloak>
+            <form @submit.prevent="submitSearch" id="searchForm" class="space-y-4">
+                <div class="text-center mb-4">
+                    <label for="skuInput" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
+                    <div class="relative w-full max-w-2xl mx-auto">
+                        <!-- Merged search container -->
+                        <div class="flex bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition duration-150 ease-in-out shadow-sm">
+                            <div class="flex-1 relative">
+                                <input 
+                                    type="text" 
+                                    id="skuInput" 
+                                    name="sku" 
+                                    x-model="searchInput"
+                                    @input="onSearchInput($event)"
+                                    @keydown="onSearchKeydown($event)"
+                                    placeholder="Enter SKU or Product Name..." 
+                                    class="w-full px-4 h-12 text-xl border-0 rounded-l-lg focus:ring-0 focus:outline-none bg-transparent"
+                                    autocomplete="off"
+                                    required
+                                >
+                                
+                                <!-- Reset search button when there's input -->
+                                <button 
+                                    type="button" 
+                                    @click="clearSearch()"
+                                    x-show="searchInput.length > 0"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <!-- Search button integrated into container -->
+                            <button 
+                                type="submit" 
+                                class="bg-primary hover:bg-primary text-white font-semibold px-6 h-12 rounded-r-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[120px] border-l border-primary"
+                                :disabled="isLoading"
+                            >
+                                <template x-if="isLoading">
+                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </template>
+                                <template x-if="!isLoading">
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </template>
+                            </button>
+                        </div>
+                        
+                        <!-- Suggestions dropdown -->
+                        <div id="suggestionsContainer" class="hidden absolute z-10 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
+                            <ul id="suggestionsList" class="py-1">
+                                <!-- Suggestions will be inserted here by JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results area -->
+        <div id="resultsContainer">
+            <!-- No search performed yet — empty state -->
+            <div x-show="!hasSearched && !errorMessage && !showConfigPicker && !isLoading" class="text-center py-16 px-4" x-cloak>
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 text-primary mb-4">
+                    <i class="fas fa-search text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-text-dark mb-1">Start by searching for a product</h3>
+                <p class="text-gray-500 max-w-md mx-auto mb-4">Enter a SKU or product name above to see every compatible bathroom product in the catalog.</p>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <span class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Try:</span>
+                    <button type="button" @click="searchInput='420000'; submitSearch()" class="text-sm font-mono font-semibold bg-primary hover:bg-blue-900 text-white px-4 py-1.5 rounded-full shadow-sm transition">420000</button>
+                    <button type="button" @click="searchInput='100959'; submitSearch()" class="text-sm font-mono font-semibold bg-primary hover:bg-blue-900 text-white px-4 py-1.5 rounded-full shadow-sm transition">100959</button>
+                    <button type="button" @click="searchInput='220333'; submitSearch()" class="text-sm font-mono font-semibold bg-primary hover:bg-blue-900 text-white px-4 py-1.5 rounded-full shadow-sm transition">220333</button>
+                </div>
+            </div>
+
+            <!-- Loading skeleton — shown while a search is in flight -->
+            <div x-show="isLoading && !showConfigPicker && compatibleProducts.length === 0 && !productDetails" x-cloak class="mt-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 flex gap-4 animate-pulse">
+                    <div class="w-32 h-32 bg-gray-200 rounded"></div>
+                    <div class="flex-1 space-y-3 py-2">
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                        <div class="h-3 bg-gray-200 rounded w-1/3"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <template x-for="i in 6" :key="i">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="aspect-square bg-gray-200 animate-pulse"></div>
+                            <div class="p-4 space-y-2">
+                                <div class="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                <div class="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                                <div class="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Error empty state -->
+            <div x-show="errorMessage" class="text-center py-16 px-4" x-cloak>
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 text-red-500 mb-4">
+                    <i class="fas fa-exclamation-circle text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-text-dark mb-1">We couldn't find that product</h3>
+                <p class="text-gray-500 max-w-md mx-auto mb-4" x-text="errorMessage"></p>
+                <button type="button" @click="clearSearch()" class="inline-flex items-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                    <i class="fas fa-redo"></i> Try another search
+                </button>
+            </div>
+            
+            <!-- Configuration picker -->
+            <div x-show="showConfigPicker" x-cloak class="py-8 max-w-3xl mx-auto">
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1">
+                        Configurations of
+                        <template x-if="configBaseProductName">
+                            <span x-text="configBaseProductName"></span>
+                        </template>
+                        <span class="text-primary font-mono" x-text="' (' + configBaseSku + ')'"></span>
+                    </h3>
+                    <p class="text-gray-500 text-sm">This product has multiple configurations — choose one to find compatible products.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <template x-for="config in configurations" :key="config.sku">
+                        <button
+                            @click="selectConfiguration(config.sku)"
+                            class="group bg-white border border-gray-200 rounded-lg overflow-hidden text-left hover:border-primary hover:shadow-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary flex flex-col"
+                        >
+                            <!-- Product image -->
+                            <div class="w-full aspect-square bg-gray-100 overflow-hidden">
+                                <img
+                                    :src="config.image_url || getPlaceholderImage(config.name || '')"
+                                    :alt="config.name || config.sku"
+                                    class="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                                >
+                            </div>
+                            <!-- Card body -->
+                            <div class="p-4 flex flex-col flex-1">
+                                <div class="text-xs text-gray-600 line-clamp-2 mb-2 flex-1" x-text="config.name || ''"></div>
+                                <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+                                    <span class="font-mono text-xs text-gray-500" x-text="config.sku"></span>
+                                    <span class="text-xs text-primary opacity-0 group-hover:opacity-100 transition"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- No compatible products empty state (search succeeded, product found, but zero matches) -->
+            <div x-show="hasSearched && !errorMessage && !isLoading && productDetails && compatibleProducts.length === 0" x-cloak class="text-center py-16 px-4">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-50 text-amber-500 mb-4">
+                    <i class="fas fa-box-open text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-text-dark mb-1">No compatible products found</h3>
+                <p class="text-gray-500 max-w-md mx-auto mb-1">
+                    We found <span class="font-semibold text-text-dark" x-text="productDetails?.name || productDetails?.sku || 'this product'"></span>,
+                    but nothing in the catalog is currently marked compatible with it.
+                </p>
+                <p class="text-gray-400 text-sm max-w-md mx-auto mb-4">An administrator can add a manual override on the Overrides page if needed.</p>
+                <button type="button" @click="clearSearch()" class="inline-flex items-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+                    <i class="fas fa-redo"></i> Try another search
+                </button>
+            </div>
+
+            <!-- Results layout container -->
+            <div x-show="compatibleProducts.length > 0 && !errorMessage && !isLoading" x-cloak>
+                <!-- Sticky "viewing X" mini-bar -->
+                <div x-show="productDetails" x-cloak class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm -mx-4 px-4 py-2 mb-4 flex items-center gap-3">
+                    <img :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')" :alt="productDetails?.name || ''" class="w-10 h-10 rounded object-cover flex-shrink-0 bg-gray-100">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-semibold text-text-dark truncate" x-text="productDetails?.name || ''"></div>
+                        <div class="text-xs text-text-light">
+                            <span class="font-mono" x-text="productDetails?.sku || ''"></span>
+                            <span x-show="productDetails?.category" class="ml-2" x-text="'· ' + (productDetails?.category || '')"></span>
+                        </div>
+                    </div>
+                    <button type="button" @click="clearSearch()" class="hidden sm:inline-flex items-center gap-1 text-xs text-text-light hover:text-text-dark transition">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+
+                <!-- Compact search form positioned above everything -->
+                <div class="mb-6 max-w-3xl mx-auto">
+                    <form @submit.prevent="submitSearch" class="space-y-4">
+                        <div class="text-center mb-4">
+                            <label for="skuInputCompact" class="block text-lg font-medium text-gray-700 mb-2">Enter SKU or Product Name</label>
+                            <div class="relative w-full max-w-2xl mx-auto">
+                                <!-- Merged search container for compact view -->
+                                <div class="flex bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition duration-150 ease-in-out shadow-sm">
+                                    <div class="flex-1 relative">
+                                        <input 
+                                            type="text" 
+                                            id="skuInputCompact" 
+                                            x-model="searchInput"
+                                            @input="onSearchInput($event)"
+                                            @keydown="onSearchKeydown($event)"
+                                            placeholder="Enter SKU or Product Name..." 
+                                            class="w-full px-4 h-12 text-xl border-0 rounded-l-lg focus:ring-0 focus:outline-none bg-transparent"
+                                            autocomplete="off"
+                                            required
+                                        >
+                                        
+                                        <!-- Reset search button -->
+                                        <button 
+                                            type="button" 
+                                            @click="clearSearch()"
+                                            x-show="searchInput.length > 0"
+                                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Search button integrated into container -->
+                                    <button 
+                                        type="submit" 
+                                        class="bg-primary hover:bg-primary text-white font-semibold px-6 h-12 rounded-r-lg transition duration-150 ease-in-out flex items-center justify-center min-w-[120px] border-l border-primary"
+                                        :disabled="isLoading"
+                                    >
+                                        <template x-if="isLoading">
+                                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </template>
+                                        <template x-if="!isLoading">
+                                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </template>
+                                    </button>
+                                </div>
+                                
+                                <!-- Suggestions dropdown for compact search -->
+                                <div id="suggestionsCompactContainer" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto text-left border border-gray-200">
+                                    <ul id="suggestionsCompactList" class="py-1">
+                                        <!-- Suggestions will be inserted here by JavaScript -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Mobile filter toggle button -->
+                <div class="xl:hidden mb-4">
+                    <button 
+                        @click="mobileFiltersOpen = !mobileFiltersOpen"
+                        class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                        <span class="font-medium text-text-dark">
+                            <i class="fas fa-filter mr-2"></i>Filters
+                        </span>
+                        <svg 
+                            class="h-5 w-5 text-gray-400 transform transition-transform duration-200" 
+                            :class="{'rotate-180': mobileFiltersOpen}"
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Horizontal layout for Filter and Product Details -->
+                <div class="flex flex-col xl:flex-row gap-6">
+                    <!-- Left column: Filters -->
+                    <div class="xl:w-80 flex-shrink-0">
+                        <!-- Filter panel -->
+                        <div 
+                            class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-4 transition-all duration-300"
+                            :class="{'hidden xl:block': !mobileFiltersOpen, 'block': mobileFiltersOpen}"
+                        >
+                            <!-- Filter header -->
+                            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                                <h2 class="text-lg font-semibold text-text-dark flex items-center gap-2">
+                                    Filter
+                                    <span x-show="totalActiveFilters() > 0" class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary text-white text-xs font-semibold" x-text="totalActiveFilters()"></span>
+                                </h2>
+                                <button
+                                    @click="resetFilters()"
+                                    :disabled="totalActiveFilters() === 0"
+                                    class="text-sm transition-colors"
+                                    :class="totalActiveFilters() === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-text-light hover:text-text-dark cursor-pointer'"
+                                    title="Reset all filters"
+                                >
+                                    <i class="fas fa-undo mr-1"></i>Clear All
+                                </button>
+                            </div>
+                            
+                            <!-- Filter groups -->
+                            <div class="space-y-4">
+                                <!-- Categories filter -->
+                                <div class="filter-section">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                        Categories<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
+                                    </h3>
+                                    <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                                        <template x-for="category in availableFilters.categories" :key="category">
+                                            <div class="flex items-center" x-show="filterCounts.categories[category] > 0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    :id="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
+                                                    :checked="filters.selectedCategories.includes(category)"
+                                                    @click="toggleCategoryFilter(category)"
+                                                    class="h-4 w-4 rounded"
+                                                >
+                                                <label 
+                                                    :for="'category-' + category.replace(/\s+/g, '-').toLowerCase()"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
+                                                    :title="category"
+                                                >
+                                                    <span x-text="category"></span>
+                                                    <span x-show="filterCounts.categories[category]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.categories[category] || 0) + ')'"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Brand filter -->
+                                <div class="filter-section">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                        Brands<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
+                                    </h3>
+                                    <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                                        <template x-for="brand in availableFilters.brands" :key="brand">
+                                            <div class="flex items-center" x-show="filterCounts.brands[brand] > 0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    :id="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
+                                                    :checked="filters.selectedBrands.includes(brand)"
+                                                    @click="toggleBrandFilter(brand)"
+                                                    class="h-4 w-4 rounded"
+                                                >
+                                                <label 
+                                                    :for="'brand-' + brand.replace(/\s+/g, '-').toLowerCase()"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
+                                                    :title="brand"
+                                                >
+                                                    <span x-text="brand"></span>
+                                                    <span x-show="filterCounts.brands[brand]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.brands[brand] || 0) + ')'"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Series filter -->
+                                <div class="filter-section">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                        Series<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
+                                    </h3>
+                                    <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                                        <template x-for="series in availableFilters.series" :key="series">
+                                            <div class="flex items-center" x-show="filterCounts.series[series] > 0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    :id="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
+                                                    :checked="filters.selectedSeries.includes(series)"
+                                                    @click="toggleSeriesFilter(series)"
+                                                    class="h-4 w-4 rounded"
+                                                >
+                                                <label 
+                                                    :for="'series-' + series.replace(/\s+/g, '-').toLowerCase()"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
+                                                    :title="series"
+                                                >
+                                                    <span x-text="series"></span>
+                                                    <span x-show="filterCounts.series[series]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.series[series] || 0) + ')'"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Glass thickness filter -->
+                                <div class="filter-section" x-show="showDynamicFilters.glassThicknesses">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                        Glass Thickness<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
+                                    </h3>
+                                    <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                                        <template x-for="thickness in availableFilters.glassThicknesses" :key="thickness">
+                                            <div class="flex items-center" x-show="filterCounts.glassThicknesses[thickness] > 0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    :id="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
+                                                    :checked="filters.selectedGlassThicknesses.includes(thickness)"
+                                                    @click="toggleGlassThicknessFilter(thickness)"
+                                                    class="h-4 w-4 rounded"
+                                                >
+                                                <label 
+                                                    :for="'thickness-' + thickness.replace(/\s+/g, '-').toLowerCase()"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
+                                                    :title="thickness"
+                                                >
+                                                    <span x-text="thickness"></span>
+                                                    <span x-show="filterCounts.glassThicknesses[thickness]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.glassThicknesses[thickness] || 0) + ')'"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Door type filter -->
+                                <div class="filter-section" x-show="showDynamicFilters.doorTypes">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                        Door Type<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
+                                    </h3>
+                                    <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                                        <template x-for="doorType in availableFilters.doorTypes" :key="doorType">
+                                            <div class="flex items-center" x-show="filterCounts.doorTypes[doorType] > 0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    :id="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
+                                                    :checked="filters.selectedDoorTypes.includes(doorType)"
+                                                    @click="toggleDoorTypeFilter(doorType)"
+                                                    class="h-4 w-4 rounded"
+                                                >
+                                                <label 
+                                                    :for="'doortype-' + doorType.replace(/\s+/g, '-').toLowerCase()"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
+                                                    :title="doorType"
+                                                >
+                                                    <span x-text="doorType"></span>
+                                                    <span x-show="filterCounts.doorTypes[doorType]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.doorTypes[doorType] || 0) + ')'"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Material filter -->
+                                <div class="filter-section" x-show="showDynamicFilters.materials">
+                                    <h3 class="font-medium text-sm text-text-dark cursor-pointer mb-2" @click="toggleFilterSection($event)">
+                                        Material<i class="fas fa-chevron-up filter-chevron float-right text-gray-400 text-xs mt-1"></i>
+                                    </h3>
+                                    <div class="max-h-32 overflow-y-auto space-y-1 filter-checkbox-container">
+                                        <template x-for="material in availableFilters.materials" :key="material">
+                                            <div class="flex items-center" x-show="filterCounts.materials[material] > 0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    :id="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
+                                                    :checked="filters.selectedMaterials.includes(material)"
+                                                    @click="toggleMaterialFilter(material)"
+                                                    class="h-4 w-4 rounded"
+                                                >
+                                                <label 
+                                                    :for="'material-' + material.replace(/\s+/g, '-').toLowerCase()"
+                                                    class="ml-2 block text-sm text-text-light filter-label cursor-pointer"
+                                                    :title="material"
+                                                >
+                                                    <span x-text="material"></span>
+                                                    <span x-show="filterCounts.materials[material]" class="text-gray-400 ml-1" x-text="'(' + (filterCounts.materials[material] || 0) + ')'"></span>
+                                                </label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right column: Product Details and Compatible Products -->
+                    <div class="flex-1">
+                        <!-- Source product details -->
+                        <div x-show="productDetails && !errorMessage" class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4" x-cloak>
+                            <h2 class="text-xl font-semibold mb-4 text-text-dark">Product Details</h2>
+                            <div class="flex flex-wrap md:flex-nowrap gap-6">
+                                <div class="w-full md:w-1/3 lg:w-1/4 relative">
+                                    <!-- Product image with link -->
+                                    <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                                        <a x-show="productDetails?.product_page_url" 
+                                           :href="productDetails?.product_page_url" 
+                                           target="_blank" 
+                                           rel="noopener noreferrer" 
+                                           class="block w-full h-full group cursor-pointer">
+                                            <img 
+                                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')"
+                                                :alt="productDetails?.name || 'Product Image'" 
+                                                class="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                                            >
+                                        </a>
+                                        <template x-if="!productDetails?.product_page_url">
+                                            <img 
+                                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')"
+                                                :alt="productDetails?.name || 'Product Image'" 
+                                                class="w-full h-full object-cover object-center"
+                                            >
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold mb-2 text-text-dark" x-text="productDetails?.name || ''"></h3>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                                        <div class="text-sm">
+                                            <span class="font-medium text-text-light">SKU:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.sku || ''"></span>
+                                        </div>
+                                        <div class="text-sm">
+                                            <span class="font-medium text-text-light">Category:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.category || ''"></span>
+                                        </div>
+                                        <div class="text-sm" x-show="productDetails?.nominal_dimensions">
+                                            <span class="font-medium text-text-light">Dimensions:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.nominal_dimensions"></span>
+                                        </div>
+                                        <div class="text-sm" x-show="productDetails?.installation">
+                                            <span class="font-medium text-text-light">Installation:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.installation"></span>
+                                        </div>
+                                        <div class="text-sm">
+                                            <span class="font-medium text-text-light">Brand:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.brand || 'N/A'"></span>
+                                        </div>
+                                        <div class="text-sm" x-show="productDetails?.series">
+                                            <span class="font-medium text-text-light">Series:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.series"></span>
+                                        </div>
+                                        <!-- Maximum Door Width (for Bathtubs, Shower Bases, Showers and Tub Showers) -->
+                                        <div x-show="productDetails?.category === 'Bathtubs' || productDetails?.category === 'Shower Bases' || productDetails?.category === 'Showers' || productDetails?.category === 'Tub Showers'" class="text-sm">
+                                            <span class="font-medium text-text-light">Maximum Door Width:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
+                                        </div>
+                                        
+                                        <!-- Maximum Door Height (ONLY for Showers and Tub Showers) -->
+                                        <div x-show="productDetails?.category === 'Showers' || productDetails?.category === 'Tub Showers'" class="text-sm">
+                                            <span class="font-medium text-text-light">Maximum Door Height:</span> 
+                                            <span class="text-text-dark" x-text="productDetails?.max_door_height ? formatInchFraction(productDetails.max_door_height) + ' in.' : 'N/A'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Incompatibility Reasons Section -->
+                            <div class="mt-4" x-show="incompatibilityReasons && Object.keys(incompatibilityReasons).length > 0">
+                                <div class="border-t border-gray-200 pt-4 mt-2">
+                                    <template x-for="(reason, category) in incompatibilityReasons" :key="category">
+                                        <div class="text-sm bg-red-50 border border-red-200 rounded-md p-3">
+                                            <span class="text-red-800" x-text="reason"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compatible products section -->
+                        <div x-show="compatibleProducts.length > 0 && !errorMessage" class="compatible-products-section" x-cloak>
+                            <div class="flex flex-wrap items-center justify-between mb-4">
+                                <h2 class="text-xl font-semibold text-text-dark">Compatible Products for <span x-text="currentSku" class="text-primary"></span></h2>
+                                    <button
+                                        type="button"
+                                        @click="downloadXlsx"
+                                        class="inline-flex items-center bg-primary hover:bg-primary text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition duration-150"
+                                    >
+                                        Download (.xlsx)
+                                    </button>
+
+                            </div>
+                            
+                            <!-- Show results count -->
+                            <div class="text-sm text-text-light mb-4">
+                                <template x-if="filteredCompatibleProducts.length === 0">
+                                    <div class="text-center py-12 px-4 bg-white rounded-lg border border-gray-200">
+                                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-3">
+                                            <i class="fas fa-filter text-2xl"></i>
+                                        </div>
+                                        <h3 class="text-base font-semibold text-text-dark mb-1">No products match your filters</h3>
+                                        <p class="text-gray-500 text-sm mb-4">Try removing a filter or two to see more results.</p>
+                                        <button type="button" @click="resetFilters()" class="inline-flex items-center gap-2 bg-primary hover:bg-blue-900 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                                            <i class="fas fa-undo"></i> Clear all filters
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="filteredCompatibleProducts.length > 0">
+                                    <p>
+                                        Showing <span class="font-medium text-text-dark" x-text="filteredCompatibleProducts.reduce((acc, cat) => acc + cat.products.length, 0)"></span> 
+                                        compatible products in <span class="font-medium text-text-dark" x-text="filteredCompatibleProducts.length"></span> categories
+                                    </p>
+                                </template>
+                            </div>
+                            
+                            <!-- Product listing -->
+                            <template x-for="(category, catIndex) in filteredCompatibleProducts" :key="catIndex">
+                                <div class="mb-8">
+                                    <h3 class="text-lg font-semibold mb-3 px-1 text-text-dark" x-text="category.category"></h3>
+                                    
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        <!-- Single product cards -->
+                                        <template x-for="(product, prodIndex) in category.products" :key="prodIndex">
+                                            <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 flex flex-col h-full">
+                                                <!-- Regular product -->
+                                                <template x-if="!isComboProduct(product)">
+                                                    <div>
+                                                        <div class="aspect-square overflow-hidden relative">
+                                                            <a x-show="product.product_page_url" 
+                                                               :href="product.product_page_url" 
+                                                               target="_blank" 
+                                                               rel="noopener noreferrer" 
+                                                               class="block w-full h-full">
+                                                                <img 
+                                                                    :src="product.image_url || getPlaceholderImage(product.name)" 
+                                                                    :alt="product.name || 'Product Image'" 
+                                                                    class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
+                                                                >
+                                                            </a>
+                                                            <template x-if="!product.product_page_url">
+                                                                <img 
+                                                                    :src="product.image_url || getPlaceholderImage(product.name)" 
+                                                                    :alt="product.name || 'Product Image'" 
+                                                                    class="w-full h-full object-cover object-center"
+                                                                >
+                                                            </template>
+                                                        </div>
+                                                        <div class="p-4 flex-grow flex flex-col">
+                                                            <div class="mb-1">
+                                                                <div class="font-semibold text-text-dark" x-text="formatProductName(product)"></div>
+                                                            </div>
+                                                            <div class="text-xs text-text-light mb-1">
+                                                                <span class="font-medium">SKU:</span> <span x-text="product.sku"></span>
+                                                            </div>
+                                                            <div class="border-t mt-2 pt-2 space-y-1 flex-grow flex flex-col justify-end">
+                                                                <div class="flex justify-between text-xs">
+                                                                    <span class="font-medium text-text-light">Brand:</span>
+                                                                    <span class="text-text-dark" x-text="product.brand || 'N/A'"></span>
+                                                                </div>
+                                                                <div class="flex justify-between text-xs">
+                                                                    <span class="font-medium text-text-light">Series:</span>
+                                                                    <span class="text-text-dark" x-text="product.series || 'N/A'"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                                
+                                                <!-- Combo product (Door + Return Panel) -->
+                                                <template x-if="isComboProduct(product)">
+                                                    <div class="relative">
+                                                        <div class="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide shadow">
+                                                            <i class="fas fa-link text-[9px]"></i> Combo
+                                                        </div>
+                                                        <div class="aspect-square overflow-hidden bg-gray-50 flex relative">
+                                                            <!-- Main product image (left half) -->
+                                                            <div class="w-1/2 h-full relative">
+                                                                <template x-if="product.main_product.product_page_url">
+                                                                    <a :href="product.main_product.product_page_url" 
+                                                                       target="_blank" 
+                                                                       rel="noopener noreferrer" 
+                                                                       class="block w-full h-full">
+                                                                        <img 
+                                                                            :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
+                                                                            :alt="product.main_product.name || 'Main Product Image'" 
+                                                                            class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
+                                                                        >
+                                                                    </a>
+                                                                </template>
+                                                                <template x-if="!product.main_product.product_page_url">
+                                                                    <img 
+                                                                        :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
+                                                                        :alt="product.main_product.name || 'Main Product Image'" 
+                                                                        class="w-full h-full object-cover object-center"
+                                                                    >
+                                                                </template>
+                                                            </div>
+                                                            
+                                                                            <!-- Divider line + plus badge -->
+                                                            <div class="w-px bg-gray-300"></div>
+                                                            <div class="combo-plus-badge">+</div>
+                                                            
+                                                            <!-- Secondary product image (right half) -->
+                                                            <div class="w-1/2 h-full relative">
+                                                                <template x-if="product.secondary_product.product_page_url">
+                                                                    <a :href="product.secondary_product.product_page_url" 
+                                                                       target="_blank" 
+                                                                       rel="noopener noreferrer" 
+                                                                       class="block w-full h-full">
+                                                                        <img 
+                                                                            :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.name)" 
+                                                                            :alt="product.secondary_product.name || 'Secondary Product Image'" 
+                                                                            class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
+                                                                        >
+                                                                    </a>
+                                                                </template>
+                                                                <template x-if="!product.secondary_product.product_page_url">
+                                                                    <img 
+                                                                        :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.name)" 
+                                                                        :alt="product.secondary_product.name || 'Secondary Product Image'" 
+                                                                        class="w-full h-full object-cover object-center"
+                                                                    >
+                                                                </template>
+                                                            </div>
+                                                            
+
+                                                        </div>
+                                                        <div class="p-4 flex-grow flex flex-col">
+                                                            <div class="mb-1">
+                                                                <div class="font-semibold text-text-dark" x-text="formatProductName(product.main_product)"></div>
+                                                                <div class="font-semibold text-text-dark" x-text="formatProductName(product.secondary_product)"></div>
+                                                            </div>
+                                                            <div class="text-xs text-text-light mb-1 flex items-center flex-wrap gap-1">
+                                                                <span class="font-medium">SKUs:</span>
+                                                                <span x-text="product.main_product.sku"></span>
+                                                                <span>+</span>
+                                                                <span x-text="product.secondary_product.sku"></span>
+                                                            </div>
+                                                            <div class="border-t mt-2 pt-2 flex justify-between">
+                                                                <div class="flex flex-col">
+                                                                    <span class="text-xs font-medium text-primary">Door + Return Panel</span>
+                                                                    <span class="text-xs text-text-light">
+                                                                        <span class="font-medium">Brand:</span> 
+                                                                        <span class="text-text-dark" x-text="product.main_product.brand || 'N/A'"></span>
+                                                                    </span>
+                                                                </div>
+                                                                <span class="text-xs text-text-light">
+                                                                    <span class="font-medium">Series:</span> 
+                                                                    <span class="text-text-dark" x-text="product.main_product.series || 'N/A'"></span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- Custom JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

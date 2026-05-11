@@ -110,9 +110,44 @@ public class HomeController : ControllerBase
         if (Request.Query["auth_error"] == "domain_restriction")
             return ServeDomainRestriction();
 
-        var deny = RequireViewer("/");
-        if (deny != null) return deny;
+        // For unauthenticated requests return HTTP 200 with a JS-based login redirect.
+        // This is critical for autoscale deployments: the health probe hits GET / and
+        // requires a 200 response. A 302 Challenge would cause the probe to fail and
+        // the deployment to time out at the promote step.
+        if (User?.Identity?.IsAuthenticated != true)
+            return ServeLoginRedirect();
+
+        // Authenticated: enforce minimum role.
+        if (!User.IsInRole(RoleViewer) && !User.IsInRole(RoleEditor) && !User.IsInRole(RoleAdmin))
+            return Serve403("You need the <strong>ORCA - Viewer</strong> role (or higher) to access this application.");
+
         return ServeTemplate("index.html");
+    }
+
+    /// <summary>
+    /// Returns a lightweight 200 page that immediately redirects the browser to Auth0
+    /// login via JavaScript. Bots and health probes (which have no JS) see a 200 and pass.
+    /// </summary>
+    private ContentResult ServeLoginRedirect()
+    {
+        var favicon = "https://res.cloudinary.com/american-bath-group/image/upload/v1628517134/abg-graphics/logos/abg/abg-logos/png/star-icon-blue.png";
+        var html = $"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="icon" type="image/png" href="{favicon}">
+                <title>ORCA — Signing in…</title>
+                <script>
+                    window.location.replace('/account/login?returnTo=' +
+                        encodeURIComponent(window.location.pathname + window.location.search));
+                </script>
+            </head>
+            <body></body>
+            </html>
+            """;
+        return Content(html, "text/html");
     }
 
     private IActionResult ServeDomainRestriction()

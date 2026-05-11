@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/american-bath-group/image/upload/v1628517134/abg-graphics/logos/abg/abg-logos/png/star-icon-blue.png">
+    <title>Access Denied — ORCA</title>
+    <link rel="stylesheet" href="/static/css/tailwind.css">
+</head>
+<body class="bg-stone-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-sm w-full text-center space-y-4">
+        <div class="text-4xl select-none">🔒</div>
+        <h1 class="text-xl font-semibold text-gray-900">Access Denied</h1>
+        <p class="text-sm text-gray-500">
+            Your account (<strong class="text-gray-700">{{USER_EMAIL}}</strong>) does not have an ORCA role assigned.
+        </p>
+        <p class="text-sm text-gray-500">
+            Please contact your administrator.
+        </p>
+        <p></p>
+        <a href="/account/logout"
+           class="inline-block mt-2 text-sm underline text-gray-400 hover:text-gray-700 transition">
+            Sign out
+        </a>
+        </p>
+    </div>
+</body>
+</html>

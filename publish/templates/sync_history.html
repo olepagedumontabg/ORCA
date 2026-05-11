@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/american-bath-group/image/upload/v1628517134/abg-graphics/logos/abg/abg-logos/png/star-icon-blue.png">
+    <title>Sync History - Bathroom Compatibility Finder</title>
+    <link rel="stylesheet" href="/static/css/tailwind.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .status-completed { background-color: #D1FAE5; color: #065F46; }
+        .status-processing { background-color: #DBEAFE; color: #1E40AF; }
+        .status-running    { background-color: #DBEAFE; color: #1E40AF; }
+        .status-failed     { background-color: #FEE2E2; color: #991B1B; }
+        .status-pending    { background-color: #FEF3C7; color: #92400E; }
+        .status-queued       { background-color: #FEF3C7; color: #92400E; }
+        .status-partial_success { background-color: #FEF3C7; color: #92400E; }
+        .status-interrupted  { background-color: #F3E8FF; color: #6B21A8; }
+        @keyframes indeterminate {
+            0%   { transform: translateX(-100%) scaleX(0.4); }
+            50%  { transform: translateX(50%)   scaleX(0.6); }
+            100% { transform: translateX(300%)  scaleX(0.4); }
+        }
+        .animate-indeterminate {
+            width: 40%;
+            animation: indeterminate 1.4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 h-20">
+        <div class="container mx-auto px-4 h-full">
+            <div class="flex items-center justify-between h-full">
+                <a href="/" class="flex items-center">
+                    <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
+                </a>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Home</a>
+                    <a href="/sync-history"{{STYLE_ADMIN}} class="text-primary font-semibold border-b-2 border-primary pb-1">Sync History</a>
+                    <a href="/overrides"{{STYLE_EDITOR}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
+                    <a href="/documentation"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
+                    <span class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
+                        <i class="fas fa-user-circle text-primary"></i>
+                        <span class="text-gray-600 font-medium">{{USER_EMAIL}}</span>
+                        <a href="/account/logout" class="text-gray-500 hover:text-red-600 transition flex items-center gap-1 text-sm" title="Log out"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </span>
+                </nav>
+                <button onclick="document.getElementById('mobileNav').classList.toggle('hidden');var i=this.querySelector('i');i.classList.toggle('fa-bars');i.classList.toggle('fa-times');" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <nav id="mobileNav" class="hidden md:hidden bg-white border-b border-gray-200 shadow-md">
+            <a href="/" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Home</a>
+            <a href="/sync-history"{{STYLE_ADMIN}} class="block px-4 py-2 text-primary font-semibold bg-blue-50">Sync History</a>
+            <a href="/overrides"{{STYLE_EDITOR}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
+            <a href="/documentation"{{STYLE_ADMIN}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
+            <div class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
+                <i class="fas fa-user-circle text-primary"></i>
+                <span class="font-medium truncate">{{USER_EMAIL}}</span>
+            </div>
+            <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+        </nav>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text-dark mb-2">Sync History</h1>
+            <p class="text-text-light">View all product data synchronization operations from Salsify</p>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loadingState" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-primary text-4xl mb-4"></i>
+            <p class="text-gray-500">Loading sync history...</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="errorState" class="hidden text-center py-12">
+            <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+            <p class="text-red-600" id="errorText">Failed to load sync history.</p>
+        </div>
+
+        <!-- Content (hidden until loaded) -->
+        <div id="content" class="hidden">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-primary">
+                    <div class="text-gray-600 text-sm font-medium mb-1">Total Syncs</div>
+                    <div class="text-3xl font-bold text-text-dark" id="statTotal">0</div>
+                    <div class="text-xs text-gray-500 mt-1" id="statSuccessRate">0% success rate</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                    <div class="text-gray-600 text-sm font-medium mb-1">Completed</div>
+                    <div class="text-3xl font-bold text-green-600" id="statCompleted">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Fully successful</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+                    <div class="text-gray-600 text-sm font-medium mb-1">Partial</div>
+                    <div class="text-3xl font-bold text-yellow-600" id="statPartial">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Data saved, computing interrupted</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+                    <div class="text-gray-600 text-sm font-medium mb-1">Failed</div>
+                    <div class="text-3xl font-bold text-red-600" id="statFailed">0</div>
+                    <div class="text-xs text-gray-500 mt-1">No data saved</div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                    <div class="text-gray-600 text-sm font-medium mb-1">Processing</div>
+                    <div class="text-3xl font-bold text-blue-600" id="statProcessing">0</div>
+                    <div class="text-xs text-gray-500 mt-1">Currently running</div>
+                </div>
+            </div>
+
+            <!-- Sync History Table -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <div id="emptyState" class="hidden text-center py-12">
+                        <i class="fas fa-history text-gray-300 text-5xl mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-600 mb-2">No sync history yet</h3>
+                        <p class="text-gray-500">Webhook sync operations will appear here once Salsify sends data updates</p>
+                    </div>
+                    <table id="syncTable" class="min-w-full divide-y divide-gray-200 hidden">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compatibilities</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error/Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="syncTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 text-xl mr-3 mt-1"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">About Sync History</h3>
+                        <p class="text-blue-800 mb-2">
+                            This page shows all automatic data synchronizations triggered by Salsify webhooks.
+                            Each time you publish your product feed in Salsify, a webhook is sent to this application,
+                            and the database is updated automatically.
+                        </p>
+                        <ul class="list-disc list-inside text-blue-800 space-y-1">
+                            <li><strong>Products Added:</strong> New products that didn't exist in the database</li>
+                            <li><strong>Products Updated:</strong> Existing products with changed data</li>
+                            <li><strong>Products Deleted:</strong> Products removed from Salsify</li>
+                            <li><strong>Compatibilities Updated:</strong> Number of compatibility matches recalculated</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onclick="closeErrorOutside(event)">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-xl font-bold text-red-600">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Sync Failed
+                </h3>
+                <button onclick="closeError()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <!-- Sync meta: ID, channel, time -->
+            <div id="errorMeta" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 text-sm"></div>
+
+            <!-- Stage badge -->
+            <div id="errorStageBadge" class="hidden mb-4 flex items-center gap-2">
+                <span class="text-gray-500 font-medium whitespace-nowrap">Failed at:</span>
+                <span id="errorStageText" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-semibold text-sm"></span>
+            </div>
+
+            <!-- Error message -->
+            <div class="mb-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Error Message</div>
+                <div id="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm font-mono text-red-800 break-words whitespace-pre-wrap overflow-auto max-h-48"></div>
+            </div>
+
+            <!-- Feed URL -->
+            <div id="errorFeedUrlBlock" class="hidden mb-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Product Feed URL</div>
+                <div id="errorFeedUrl" class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 break-all"></div>
+            </div>
+
+            <!-- Suggestions -->
+            <div id="errorSuggestions" class="hidden mb-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Possible Causes</div>
+                <ul id="errorSuggestionList" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-1 text-sm text-yellow-900 list-disc list-inside"></ul>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-gray-100">
+                <button onclick="closeError()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded font-medium transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeErrorOutside(e) {
+            if (e.target === document.getElementById('errorModal')) closeError();
+        }
+
+        function showError(syncId) {
+            const syncObj = _syncCache[syncId] || {};
+            const meta = syncObj.metadata || null;
+
+            const rawMsg = syncObj.error_message || 'Unknown error';
+
+            // Parse [step] prefix written by the server
+            const stepMatch = rawMsg.match(/^\[([^\]]+)\]\s*/);
+            const step = stepMatch ? stepMatch[1] : null;
+            const message = stepMatch ? rawMsg.slice(stepMatch[0].length) : rawMsg;
+
+            // Sync meta row
+            const metaDiv = document.getElementById('errorMeta');
+            const failedAt = syncObj.completed_at
+                ? new Date(syncObj.completed_at).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
+                : '-';
+            metaDiv.innerHTML = `
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="text-xs text-gray-500 mb-1">Sync ID</div>
+                    <div class="font-bold text-gray-900">#${syncId}</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="text-xs text-gray-500 mb-1">Channel</div>
+                    <div class="font-medium text-gray-900">${escapeHtml(meta && meta.channel_name || 'Unknown')}</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="text-xs text-gray-500 mb-1">Failed At</div>
+                    <div class="font-medium text-gray-900">${failedAt}</div>
+                </div>`;
+
+            // Stage badge
+            if (step) {
+                document.getElementById('errorStageText').textContent = step;
+                document.getElementById('errorStageBadge').classList.remove('hidden');
+            } else {
+                document.getElementById('errorStageBadge').classList.add('hidden');
+            }
+
+            // Error message
+            document.getElementById('errorMessage').textContent = message;
+
+            // Feed URL
+            const feedUrl = meta && (meta.product_feed_url || meta.feed_url);
+            if (feedUrl) {
+                document.getElementById('errorFeedUrl').textContent = feedUrl;
+                document.getElementById('errorFeedUrlBlock').classList.remove('hidden');
+            } else {
+                document.getElementById('errorFeedUrlBlock').classList.add('hidden');
+            }
+
+            // Suggestions based on keywords
+            const suggestions = [];
+            const lower = rawMsg.toLowerCase();
+            if (lower.includes('0 bytes') || lower.includes('empty'))
+                suggestions.push('The product feed URL returned an empty file — it may have expired. Trigger a new Salsify publication to get a fresh URL.');
+            if (lower.includes('unauthorized') || lower.includes('403') || lower.includes('401'))
+                suggestions.push('The download was rejected (access denied). Check that the Salsify S3 URL is publicly accessible or that credentials are correct.');
+            if (lower.includes('404') || lower.includes('not found'))
+                suggestions.push('The file was not found at the given URL. The product feed link may have expired — trigger a new Salsify publication.');
+            if (lower.includes('timeout') || lower.includes('timed out'))
+                suggestions.push('The download timed out. The Excel file may be very large, or Salsify\'s S3 is temporarily slow. Retry the sync.');
+            if (lower.includes('archive') || lower.includes('zip') || lower.includes('format') || lower.includes('parse') || lower.includes('openxml'))
+                suggestions.push('The file could not be parsed as an Excel workbook. Make sure Salsify exports an .xlsx file, not CSV or another format.');
+            if (lower.includes('database') || lower.includes('sql') || lower.includes('connection'))
+                suggestions.push('A database error occurred while saving products. Check the database connection and try again.');
+            if (suggestions.length === 0)
+                suggestions.push('Review the error message above and check the application logs for more details.');
+
+            const ul = document.getElementById('errorSuggestionList');
+            ul.innerHTML = suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+            document.getElementById('errorSuggestions').classList.remove('hidden');
+
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').classList.add('hidden');
+        }
+
+        const _syncCache = {};
+
+        function toggleDetails(id) {
+            const row = document.getElementById('details-' + id);
+            const btn = document.getElementById('toggle-btn-' + id);
+            if (row) {
+                const hidden = row.classList.toggle('hidden');
+                btn.innerHTML = hidden
+                    ? '<i class="fas fa-eye"></i> Show Details'
+                    : '<i class="fas fa-eye-slash"></i> Hide Details';
+            }
+        }
+
+        function formatDuration(startedAt, completedAt, status) {
+            if (!completedAt && (status === 'processing' || status === 'running')) {
+                return '<span class="text-blue-600 animate-pulse">Processing...</span>';
+            }
+            if (!completedAt || !startedAt) return '-';
+            const secs = (new Date(completedAt) - new Date(startedAt)) / 1000;
+            if (secs < 60) return Math.round(secs) + 's';
+            if (secs < 3600) return (secs / 60).toFixed(1) + 'm';
+            return (secs / 3600).toFixed(1) + 'h';
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function buildDetailsRow(sync, meta) {
+            const cd = meta && meta.change_details;
+            if (!cd || (!cd.updated_products?.length && !cd.added_products?.length && !cd.deleted_products?.length)) return '';
+
+            let badges = '';
+            if (cd.added_products?.length)   badges += `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold text-sm"><i class="fas fa-plus-circle"></i> ${cd.added_products.length} Added</span>`;
+            if (cd.updated_products?.length)  badges += `<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold text-sm"><i class="fas fa-edit"></i> ${cd.updated_products.length} Updated</span>`;
+            if (cd.deleted_products?.length)  badges += `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full font-semibold text-sm"><i class="fas fa-trash-alt"></i> ${cd.deleted_products.length} Deleted</span>`;
+
+            let sections = '';
+
+            if (cd.updated_products?.length) {
+                let rows = cd.updated_products.map(p => {
+                    let changes = Object.entries(p.changes || {}).map(([field, ch]) =>
+                        `<div class="text-xs bg-white p-2 rounded border border-gray-200">
+                            <div class="font-semibold text-gray-700 mb-1">${escapeHtml(field)}:</div>
+                            <div class="flex flex-col space-y-1">
+                                <div class="text-red-600 break-all"><span class="font-medium">Old:</span> ${escapeHtml(ch.old)}</div>
+                                <div class="text-green-600 break-all"><span class="font-medium">New:</span> ${escapeHtml(ch.new)}</div>
+                            </div>
+                        </div>`
+                    ).join('');
+                    return `<div class="bg-blue-50 p-3 rounded border border-blue-200">
+                        <div class="font-medium text-gray-900">${escapeHtml(p.name || '')}</div>
+                        <div class="text-xs text-gray-600 mb-2">SKU: ${escapeHtml(p.sku || '')} | Category: ${escapeHtml(p.category || '')}</div>
+                        <div class="text-sm"><strong>Changes:</strong><div class="mt-1 space-y-2">${changes}</div></div>
+                    </div>`;
+                }).join('');
+                sections += `<div class="mb-6">
+                    <h5 class="font-bold text-blue-700 mb-3 text-lg border-l-4 border-blue-500 pl-3"><i class="fas fa-edit"></i> Updated Products</h5>
+                    <div class="space-y-3">${rows}</div>
+                </div>`;
+            }
+
+            if (cd.added_products?.length) {
+                let cards = cd.added_products.map(p =>
+                    `<div class="bg-green-50 p-3 rounded-lg border-2 border-green-200 hover:border-green-400 transition">
+                        <div class="font-semibold text-gray-900 mb-1">${escapeHtml(p.name || '')}</div>
+                        <div class="text-sm text-gray-700">
+                            <div><span class="font-medium">SKU:</span> ${escapeHtml(p.sku || '')}</div>
+                            <div><span class="font-medium">Category:</span> ${escapeHtml(p.category || '')}</div>
+                        </div>
+                    </div>`
+                ).join('');
+                sections += `<div class="mb-6">
+                    <h5 class="font-bold text-green-700 mb-3 text-lg border-l-4 border-green-500 pl-3"><i class="fas fa-plus-circle"></i> Added Products</h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+                </div>`;
+            }
+
+            if (cd.deleted_products?.length) {
+                let cards = cd.deleted_products.map(p =>
+                    `<div class="bg-red-50 p-3 rounded-lg border-2 border-red-200 hover:border-red-400 transition">
+                        <div class="font-semibold text-gray-900 mb-1">${escapeHtml(p.name || '')}</div>
+                        <div class="text-sm text-gray-700">
+                            <div><span class="font-medium">SKU:</span> ${escapeHtml(p.sku || '')}</div>
+                            <div><span class="font-medium">Category:</span> ${escapeHtml(p.category || '')}</div>
+                        </div>
+                    </div>`
+                ).join('');
+                sections += `<div class="mb-6">
+                    <h5 class="font-bold text-red-700 mb-3 text-lg border-l-4 border-red-500 pl-3"><i class="fas fa-trash-alt"></i> Deleted Products</h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+                </div>`;
+            }
+
+            return `<tr id="details-${sync.id}" class="bg-gray-50">
+                <td colspan="8" class="px-6 py-4">
+                    <div class="bg-white rounded-lg shadow-sm p-6 border-2 border-gray-300">
+                        <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-200">
+                            <h4 class="font-bold text-gray-900 text-xl"><i class="fas fa-list-check text-primary"></i> Change Details for Sync #${sync.id}</h4>
+                            <div class="flex gap-4">${badges}</div>
+                        </div>
+                        ${sections}
+                    </div>
+                </td>
+            </tr>`;
+        }
+
+        async function loadSyncHistory() {
+            try {
+                const res = await fetch('/api/salsify/status?limit=100');
+                if (!res.ok) throw new Error('API returned ' + res.status);
+                const data = await res.json();
+                const syncs = data.syncs || [];
+
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+
+                const total     = syncs.length;
+                const completed = syncs.filter(s => s.status === 'completed').length;
+                const partial   = syncs.filter(s => s.status === 'partial_success').length;
+                const failed    = syncs.filter(s => s.status === 'failed').length;
+                const processing= syncs.filter(s => s.status === 'processing' || s.status === 'running').length;
+                const rate      = total > 0 ? Math.round((completed + partial) / total * 100) : 0;
+
+                document.getElementById('statTotal').textContent     = total;
+                document.getElementById('statCompleted').textContent = completed;
+                document.getElementById('statPartial').textContent   = partial;
+                document.getElementById('statFailed').textContent    = failed;
+                document.getElementById('statProcessing').textContent= processing;
+                document.getElementById('statSuccessRate').textContent = rate + '% success rate';
+
+                if (syncs.length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('syncTable').classList.remove('hidden');
+                const tbody = document.getElementById('syncTableBody');
+
+                syncs.forEach(sync => renderSyncRow(sync, tbody));
+                startPollingIfNeeded(syncs);
+            } catch (err) {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('errorState').classList.remove('hidden');
+                document.getElementById('errorText').textContent = 'Failed to load sync history: ' + err.message;
+            }
+        }
+
+        function buildCompatHtml(sync) {
+            const meta = sync.metadata || null;
+            const isRunning = sync.status === 'running' || sync.status === 'processing';
+            const total = meta && meta.products_total != null ? meta.products_total : null;
+            const done  = meta && meta.products_done  != null ? meta.products_done  : null;
+
+            if (isRunning) {
+                if (total != null) {
+                    // Deterministic bar — compatibility computation phase
+                    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                    return `<div class="min-w-[160px]">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span class="font-medium text-blue-700 animate-pulse">Computing…</span>
+                            <span class="font-mono">${done} / ${total}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-blue-500 h-2.5 rounded-full transition-all duration-500" style="width:${pct}%"></div>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1 text-right">${pct}%</div>
+                    </div>`;
+                } else {
+                    // Indeterminate bar — Excel parsing / preparing phase
+                    return `<div class="min-w-[160px]">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span class="font-medium text-blue-600 animate-pulse">Preparing…</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                            <div class="h-2.5 rounded-full bg-blue-400 animate-indeterminate"></div>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">Parsing product data</div>
+                    </div>`;
+                }
+            }
+
+            if (sync.status === 'completed' || sync.status === 'partial_success') {
+                const count = sync.compatibilities_updated || 0;
+                const displayTotal = total || count;
+                if (displayTotal > 0) {
+                    return `<div class="min-w-[160px]">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span class="font-medium text-green-700">Complete</span>
+                            <span class="font-mono text-green-700">${count.toLocaleString()} updated</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-green-500 h-2.5 rounded-full" style="width:100%"></div>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            if (sync.compatibilities_updated > 0) {
+                return `<span class="text-primary font-medium">${sync.compatibilities_updated.toLocaleString()}</span> updated`;
+            }
+            return '<span class="text-gray-400">-</span>';
+        }
+
+        function renderSyncRow(sync, tbody) {
+            const meta = sync.metadata || null;
+            _syncCache[sync.id] = sync;
+
+            const channelName = (meta && meta.channel_name) || 'Unknown';
+            const statusLabel = sync.status === 'partial_success' ? 'Partial'
+                : sync.status === 'interrupted' ? 'Interrupted'
+                : (sync.status.charAt(0).toUpperCase() + sync.status.slice(1));
+
+            const startedFormatted = sync.started_at
+                ? new Date(sync.started_at).toLocaleString('en-CA', { timeZone: 'UTC', hour12: false }).replace(',', '') + ' UTC'
+                : '-';
+
+            const duration = formatDuration(sync.started_at, sync.completed_at, sync.status);
+
+            let productsHtml = '<div class="text-gray-400">No changes</div>';
+            const parts = [];
+            if (sync.products_added   > 0) parts.push(`<div class="text-green-600"><i class="fas fa-plus-circle"></i> ${sync.products_added} added</div>`);
+            if (sync.products_updated > 0) parts.push(`<div class="text-blue-600"><i class="fas fa-edit"></i> ${sync.products_updated} updated</div>`);
+            if (sync.products_deleted > 0) parts.push(`<div class="text-red-600"><i class="fas fa-trash-alt"></i> ${sync.products_deleted} deleted</div>`);
+            if (parts.length > 0) productsHtml = '<div class="flex flex-col space-y-1">' + parts.join('') + '</div>';
+
+            const compatHtml = buildCompatHtml(sync);
+
+            const cd = meta && meta.change_details;
+            const hasDetails = cd && (cd.updated_products?.length || cd.added_products?.length || cd.deleted_products?.length);
+
+            let detailsBtn = '<span class="text-gray-400">No details</span>';
+            if (sync.error_message) {
+                detailsBtn = `<button onclick="showError(${sync.id})" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-exclamation-circle"></i> View Error</button>`;
+            } else if (hasDetails) {
+                detailsBtn = `<button onclick="toggleDetails(${sync.id})" class="text-primary hover:text-blue-800 font-medium" id="toggle-btn-${sync.id}"><i class="fas fa-eye-slash"></i> Hide Details</button>`;
+            }
+
+            const existing = document.getElementById('sync-row-' + sync.id);
+            const row = existing || document.createElement('tr');
+            row.className = 'hover:bg-gray-50 transition';
+            row.id = 'sync-row-' + sync.id;
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${sync.id}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div class="font-medium">${escapeHtml(channelName)}</div>
+                    <div class="text-xs text-gray-500">${escapeHtml(sync.sync_type)}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="status-badge status-${sync.status}">${escapeHtml(statusLabel)}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${startedFormatted}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${duration}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${productsHtml}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">${compatHtml}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${detailsBtn}</td>
+            `;
+            if (!existing && tbody) tbody.appendChild(row);
+
+            if (hasDetails && !existing) {
+                const detailsHtml = buildDetailsRow(sync, meta);
+                if (detailsHtml) {
+                    const tmp = document.createElement('tbody');
+                    tmp.innerHTML = detailsHtml;
+                    tbody.appendChild(tmp.firstElementChild);
+                }
+            }
+        }
+
+        let _pollInterval = null;
+
+        async function pollRunningSyncs() {
+            const running = Object.values(_syncCache).filter(s => s.status === 'running' || s.status === 'processing');
+            if (running.length === 0) {
+                clearInterval(_pollInterval);
+                _pollInterval = null;
+                return;
+            }
+            try {
+                const res = await fetch('/api/salsify/status?limit=100');
+                if (!res.ok) return;
+                const data = await res.json();
+                const syncs = data.syncs || [];
+                syncs.forEach(sync => {
+                    const prev = _syncCache[sync.id];
+                    if (prev && (prev.status === 'running' || prev.status === 'processing')) {
+                        renderSyncRow(sync, null);
+                        if (sync.status !== 'running' && sync.status !== 'processing') {
+                            clearInterval(_pollInterval);
+                            _pollInterval = null;
+                        }
+                    }
+                });
+            } catch { /* silent */ }
+        }
+
+        function startPollingIfNeeded(syncs) {
+            const hasRunning = syncs.some(s => s.status === 'running' || s.status === 'processing');
+            if (hasRunning && !_pollInterval) {
+                _pollInterval = setInterval(pollRunningSyncs, 5000);
+            }
+        }
+
+        loadSyncHistory();
+    </script>
+</body>
+</html>

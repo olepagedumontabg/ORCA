@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/american-bath-group/image/upload/v1628517134/abg-graphics/logos/abg/abg-logos/png/star-icon-blue.png">
+    <title>API Documentation — Compatibility Finder</title>
+
+    <link rel="stylesheet" href="/static/css/tailwind.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        .method-get    { background: #D1FAE5; color: #065F46; }
+        .method-post   { background: #DBEAFE; color: #1E40AF; }
+        .method-delete { background: #FEE2E2; color: #991B1B; }
+        .method-badge  { display: inline-block; font-size: 0.7rem; font-weight: 700;
+                         padding: 2px 8px; border-radius: 4px; letter-spacing: .04em;
+                         font-family: monospace; vertical-align: middle; }
+        .endpoint-path { font-family: monospace; font-size: 0.95rem; color: #111827; font-weight: 600; }
+        .param-table   { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+        .param-table th, .param-table td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
+        .param-table th { background: #f9fafb; font-weight: 600; color: #374151; }
+        .param-table code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; }
+        .code-block { background: #f3f4f6; border-radius: 6px; padding: 12px 14px;
+                      font-family: monospace; font-size: 0.8rem; overflow-x: auto;
+                      white-space: pre; color: #1f2937; }
+        .toc-link { display: block; color: #001A70; font-size: 0.875rem; padding: 2px 0; }
+        .toc-link:hover { text-decoration: underline; }
+        .section-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 2rem; }
+        .section-card > .section-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f3f4f6; }
+        .section-card > .section-body   { padding: 1.5rem; }
+        .endpoint-block { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+        .endpoint-block:last-child { margin-bottom: 0; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm border-b border-gray-200 h-20">
+        <div class="container mx-auto px-4 h-full">
+            <div class="flex items-center justify-between h-full">
+                <a href="/" class="flex items-center">
+                    <img src="/static/images/abg-logo-header.svg" alt="ABG Logo" class="h-6 w-auto">
+                </a>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Home</a>
+                    <a href="/sync-history"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
+                    <a href="/overrides"{{STYLE_EDITOR}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
+                    <a href="/documentation"{{STYLE_ADMIN}} class="text-primary font-semibold border-b-2 border-primary pb-1">API Docs</a>
+                    <span class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
+                        <i class="fas fa-user-circle text-primary"></i>
+                        <span class="text-gray-600 font-medium">{{USER_EMAIL}}</span>
+                        <a href="/account/logout" class="text-gray-500 hover:text-red-600 transition flex items-center gap-1 text-sm" title="Log out"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </span>
+                </nav>
+                <button onclick="document.getElementById('mobileNav').classList.toggle('hidden');var i=this.querySelector('i');i.classList.toggle('fa-bars');i.classList.toggle('fa-times');" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <nav id="mobileNav" class="hidden md:hidden bg-white border-b border-gray-200 shadow-md">
+            <a href="/" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Home</a>
+            <a href="/sync-history"{{STYLE_ADMIN}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Sync History</a>
+            <a href="/overrides"{{STYLE_EDITOR}} class="block px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
+            <a href="/documentation"{{STYLE_ADMIN}} class="block px-4 py-2 text-primary font-semibold bg-blue-50">API Docs</a>
+            <div class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
+                <i class="fas fa-user-circle text-primary"></i>
+                <span class="font-medium truncate">{{USER_EMAIL}}</span>
+            </div>
+            <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+        </nav>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto w-full py-8 px-4 sm:px-6 lg:px-8">
+
+        <!-- Page title -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">API Documentation</h1>
+            <p class="mt-1 text-gray-500 text-sm">A guide to the ORCA Compatibility Finder API for developers and integrators.</p>
+        </div>
+
+        <!-- Table of contents -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="text-base font-semibold text-gray-900">Table of Contents</h2>
+            </div>
+            <div class="section-body grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+                <div>
+                    <a href="#overview"       class="toc-link">1. Overview</a>
+                    <a href="#base-url"        class="toc-link">2. Base URL &amp; Format</a>
+                    <a href="#endpoints-products"    class="toc-link">3. Products</a>
+                    <a href="#endpoints-compat"      class="toc-link">4. Compatibility</a>
+                    <a href="#endpoints-overrides"   class="toc-link">5. Overrides</a>
+                </div>
+                <div>
+                    <a href="#endpoints-salsify"     class="toc-link">6. Salsify / Data Sync</a>
+                    <a href="#endpoints-utility"     class="toc-link">7. Utility</a>
+                    <a href="#compat-logic"           class="toc-link">8. How Compatibility Works</a>
+                    <a href="#data-flow"              class="toc-link">9. Data Flow</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Overview -->
+        <div id="overview" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">1. Overview</h2>
+            </div>
+            <div class="section-body text-gray-600 space-y-3 text-sm leading-relaxed">
+                <p>
+                    The <strong>ORCA Compatibility Finder</strong> is a REST API that identifies which bathroom products work together.
+                    Given a product SKU, it returns every compatible product across all relevant categories — shower doors, walls,
+                    screens, return panels, bathtubs, and more.
+                </p>
+                <p>
+                    Product data is synchronized automatically from <strong>Salsify PIM</strong> via a webhook. When Salsify publishes
+                    a new Excel export, the API downloads it, upserts every product into the database, and recomputes all compatibility
+                    pairs in the background — all without any downtime.
+                </p>
+                <p>
+                    Compatibility results can also be pre-computed and cached in the database, or forced on-demand per SKU. A manual
+                    override system (whitelist / blacklist) lets administrators fine-tune specific pairs.
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. Base URL & Format -->
+        <div id="base-url" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">2. Base URL &amp; Format</h2>
+            </div>
+            <div class="section-body text-sm text-gray-600 space-y-4">
+                <div>
+                    <p class="mb-2">All API routes are prefixed with <code class="bg-gray-100 px-1 rounded font-mono">/api/</code>.
+                    Responses are JSON. Field names use <strong>snake_case</strong>.</p>
+                    <div class="code-block">Base URL: https://&lt;your-domain&gt;
+
+Content-Type: application/json
+Accept:       application/json</div>
+                </div>
+                <div>
+                    <p class="mb-2 font-medium text-gray-700">Successful response shape (example):</p>
+                    <div class="code-block">{
+  "success": true,
+  "product": { ... }
+}</div>
+                </div>
+                <div>
+                    <p class="mb-2 font-medium text-gray-700">Error response shape:</p>
+                    <div class="code-block">{
+  "success": false,
+  "error": "Product not found: 99999"
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Products -->
+        <div id="endpoints-products" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">3. Products</h2>
+            </div>
+            <div class="section-body space-y-5">
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/products</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">List all products. Supports pagination and category filtering.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>page</code></td><td>int</td><td>1</td><td>Page number</td></tr>
+                            <tr><td><code>pageSize</code></td><td>int</td><td>50</td><td>Results per page</td></tr>
+                            <tr><td><code>category</code></td><td>string</td><td>—</td><td>Filter by category name (e.g. <code>Shower Bases</code>)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/products?category=Shower+Bases&page=1&pageSize=20
+
+{
+  "success": true,
+  "products": [ { "id": 1, "sku": "100959", "name": "Biarritz 40", "category": "Shower Bases", ... } ],
+  "total": 142,
+  "page": 1,
+  "page_size": 20
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/product/{sku}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Get a single product by SKU. Also available at <code class="bg-gray-100 px-1 rounded font-mono text-xs">/api/products/sku/{sku}</code>.</p>
+                    <div class="code-block">GET /api/product/100959
+
+{
+  "success": true,
+  "product": {
+    "id": 1, "sku": "100959", "name": "Biarritz 40", "brand": "MAAX",
+    "series": "MAAX", "category": "Shower Bases",
+    "image_url": "https://...", "product_page_url": "https://..."
+  }
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/products/{id}</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Get a single product by its internal numeric database ID.</p>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/categories</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">List all product categories with the number of products in each.</p>
+                    <div class="code-block">GET /api/categories
+
+{
+  "success": true,
+  "categories": [
+    { "category": "Shower Bases", "count": 142 },
+    { "category": "Shower Doors", "count": 87 },
+    ...
+  ]
+}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 4. Compatibility -->
+        <div id="endpoints-compat" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">4. Compatibility</h2>
+            </div>
+            <div class="section-body space-y-5">
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/compatible/{sku}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">
+                        The main compatibility lookup. Returns all products compatible with the given SKU, grouped by category.
+                        Results come from the pre-computed cache when available, falling back to on-demand computation.
+                        Also available at <code class="bg-gray-100 px-1 rounded font-mono text-xs">/api/products/sku/{sku}/compatible</code>.
+                    </p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>category</code></td><td>string</td><td>—</td><td>Return only this category (e.g. <code>Walls</code>)</td></tr>
+                            <tr><td><code>brand</code></td><td>string</td><td>—</td><td>Return only this brand</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/compatible/100959?category=Shower+Doors
+
+{
+  "success": true,
+  "sku": "100959",
+  "product": { "name": "Biarritz 40", "category": "Shower Bases", ... },
+  "compatible_products": [
+    {
+      "category": "Shower Doors",
+      "count": 4,
+      "products": [ { "sku": "700A36N", "name": "Kameleon 36", ... }, ... ]
+    }
+  ],
+  "total_compatible": 4
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/compatibility/search</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Search for compatible products with a JSON body. Useful when you want to pass filters programmatically.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>sku</code></td><td>string</td><td>Yes</td><td>Source SKU to find compatibles for</td></tr>
+                            <tr><td><code>category</code></td><td>string</td><td>No</td><td>Filter results to this category</td></tr>
+                            <tr><td><code>brand</code></td><td>string</td><td>No</td><td>Filter results to this brand</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">POST /api/compatibility/search
+{ "sku": "100959", "category": "Walls", "brand": "MAAX" }</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/compatibility/compute/{sku}</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Force recomputation of compatibility for a single SKU and save the result to the database. Useful after a manual data correction.</p>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/compute-compatibilities</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Recompute and cache compatibility for <strong>all</strong> products. This runs synchronously and can take several minutes. Normally triggered automatically after a Salsify sync.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 5. Overrides -->
+        <div id="endpoints-overrides" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">5. Overrides</h2>
+            </div>
+            <div class="section-body space-y-5">
+                <p class="text-sm text-gray-600">
+                    Overrides let administrators force two SKUs to always be compatible (whitelist) or never compatible (blacklist),
+                    regardless of what the standard compatibility rules compute. Overrides are bidirectional — they apply whether
+                    you query A&rarr;B or B&rarr;A.
+                </p>
+
+                <!-- GET /api/overrides -->
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/overrides</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">List all compatibility overrides. Optionally filter by a specific SKU.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>sku</code></td><td>string</td><td>No</td><td>Return only overrides where <code>base_sku</code> or <code>compatible_sku</code> matches this value (case-insensitive)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/overrides?sku=100959
+
+{
+  "success": true,
+  "count": 2,
+  "overrides": [
+    {
+      "id": 1,
+      "base_sku": "100959",
+      "compatible_sku": "700A36N",
+      "override_type": "whitelist",
+      "reason": "Confirmed compatible by engineering",
+      "created_at": "2026-04-01T09:00:00Z"
+    },
+    {
+      "id": 2,
+      "base_sku": "100959",
+      "compatible_sku": "ABC999",
+      "override_type": "blacklist",
+      "reason": null,
+      "created_at": "2026-04-02T14:30:00Z"
+    }
+  ]
+}</div>
+                </div>
+
+                <!-- POST /api/overrides -->
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/overrides</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Create a new whitelist or blacklist override. Both SKUs must exist in the product database. A SKU pair can only have one active override at a time — delete the existing entry before adding a different type.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Body field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>base_sku</code></td><td>string</td><td>Yes</td><td>First SKU in the pair (stored uppercase)</td></tr>
+                            <tr><td><code>compatible_sku</code></td><td>string</td><td>Yes</td><td>Second SKU in the pair (stored uppercase)</td></tr>
+                            <tr><td><code>override_type</code></td><td>string</td><td>Yes</td><td><code>"whitelist"</code> to force compatibility, or <code>"blacklist"</code> to block it</td></tr>
+                            <tr><td><code>reason</code></td><td>string</td><td>No</td><td>Optional human-readable note explaining the override</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">POST /api/overrides
+Content-Type: application/json
+
+{ "base_sku": "100959", "compatible_sku": "700A36N", "override_type": "whitelist", "reason": "Confirmed by engineering" }
+
+{
+  "success": true,
+  "message": "whitelist override created: 100959 \u2194 700A36N",
+  "override": {
+    "id": 1,
+    "base_sku": "100959",
+    "compatible_sku": "700A36N",
+    "override_type": "whitelist",
+    "reason": "Confirmed by engineering",
+    "created_at": "2026-04-01T09:00:00Z"
+  }
+}</div>
+                </div>
+
+                <!-- DELETE /api/overrides/{id} -->
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-delete">DELETE</span>
+                        <span class="endpoint-path">/api/overrides/{id}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">Remove an override by its database ID. Returns a confirmation message including the deleted pair and type.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Path param</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>id</code></td><td>int</td><td>The numeric ID of the override to delete (returned by GET or POST)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">DELETE /api/overrides/1
+
+{
+  "success": true,
+  "message": "Override 1 deleted (whitelist: 100959 \u2194 700A36N)"
+}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 6. Salsify / Data Sync -->
+        <div id="endpoints-salsify" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">6. Salsify / Data Sync</h2>
+            </div>
+            <div class="section-body space-y-5 text-sm text-gray-600">
+                <p>
+                    Product data comes from <strong>Salsify PIM</strong>. When a publication is triggered in Salsify, it calls the
+                    webhook below with the URL of an Excel export. The API downloads the file, upserts all products, and recomputes
+                    compatibility in the background.
+                </p>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/salsify/webhook</span>
+                    </div>
+                    <p class="mb-3">Receives a Salsify publication event. Pass the <code>SALSIFY_WEBHOOK_SECRET</code> value in the <code>X-Salsify-Secret</code> request header. Only processes publications with status <code>completed</code>.</p>
+                    <div class="code-block">POST /api/salsify/webhook
+X-Salsify-Secret: your-secret
+{
+  "publication_status": "completed",
+  "product_feed_url": "https://s3.amazonaws.com/.../export.xlsx",
+  "channel_id": "abc123",
+  "channel_name": "ORCA Export"
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/salsify/status</span>
+                    </div>
+                    <p class="mb-3">Returns the history of recent sync jobs. This is the same data shown on the Sync History page.</p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>limit</code></td><td>int</td><td>10</td><td>Number of records to return</td></tr>
+                            <tr><td><code>sync_id</code></td><td>int</td><td>—</td><td>Return a single sync record by ID</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /api/salsify/status?limit=5
+
+{
+  "success": true,
+  "count": 2,
+  "syncs": [
+    {
+      "id": 42, "status": "completed", "sync_type": "webhook",
+      "started_at": "2026-04-01T10:00:00Z", "completed_at": "2026-04-01T10:02:15Z",
+      "sync_metadata": { "products_synced": 1840, "channel_name": "ORCA Export" }
+    },
+    ...
+  ]
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-post">POST</span>
+                        <span class="endpoint-path">/api/salsify/cleanup</span>
+                    </div>
+                    <p>Deletes old sync records from the database to keep the history table clean.</p>
+                    <table class="param-table mt-2">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>older_than_days</code></td><td>int</td><td>30</td><td>Delete records older than this many days</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Utility -->
+        <div id="endpoints-utility" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">7. Utility</h2>
+            </div>
+            <div class="section-body space-y-5">
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/api/Health</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">Health check. Returns database connectivity status and basic stats. Useful for monitoring.</p>
+                    <div class="code-block">GET /api/Health
+
+{
+  "status": "healthy",
+  "database": "connected",
+  "product_count": 1840,
+  "timestamp": "2026-04-01T13:00:00Z"
+}</div>
+                </div>
+
+                <div class="endpoint-block">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="method-badge method-get">GET</span>
+                        <span class="endpoint-path">/suggest?q={query}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">
+                        Autocomplete endpoint used by the search bar. Returns matching SKUs and display strings
+                        (<code class="bg-gray-100 px-1 rounded font-mono text-xs">SKU - Product Name</code>) for a partial query. Matches against both SKU and product name.
+                    </p>
+                    <table class="param-table mb-3">
+                        <thead><tr><th>Query param</th><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>q</code></td><td>string</td><td>Search term (minimum 2 characters)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="code-block">GET /suggest?q=biarra
+
+{
+  "suggestions": ["100959", "100960"],
+  "displaySuggestions": ["100959 - Biarritz 40", "100960 - Biarritz 48"]
+}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 8. How Compatibility Works -->
+        <div id="compat-logic" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">8. How Compatibility Works</h2>
+            </div>
+            <div class="section-body text-sm text-gray-600 space-y-4 leading-relaxed">
+                <p>
+                    Compatibility is determined by a set of rules applied between two products. The rules depend on the
+                    categories involved. Here is a plain-language summary of the main rules.
+                </p>
+
+                <h3 class="text-base font-semibold text-gray-800">Shower Base → Door</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>The base must be an <strong>alcove</strong> or <strong>corner</strong> installation type</li>
+                    <li>The base's max door width must fall within the door's min–max width range</li>
+                    <li>Door type must be Pivot, Sliding, or Bypass</li>
+                    <li>Both products must pass the <strong>series compatibility</strong> check (see below)</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Shower Base → Screen</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Base max door width minus the screen's fixed panel width must be greater than 22 inches</li>
+                    <li>Series compatibility must pass</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Shower Base / Bathtub → Walls</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Brand and family must match (see Brand/Family rules below)</li>
+                    <li>For shower-type walls, nominal dimensions are checked for an exact match</li>
+                    <li>For bathtubs, cut-to-size walls are matched by finding the closest wall that is still larger than the tub</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Series Compatibility</h3>
+                <p>Products in different series are sometimes cross-compatible. The rules:</p>
+                <table class="param-table">
+                    <thead><tr><th>Product series</th><th>Compatible with</th></tr></thead>
+                    <tbody>
+                        <tr><td>Same series</td><td>Always compatible</td></tr>
+                        <tr><td>Either side has no series</td><td>Compatible</td></tr>
+                        <tr><td>Retail</td><td>Retail, MAAX, Swan</td></tr>
+                        <tr><td>MAAX</td><td>Retail, MAAX, Collection, Professional</td></tr>
+                        <tr><td>Collection / Professional</td><td>MAAX, Collection, Professional</td></tr>
+                        <tr><td>Swan</td><td>Swan, Retail only</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-base font-semibold text-gray-800">Brand / Family Rules</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Same brand: family must also match (if both products have a family)</li>
+                    <li><strong>Neptune ↔ Maax</strong>: cross-brand compatibility is allowed</li>
+                    <li><strong>w&amp;b family</strong>: only matches other w&amp;b products</li>
+                    <li><strong>utile / nextile</strong> wall families have specific base family requirements</li>
+                </ul>
+
+                <h3 class="text-base font-semibold text-gray-800">Overrides (Whitelist / Blacklist)</h3>
+                <p>
+                    Administrators can add entries to the <code class="bg-gray-100 px-1 rounded font-mono text-xs">compatibility_overrides</code>
+                    table to force two SKUs to always be shown as compatible (whitelist) or never compatible (blacklist),
+                    regardless of what the rules compute. Overrides are bidirectional — they apply whether you search A→B or B→A.
+                </p>
+            </div>
+        </div>
+
+        <!-- 9. Data Flow -->
+        <div id="data-flow" class="section-card">
+            <div class="section-header">
+                <h2 class="text-lg font-semibold text-gray-900">9. Data Flow</h2>
+            </div>
+            <div class="section-body text-sm text-gray-600 space-y-3 leading-relaxed">
+                <p>Here is how data moves through the system from Salsify to a compatibility result:</p>
+                <ol class="list-decimal pl-5 space-y-2">
+                    <li>
+                        <strong>Salsify publishes</strong> a product export and calls <code class="bg-gray-100 px-1 rounded font-mono text-xs">POST /api/salsify/webhook</code>
+                        with the URL of the Excel file.
+                    </li>
+                    <li>
+                        <strong>The API downloads</strong> the Excel file from S3, parses each worksheet (one per product category),
+                        and upserts every row into the <code class="bg-gray-100 px-1 rounded font-mono text-xs">products</code> database table.
+                    </li>
+                    <li>
+                        <strong>Compatibility is recomputed</strong> for all products in the background. Results are stored in the
+                        <code class="bg-gray-100 px-1 rounded font-mono text-xs">product_compatibility</code> table.
+                    </li>
+                    <li>
+                        <strong>A query hits</strong> <code class="bg-gray-100 px-1 rounded font-mono text-xs">GET /api/compatible/{sku}</code>.
+                        The API reads from the pre-computed table, applies any active overrides, and returns the result.
+                    </li>
+                </ol>
+
+                <div class="mt-4">
+                    <p class="font-medium text-gray-700 mb-2">Database tables:</p>
+                    <table class="param-table">
+                        <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>products</code></td><td>All product data with a JSON attributes column</td></tr>
+                            <tr><td><code>product_compatibility</code></td><td>Pre-computed compatible pairs</td></tr>
+                            <tr><td><code>compatibility_overrides</code></td><td>Manual whitelist / blacklist entries</td></tr>
+                            <tr><td><code>sync_statuses</code></td><td>Salsify sync history (shown on the Sync History page)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+
+</body>
+</html>

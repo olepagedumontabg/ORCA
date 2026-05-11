@@ -1,0 +1,63 @@
+/* Custom styles */
+
+/* Color Variables */
+:root {
+    --color-primary: #001A70;
+    --color-primary-hover: #001558;
+    --color-text-dark: #2A314C;
+    --color-text-light: #4B5563;
+}
+
+/* Scrollbar styling for Webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Focus styling */
+input:focus, button:focus {
+    outline: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Responsive table adjustments */
+@media (max-width: 640px) {
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    th, td {
+        min-width: 120px;
+    }
+}
+
+/* Fix for mobile devices to prevent zoom on input focus */
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}

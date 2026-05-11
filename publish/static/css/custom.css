@@ -1,0 +1,77 @@
+/* Shared component styles for the Compatibility Finder UI */
+
+/* Hide Alpine.js cloaked elements before init */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Filter sidebar sections — divider + spacing */
+.filter-section {
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.filter-section:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+/* Truncate long filter labels with an ellipsis */
+.filter-label {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Filter section chevron — rotates when collapsed */
+.filter-chevron {
+    transition: transform 0.2s ease;
+}
+.filter-chevron.rotate-180 {
+    transform: rotate(180deg);
+}
+
+/* Compatibility result combo card "+" badge between the two product images */
+.combo-plus-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    background: #001A70;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Hero example-SKU chip */
+.example-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 9999px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    transition: background 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+}
+.example-chip:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: #fff;
+}
