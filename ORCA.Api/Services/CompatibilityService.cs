@@ -197,26 +197,24 @@ public class CompatibilityService : ICompatibilityService
             }
         }
 
-        // Compute compatibilities in memory for all changed SKUs
+        // Only base-type products are computed — all others derive their results
+        // from the reverse direction of these stored forward pairs.
         var productsToProcess = skuSet
             .Where(s => bySku.ContainsKey(s))
             .Select(s => bySku[s])
+            .Where(p => BaseCategories.Contains(p.Category))
             .ToList();
 
         if (productsToProcess.Count == 0) return 0;
 
         var baseProductIds = productsToProcess.Select(p => p.Id).ToList();
 
-        // Bulk delete existing compatibility records for changed products —
-        // both directions so reverse records from previous runs are also cleaned up
+        // Delete existing forward records for these base products only.
         var existingRecords = await _db.ProductCompatibilities
-            .Where(pc => baseProductIds.Contains(pc.BaseProductId)
-                      || baseProductIds.Contains(pc.CompatibleProductId))
+            .Where(pc => baseProductIds.Contains(pc.BaseProductId))
             .ToListAsync();
         _db.ProductCompatibilities.RemoveRange(existingRecords);
 
-        // Use a dictionary keyed by (BaseId, CompatId) to deduplicate pairs across
-        // both the forward and the reverse records we generate below
         var pairMap = new Dictionary<(int, int), ProductCompatibility>();
         int processed = 0;
 
@@ -242,7 +240,6 @@ public class CompatibilityService : ICompatibilityService
                     if (!bySku.TryGetValue(compatible.Sku, out var compatProduct))
                         continue;
 
-                    // Forward: product → compatProduct
                     var forwardKey = (product.Id, compatProduct.Id);
                     if (!pairMap.ContainsKey(forwardKey))
                         pairMap[forwardKey] = new ProductCompatibility
@@ -250,19 +247,6 @@ public class CompatibilityService : ICompatibilityService
                             BaseProductId = product.Id,
                             CompatibleProductId = compatProduct.Id,
                             MatchReason = compatible.MatchReason ?? category.Category,
-                            ComputedAt = DateTime.UtcNow
-                        };
-
-                    // Reverse: compatProduct → product (bidirectional)
-                    // The MatchReason on the reverse row is the base product's category
-                    // so the wall shows "Shower Bases", the door shows "Shower Bases", etc.
-                    var reverseKey = (compatProduct.Id, product.Id);
-                    if (!pairMap.ContainsKey(reverseKey))
-                        pairMap[reverseKey] = new ProductCompatibility
-                        {
-                            BaseProductId = compatProduct.Id,
-                            CompatibleProductId = product.Id,
-                            MatchReason = product.Category,
                             ComputedAt = DateTime.UtcNow
                         };
                 }
@@ -341,6 +325,7 @@ public class CompatibilityService : ICompatibilityService
         foreach (var row in forwardRows)
         {
             var compatSku = row.CompatibleProduct.Sku;
+            if (string.Equals(compatSku, baseSku, StringComparison.OrdinalIgnoreCase)) continue; // skip self
             if (overrides.Blacklisted.Contains(compatSku)) continue;
             if (!seenSkus.Add(compatSku)) continue;
 
@@ -362,10 +347,11 @@ public class CompatibilityService : ICompatibilityService
             });
         }
 
-        // Reverse rows: BaseProduct is the target (bidirectional — if A→B exists, B→A is implied)
+        // Reverse rows: BaseProduct is the target (if base A computed B as compatible, B can find A here)
         foreach (var row in reverseRows)
         {
             var compatSku = row.BaseProduct.Sku;
+            if (string.Equals(compatSku, baseSku, StringComparison.OrdinalIgnoreCase)) continue; // skip self
             if (overrides.Blacklisted.Contains(compatSku)) continue;
             if (!seenSkus.Add(compatSku)) continue;
 
@@ -453,15 +439,14 @@ public class CompatibilityService : ICompatibilityService
 
     private async Task StoreComputedCompatibilitiesAsync(Product baseProduct, List<CompatibilityCategoryResult> categories)
     {
-        // Remove existing records in both directions for this product
+        // Only forward records are stored (base → compatible).
+        // Reverse lookups are handled at query time by reading WHERE compatible_product_id = X.
         var existing = await _db.ProductCompatibilities
-            .Where(pc => pc.BaseProductId == baseProduct.Id
-                      || pc.CompatibleProductId == baseProduct.Id)
+            .Where(pc => pc.BaseProductId == baseProduct.Id)
             .ToListAsync();
 
         _db.ProductCompatibilities.RemoveRange(existing);
 
-        // Load all referenced products at once
         var skus = categories
             .SelectMany(c => c.Products)
             .Select(p => p.Sku)
@@ -472,7 +457,6 @@ public class CompatibilityService : ICompatibilityService
             .Where(p => skus.Contains(p.Sku))
             .ToDictionaryAsync(p => p.Sku, p => p);
 
-        // Deduplicate pairs: forward + reverse in one dictionary
         var pairMap = new Dictionary<(int, int), ProductCompatibility>();
 
         foreach (var category in categories)
@@ -482,7 +466,6 @@ public class CompatibilityService : ICompatibilityService
                 if (!productsMap.TryGetValue(compatible.Sku, out var compatProduct))
                     continue;
 
-                // Forward
                 var fwd = (baseProduct.Id, compatProduct.Id);
                 if (!pairMap.ContainsKey(fwd))
                     pairMap[fwd] = new ProductCompatibility
@@ -490,17 +473,6 @@ public class CompatibilityService : ICompatibilityService
                         BaseProductId = baseProduct.Id,
                         CompatibleProductId = compatProduct.Id,
                         MatchReason = compatible.MatchReason ?? category.Category,
-                        ComputedAt = DateTime.UtcNow
-                    };
-
-                // Reverse — MatchReason is the base product's category
-                var rev = (compatProduct.Id, baseProduct.Id);
-                if (!pairMap.ContainsKey(rev))
-                    pairMap[rev] = new ProductCompatibility
-                    {
-                        BaseProductId = compatProduct.Id,
-                        CompatibleProductId = baseProduct.Id,
-                        MatchReason = baseProduct.Category,
                         ComputedAt = DateTime.UtcNow
                     };
             }
@@ -522,6 +494,22 @@ public class CompatibilityService : ICompatibilityService
         _db.ProductCompatibilities.AddRange(pairMap.Values);
         await _db.SaveChangesAsync();
     }
+
+    public async Task ClearAllCompatibilitiesAsync()
+    {
+        await _db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE product_compatibility");
+    }
+
+    // Only base-type categories are computed forward. All other categories
+    // (doors, screens, walls, enclosures, return panels) find their compatible
+    // products by querying the reverse direction of these stored pairs.
+    private static readonly HashSet<string> BaseCategories = new(StringComparer.OrdinalIgnoreCase)
+    {
+        CompatibilityConstants.Categories.ShowerBases,
+        CompatibilityConstants.Categories.Bathtubs,
+        CompatibilityConstants.Categories.Showers,
+        CompatibilityConstants.Categories.TubShowers
+    };
 
     private static string[] GetCandidateCategories(string productCategory)
     {
@@ -548,26 +536,6 @@ public class CompatibilityService : ICompatibilityService
             CompatibilityConstants.Categories.TubShowers => new[]
             {
                 CompatibilityConstants.Categories.TubDoors
-            },
-            CompatibilityConstants.Categories.ShowerScreens => new[]
-            {
-                CompatibilityConstants.Categories.ShowerBases
-            },
-            CompatibilityConstants.Categories.TubScreens => new[]
-            {
-                CompatibilityConstants.Categories.Bathtubs
-            },
-            CompatibilityConstants.Categories.Enclosures => new[]
-            {
-                CompatibilityConstants.Categories.ShowerBases
-            },
-            CompatibilityConstants.Categories.ShowerDoors => new[]
-            {
-                CompatibilityConstants.Categories.ShowerBases
-            },
-            CompatibilityConstants.Categories.TubDoors => new[]
-            {
-                CompatibilityConstants.Categories.Bathtubs
             },
             _ => Array.Empty<string>()
         };

@@ -44,8 +44,19 @@ public class CompatibilityController : ControllerBase
     [HttpPost("api/compute-compatibilities")]
     public async Task<IActionResult> ComputeAll()
     {
+        // Wipe the table first so stale records from any previous run are gone.
+        // This is safe because the full recompute regenerates everything from scratch.
+        await _compatibilityService.ClearAllCompatibilitiesAsync();
+
         int count = 0;
         int errors = 0;
+
+        // Only base-type products are computed. Doors, screens, walls, enclosures,
+        // and return panels automatically get reverse results from the stored pairs.
+        var baseCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Shower Bases", "Bathtubs", "Showers", "Tub-Showers"
+        };
 
         const int pageSize = 500;
         int page = 1;
@@ -59,6 +70,9 @@ public class CompatibilityController : ControllerBase
 
             foreach (var p in result.Products)
             {
+                if (!baseCategories.Contains(p.Category ?? ""))
+                    continue;
+
                 try
                 {
                     await _compatibilityService.ComputeCompatibilitiesAsync(p.Sku);
@@ -76,7 +90,7 @@ public class CompatibilityController : ControllerBase
         return Ok(new
         {
             success = true,
-            message = $"Recomputed compatibilities for {count} products ({errors} errors)",
+            message = $"Recomputed compatibilities for {count} base products ({errors} errors)",
             productsProcessed = count,
             errors
         });

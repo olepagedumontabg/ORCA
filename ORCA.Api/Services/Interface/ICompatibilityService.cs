@@ -23,9 +23,16 @@ public interface ICompatibilityService
 
     /// <summary>
     /// Bulk recompute compatibilities for a set of SKUs in a single pass.
-    /// Loads all products and overrides once, then computes and stores in batch.
+    /// Only base-type products (Shower Bases, Bathtubs, Showers, Tub-Showers) are computed.
+    /// All other products find their compatible bases by querying the stored pairs in reverse.
     /// Returns the number of SKUs processed.
     /// onProgress is called every 50 products with the current done count.
     /// </summary>
     Task<int> BulkComputeCompatibilitiesAsync(IEnumerable<string> skus, Func<int, Task>? onProgress = null);
+
+    /// <summary>
+    /// Truncates the entire product_compatibility table. Used before a full recompute
+    /// to ensure stale records from any previous architecture are removed cleanly.
+    /// </summary>
+    Task ClearAllCompatibilitiesAsync();
 }
