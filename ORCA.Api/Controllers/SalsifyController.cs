@@ -24,9 +24,14 @@ public class SalsifyController : ControllerBase
     /// </summary>
     [HttpPost("webhook")]
     public async Task<IActionResult> Webhook(
-        [FromHeader(Name = "X-Salsify-Secret")] string? key,
+        [FromQuery(Name = "key")] string? keyFromQuery,
+        [FromHeader(Name = "X-Salsify-Secret")] string? keyFromHeader,
         [FromBody] SalsifyWebhookPayload? payload)
     {
+        // Accept the secret from either the query string (?key=) or the header.
+        // Salsify sends it as a query parameter; the header is kept as a fallback.
+        var key = keyFromQuery ?? keyFromHeader;
+
         var webhookSecret = Environment.GetEnvironmentVariable("SALSIFY_WEBHOOK_SECRET");
         if (string.IsNullOrEmpty(webhookSecret))
         {
@@ -36,7 +41,9 @@ public class SalsifyController : ControllerBase
 
         if (key != webhookSecret)
         {
-            _logger.LogWarning("Invalid webhook secret from {Ip}", HttpContext.Connection.RemoteIpAddress);
+            _logger.LogWarning("Invalid webhook secret from {Ip} (key source: {Source})",
+                HttpContext.Connection.RemoteIpAddress,
+                keyFromQuery != null ? "query" : keyFromHeader != null ? "header" : "missing");
             return Unauthorized(new { success = false, error = "Unauthorized" });
         }
 

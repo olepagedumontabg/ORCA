@@ -623,11 +623,6 @@
                                             <span class="font-medium text-text-light">Series:</span> 
                                             <span class="text-text-dark" x-text="productDetails?.series"></span>
                                         </div>
-                                        <!-- Maximum Door Width (for Bathtubs, Shower Bases, Showers and Tub Showers) -->
-                                        <div x-show="productDetails?.category === 'Bathtubs' || productDetails?.category === 'Shower Bases' || productDetails?.category === 'Showers' || productDetails?.category === 'Tub Showers'" class="text-sm">
-                                            <span class="font-medium text-text-light">Maximum Door Width:</span> 
-                                            <span class="text-text-dark" x-text="productDetails?.max_door_width ? formatInchFraction(productDetails.max_door_width) + ' in.' : 'N/A'"></span>
-                                        </div>
                                         
                                         <!-- Maximum Door Height (ONLY for Showers and Tub Showers) -->
                                         <div x-show="productDetails?.category === 'Showers' || productDetails?.category === 'Tub Showers'" class="text-sm">
