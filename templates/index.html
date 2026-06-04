@@ -45,13 +45,14 @@
                 <nav class="hidden md:flex space-x-6 items-center">
                     <a href="/" class="text-primary font-semibold border-b-2 border-primary pb-1">Home</a>
                     <a href="/sync-history"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Sync History</a>
-                    <a href="/overrides"{{STYLE_EDITOR}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
+                    <a href="/overrides" class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">Overrides</a>
                     <a href="/documentation"{{STYLE_ADMIN}} class="text-gray-600 hover:text-primary transition border-b-2 border-transparent pb-1">API Docs</a>
-                    <span class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
+                    <span{{STYLE_AUTHENTICATED}} class="text-gray-400 text-sm border-l border-gray-200 pl-6 flex items-center gap-3">
                         <i class="fas fa-user-circle text-primary"></i>
                         <span class="text-gray-600 font-medium">{{USER_EMAIL}}</span>
                         <a href="/account/logout" class="text-gray-500 hover:text-red-600 transition flex items-center gap-1 text-sm" title="Log out"><i class="fas fa-sign-out-alt"></i> Logout</a>
                     </span>
+                    <a{{STYLE_UNAUTHENTICATED}} href="/account/login" class="ml-2 px-4 py-1.5 bg-[#001A70] text-white text-sm font-semibold rounded-lg hover:bg-[#001558] transition">Sign In</a>
                 </nav>
                 <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-gray-600 hover:text-primary" aria-label="Toggle navigation">
                     <i class="fas" :class="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
@@ -63,13 +64,14 @@
             <nav class="flex flex-col py-2">
                 <a href="/" class="px-4 py-2 text-primary font-semibold bg-blue-50">Home</a>
                 <a href="/sync-history"{{STYLE_ADMIN}} class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Sync History</a>
-                <a href="/overrides"{{STYLE_EDITOR}} class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
+                <a href="/overrides" class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">Overrides</a>
                 <a href="/documentation"{{STYLE_ADMIN}} class="px-4 py-2 text-gray-600 hover:bg-gray-50 hover:text-primary">API Docs</a>
-                <div class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
+                <div{{STYLE_AUTHENTICATED}} class="px-4 py-2 border-t border-gray-100 text-sm text-gray-600 flex items-center gap-2">
                     <i class="fas fa-user-circle text-primary"></i>
                     <span class="font-medium truncate">{{USER_EMAIL}}</span>
                 </div>
-                <a href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                <a{{STYLE_AUTHENTICATED}} href="/account/logout" class="block px-4 py-2 text-red-600 hover:bg-gray-50"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                <a{{STYLE_UNAUTHENTICATED}} href="/account/login" class="block px-4 py-2 border-t border-gray-100 text-[#001A70] font-semibold hover:bg-gray-50"><i class="fas fa-sign-in-alt mr-2"></i>Sign In</a>
             </nav>
         </div>
     </header>
