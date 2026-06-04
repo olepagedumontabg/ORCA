@@ -76,8 +76,11 @@ public static class ShowerBaseRules
                         matchingDoors.Add(doorDto);
                 }
 
-                // Corner match with return panel
+                // Corner match with return panel.
+                // The door MUST declare "Has Return Panel = Yes" — a door without a return
+                // panel cannot physically close a corner opening.
                 bool cornerDoorCompatible = baseInstall.Contains("corner")
+                    && string.Equals(doorHasReturn, "Yes", StringComparison.OrdinalIgnoreCase)
                     && SharedRules.DoorWidthFits(doorMinWidth, doorMaxWidth, baseWidth)
                     && SharedRules.SeriesCompatible(baseSeries, doorSeries, baseBrand, doorBrand);
 
@@ -91,15 +94,25 @@ public static class ShowerBaseRules
                         var panelSize = panelAttrs.GetString("Return Panel Size");
                         var panelFamily = panel.Family;
 
+                        // Primary: base explicitly declares what panel size fits it.
                         bool exactMatch = !string.IsNullOrEmpty(baseFitReturn)
                             && !string.IsNullOrEmpty(panelSize)
                             && baseFitReturn == panelSize
                             && string.Equals(doorFamily, panelFamily, StringComparison.OrdinalIgnoreCase);
 
+                        // Fallback (when Fits Return Panel Size is not set on the base):
+                        // the panel's declared size must match the base's actual depth dimension.
+                        // e.g. a 48×42 base requires a 42" return panel.
+                        bool panelSizeFitsBaseWidth = !string.IsNullOrEmpty(panelSize)
+                            && baseWidthActual.HasValue
+                            && decimal.TryParse(panelSize, out var parsedPanelSize)
+                            && parsedPanelSize == baseWidthActual.Value;
+
                         bool familyCompatible = isPureCorner || string.Equals(doorFamily, panelFamily, StringComparison.OrdinalIgnoreCase);
                         bool fallbackMatch = string.IsNullOrEmpty(baseFitReturn)
                             && baseInstall.Contains("corner")
-                            && familyCompatible;
+                            && familyCompatible
+                            && panelSizeFitsBaseWidth;
 
                         if (exactMatch || fallbackMatch)
                         {
