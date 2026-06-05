@@ -1,1 +1,2 @@
 - [ORCA test baseline](test-baseline.md) — ~10 pre-existing failing tests (CompatibilityEngineTests + 1 Salsify); verify regressions via /tmp copy + `git show HEAD:`, not stash.
+- [Salsify sync stale process](salsify-sync-stale-process.md) — sync runs in the live :5000 process; restart `Start application` after sync-code edits before re-syncing, or new columns stay NULL.
