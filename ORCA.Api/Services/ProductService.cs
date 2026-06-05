@@ -57,7 +57,8 @@ public class ProductService : IProductService
                 NominalDimensions = p.NominalDimensions,
                 AlternateId1 = p.AlternateId1,
                 AlternateId2 = p.AlternateId2,
-                AlternateId3 = p.AlternateId3
+                AlternateId3 = p.AlternateId3,
+                ParentId = p.ParentId
             })
             .ToListAsync();
 
@@ -95,15 +96,13 @@ public class ProductService : IProductService
                 (p.AlternateId3 != null && p.AlternateId3.ToUpper() == upper));
     }
 
-    public async Task<List<ProductDto>> GetConfigurationsAsync(string baseSku)
+    public async Task<List<ProductDto>> GetConfigurationsAsync(string parentId)
     {
-        var prefix = baseSku.Trim().ToUpperInvariant();
-        if (prefix.Contains('-'))
-            prefix = prefix[..prefix.IndexOf('-')];
+        var pid = parentId.Trim().ToUpperInvariant();
 
         return await _db.Products
             .AsNoTracking()
-            .Where(p => p.Sku.StartsWith(prefix + "-"))
+            .Where(p => p.ParentId != null && p.ParentId.ToUpper() == pid)
             .OrderBy(p => p.Sku)
             .Select(p => new ProductDto
             {
@@ -119,8 +118,19 @@ public class ProductService : IProductService
                 NominalDimensions = p.NominalDimensions,
                 AlternateId1 = p.AlternateId1,
                 AlternateId2 = p.AlternateId2,
-                AlternateId3 = p.AlternateId3
+                AlternateId3 = p.AlternateId3,
+                ParentId = p.ParentId
             })
             .ToListAsync();
+    }
+
+    public async Task<Product?> FindFirstChildByParentIdAsync(string parentId)
+    {
+        var pid = parentId.Trim().ToUpper();
+        return await _db.Products
+            .AsNoTracking()
+            .Where(p => p.ParentId != null && p.ParentId.ToUpper() == pid)
+            .OrderBy(p => p.Sku)
+            .FirstOrDefaultAsync();
     }
 }

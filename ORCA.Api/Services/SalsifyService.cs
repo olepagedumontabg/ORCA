@@ -19,7 +19,8 @@ public class SalsifyService : ISalsifyService
         "Unique ID", "Product Name", "Brand", "Series", "Family",
         "Length", "Width", "Height", "Nominal Dimensions",
         "Product Page URL", "Image URL", "Ranking",
-        "Alternate ID 1", "Alternate ID 2", "Alternate ID 3"
+        "Alternate ID 1", "Alternate ID 2", "Alternate ID 3",
+        "Parent ID"
     };
 
     public SalsifyService(
@@ -240,6 +241,7 @@ public class SalsifyService : ISalsifyService
                         AlternateId1 = productData.AlternateId1,
                         AlternateId2 = productData.AlternateId2,
                         AlternateId3 = productData.AlternateId3,
+                        ParentId = productData.ParentId,
                         Attributes = attrsJson,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
@@ -280,7 +282,7 @@ public class SalsifyService : ISalsifyService
     private static (string Sku, string? ProductName, string? Brand, string? Series, string? Family,
         string Category, decimal? Length, decimal? Width, decimal? Height,
         string? NominalDimensions, string? ProductPageUrl, string? ImageUrl, int? Ranking,
-        string? AlternateId1, string? AlternateId2, string? AlternateId3)
+        string? AlternateId1, string? AlternateId2, string? AlternateId3, string? ParentId)
         ExtractProductData(IXLRow row, Dictionary<int, string> headers, string sku, string category)
     {
         T? Get<T>(string name) where T : struct
@@ -318,7 +320,8 @@ public class SalsifyService : ISalsifyService
             Get<int>("Ranking"),
             GetStr("Alternate ID 1"),
             GetStr("Alternate ID 2"),
-            GetStr("Alternate ID 3")
+            GetStr("Alternate ID 3"),
+            GetStr("Parent ID")
         );
     }
 
@@ -352,7 +355,7 @@ public class SalsifyService : ISalsifyService
         (string Sku, string? ProductName, string? Brand, string? Series, string? Family,
         string Category, decimal? Length, decimal? Width, decimal? Height,
         string? NominalDimensions, string? ProductPageUrl, string? ImageUrl, int? Ranking,
-        string? AlternateId1, string? AlternateId2, string? AlternateId3) data,
+        string? AlternateId1, string? AlternateId2, string? AlternateId3, string? ParentId) data,
         string? attrsJson)
     {
         bool changed = false;
@@ -374,6 +377,7 @@ public class SalsifyService : ISalsifyService
         if (product.AlternateId1 != data.AlternateId1) { product.AlternateId1 = data.AlternateId1; changed = true; }
         if (product.AlternateId2 != data.AlternateId2) { product.AlternateId2 = data.AlternateId2; changed = true; }
         if (product.AlternateId3 != data.AlternateId3) { product.AlternateId3 = data.AlternateId3; changed = true; }
+        if (product.ParentId != data.ParentId) { product.ParentId = data.ParentId; changed = true; }
         if (product.Attributes != attrsJson) { product.Attributes = attrsJson; changed = true; }
 
         return (changed, dimensionsChanged);

@@ -42,40 +42,41 @@ public class SearchService : ISearchService
             );
         }
 
-        // Default: fetch more raw rows than needed — config SKUs will be stripped
-        // to base SKU and deduplicated, so we need extra headroom.
+        // Default: fetch more raw rows than needed — config rows collapse to their
+        // Parent ID and are deduplicated, so we need extra headroom.
         var rawMatches = await _db.Products
             .AsNoTracking()
             .Where(p =>
                 p.Sku.StartsWith(skuQuery) ||
+                (p.ParentId != null && p.ParentId.ToUpper().StartsWith(skuQuery)) ||
                 (p.ProductName != null && p.ProductName.ToLower().Contains(nameQuery)))
             .OrderBy(p => p.Sku.StartsWith(skuQuery) ? 0 : 1)
             .ThenBy(p => p.Sku)
             .Take(100)
-            .Select(p => new { p.Sku, p.ProductName, p.Category })
+            .Select(p => new { p.Sku, p.ParentId, p.ProductName, p.Category })
             .ToListAsync();
 
-        // Deduplicate by base SKU (everything before the first '-').
-        // Ensures config-only products (no bare base row) still surface as base SKU.
+        // Group by the explicit Parent ID when present; standalone products (no Parent ID)
+        // surface under their own full SKU — no stripping.
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var matches = new List<(string BaseSku, string? Name, string? Category)>();
+        var matches = new List<(string Key, string? Name, string? Category)>();
 
         foreach (var m in rawMatches)
         {
-            var baseSku = m.Sku.Contains('-') ? m.Sku[..m.Sku.IndexOf('-')] : m.Sku;
-            if (seen.Add(baseSku))
+            var key = string.IsNullOrWhiteSpace(m.ParentId) ? m.Sku : m.ParentId;
+            if (seen.Add(key))
             {
-                matches.Add((baseSku, m.ProductName, m.Category));
+                matches.Add((key, m.ProductName, m.Category));
                 if (matches.Count == 20) break;
             }
         }
 
         return new SearchSuggestResult(
-            Suggestions:        matches.Select(m => m.BaseSku).ToList(),
+            Suggestions:        matches.Select(m => m.Key).ToList(),
             DisplaySuggestions: matches
                 .Select(m => string.IsNullOrWhiteSpace(m.Name)
-                    ? m.BaseSku
-                    : $"{m.BaseSku} - {m.Name}")
+                    ? m.Key
+                    : $"{m.Key} - {m.Name}")
                 .ToList(),
             Categories: matches.Select(m => m.Category ?? string.Empty).ToList()
         );

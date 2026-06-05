@@ -380,51 +380,26 @@ namespace ORCA.Tests.Services
         }
 
         [TestMethod]
-        public async Task GetCompatible_ResolvesConfigSku_ViaSkuSuffixStripping()
+        public async Task GetCompatible_ResolvesParentSku_ViaParentIdToChild()
         {
-            // "410006-501-001" not in DB and not in any AlternateId field.
-            // Suffix stripping: "410006-501" → not found; "410006" → found.
-            var baseProduct = new Product { Id = 1, Sku = "410006", Category = "Unknown" };
+            // "420043" is a Parent ID with no standalone row of its own.
+            // It must resolve to a representative child via the Parent ID column.
+            var childProduct = new Product { Id = 1, Sku = "420043-541-001", ParentId = "420043", Category = "Unknown" };
 
             _productServiceMock
-                .Setup(x => x.GetBySkuAsync("410006-501-001"))
-                .ReturnsAsync((Product?)null);
+                .Setup(x => x.GetBySkuAsync("420043"))
+                .ReturnsAsync((Product?)null); // exact lookup fails
             _productServiceMock
-                .Setup(x => x.FindByAlternateIdAsync("410006-501-001"))
-                .ReturnsAsync((Product?)null);
+                .Setup(x => x.FindByAlternateIdAsync("420043"))
+                .ReturnsAsync((Product?)null); // not stored as an alternate ID
             _productServiceMock
-                .Setup(x => x.GetBySkuAsync("410006-501"))
-                .ReturnsAsync((Product?)null); // first strip attempt fails
-            _productServiceMock
-                .Setup(x => x.GetBySkuAsync("410006"))
-                .ReturnsAsync(baseProduct); // second strip succeeds
+                .Setup(x => x.FindFirstChildByParentIdAsync("420043"))
+                .ReturnsAsync(childProduct); // Parent ID resolves to a child
 
-            var result = await _service.GetCompatibleProductsAsync("410006-501-001");
+            var result = await _service.GetCompatibleProductsAsync("420043");
 
             Assert.IsTrue(result.Success);
-            Assert.AreEqual("410006", result.Product!.Sku);
-        }
-
-        [TestMethod]
-        public async Task GetCompatible_ResolvesConfigSku_WithSingleSuffixStrip()
-        {
-            // "SB-100-RED" → "SB-100" → found immediately on first strip.
-            var baseProduct = new Product { Id = 1, Sku = "SB-100", Category = "Unknown" };
-
-            _productServiceMock
-                .Setup(x => x.GetBySkuAsync("SB-100-RED"))
-                .ReturnsAsync((Product?)null);
-            _productServiceMock
-                .Setup(x => x.FindByAlternateIdAsync("SB-100-RED"))
-                .ReturnsAsync((Product?)null);
-            _productServiceMock
-                .Setup(x => x.GetBySkuAsync("SB-100"))
-                .ReturnsAsync(baseProduct);
-
-            var result = await _service.GetCompatibleProductsAsync("SB-100-RED");
-
-            Assert.IsTrue(result.Success);
-            Assert.AreEqual("SB-100", result.Product!.Sku);
+            Assert.AreEqual("420043-541-001", result.Product!.Sku);
         }
 
         [TestMethod]

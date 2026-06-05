@@ -15,4 +15,5 @@ public class ProductDto
     public string? AlternateId1 { get; set; }
     public string? AlternateId2 { get; set; }
     public string? AlternateId3 { get; set; }
+    public string? ParentId { get; set; }
 }

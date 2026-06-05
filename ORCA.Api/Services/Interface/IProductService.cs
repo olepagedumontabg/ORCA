@@ -19,8 +19,16 @@ public interface IProductService
     Task<Product?> FindByAlternateIdAsync(string alternateId);
 
     /// <summary>
-    /// Returns all sellable configuration variants for a base SKU.
-    /// Finds every product whose SKU starts with {baseSku}-, ordered alphabetically.
+    /// Returns all sellable configuration variants for a parent product.
+    /// Finds every product whose ParentId matches the given value (case-insensitive),
+    /// ordered alphabetically by SKU.
     /// </summary>
-    Task<List<ProductDto>> GetConfigurationsAsync(string baseSku);
+    Task<List<ProductDto>> GetConfigurationsAsync(string parentId);
+
+    /// <summary>
+    /// Returns the first child product (ordered by SKU) whose ParentId matches the
+    /// given value. Used to resolve a parent SKU to a representative child when the
+    /// parent itself has no standalone product row.
+    /// </summary>
+    Task<Product?> FindFirstChildByParentIdAsync(string parentId);
 }

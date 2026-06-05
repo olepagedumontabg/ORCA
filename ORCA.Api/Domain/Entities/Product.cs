@@ -24,6 +24,10 @@ public class Product
     public string? AlternateId2 { get; set; }
     public string? AlternateId3 { get; set; }
 
+    // Explicit parent grouping key from Salsify ("Parent ID" column).
+    // Config/variant rows carry their parent's ID here; standalone products leave it null.
+    public string? ParentId { get; set; }
+
     public int? Ranking { get; set; }
 
     public DateTime CreatedAt { get; set; }

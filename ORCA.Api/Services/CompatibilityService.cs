@@ -43,13 +43,13 @@ public class CompatibilityService : ICompatibilityService
                 _logger.LogInformation("Resolved {ConfigSku} → base product {BaseSku} via alternate ID", sku, product.Sku);
         }
 
-        // Still not found — try stripping the configuration suffix progressively.
-        // e.g. "410006-501-001" → "410006-501" → "410006"
+        // Still not found — the SKU may be a Parent ID with no standalone row of its own.
+        // Resolve it to a representative child via the explicit Parent ID column.
         if (product == null)
         {
-            product = await TryFindByStrippedSkuAsync(sku);
+            product = await _productService.FindFirstChildByParentIdAsync(sku);
             if (product != null)
-                _logger.LogInformation("Resolved {ConfigSku} → base product {BaseSku} via suffix stripping", sku, product.Sku);
+                _logger.LogInformation("Resolved {ParentSku} → child product {ChildSku} via Parent ID", sku, product.Sku);
         }
 
         if (product == null)
@@ -665,26 +665,10 @@ public class CompatibilityService : ICompatibilityService
             NominalDimensions = product.NominalDimensions,
             AlternateId1 = product.AlternateId1,
             AlternateId2 = product.AlternateId2,
-            AlternateId3 = product.AlternateId3
+            AlternateId3 = product.AlternateId3,
+            ParentId = product.ParentId
         };
     }
 
     private record OverrideSet(HashSet<string> Whitelisted, HashSet<string> Blacklisted);
-
-    /// <summary>
-    /// Progressively strips trailing "-xxx" segments from a configuration SKU to find
-    /// the matching base product. For example, "410006-501-001" tries "410006-501"
-    /// then "410006", returning the first one found in the DB.
-    /// </summary>
-    private async Task<Product?> TryFindByStrippedSkuAsync(string sku)
-    {
-        var candidate = sku;
-        while (candidate.Contains('-'))
-        {
-            candidate = candidate[..candidate.LastIndexOf('-')];
-            var found = await _productService.GetBySkuAsync(candidate);
-            if (found != null) return found;
-        }
-        return null;
-    }
 }

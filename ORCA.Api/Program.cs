@@ -198,6 +198,10 @@ using (var migScope = app.Services.CreateScope())
     var migDb = migScope.ServiceProvider.GetRequiredService<OrcaDbContext>();
     await migDb.Database.ExecuteSqlRawAsync(
         "ALTER TABLE compatibility_overrides ADD COLUMN IF NOT EXISTS created_by VARCHAR(255);");
+    await migDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS parent_id VARCHAR(50);");
+    await migDb.Database.ExecuteSqlRawAsync(
+        "CREATE INDEX IF NOT EXISTS \"IX_products_parent_id\" ON products (parent_id);");
 }
 
 // ---------- Startup: recover stuck syncs ----------

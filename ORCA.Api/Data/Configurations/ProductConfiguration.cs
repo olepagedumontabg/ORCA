@@ -45,6 +45,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.AlternateId2).HasColumnName("alternate_id_2").HasMaxLength(50);
         builder.Property(p => p.AlternateId3).HasColumnName("alternate_id_3").HasMaxLength(50);
 
+        builder.Property(p => p.ParentId).HasColumnName("parent_id").HasMaxLength(50);
+        builder.HasIndex(p => p.ParentId);
+
         builder.Property(p => p.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(p => p.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
     }

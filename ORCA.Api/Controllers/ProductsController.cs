@@ -105,18 +105,15 @@ public class ProductsController : ControllerBase
 
     /// <summary>
     /// GET /api/product/{sku}/configurations
-    /// Returns all sellable configuration variants for a base SKU.
-    /// Pass the base SKU (e.g. 148006) or any config SKU (e.g. 148006-L-000-002) —
-    /// both resolve to the same base and return the same list.
-    /// Returns an empty array when the product has no split configurations
-    /// (all variants share the same dimensions and are managed at the base level).
+    /// Returns all sellable configuration variants grouped under a parent.
+    /// Pass a Parent ID (e.g. 420043) to get its children. The lookup is driven by the
+    /// explicit "Parent ID" column — products without a Parent ID return an empty list
+    /// and are treated as standalone products.
     /// </summary>
     [HttpGet("api/product/{sku}/configurations")]
     public async Task<IActionResult> GetConfigurations(string sku)
     {
         var baseSku = sku.Trim().ToUpperInvariant();
-        if (baseSku.Contains('-'))
-            baseSku = baseSku[..baseSku.IndexOf('-')];
 
         var configurations = await _productService.GetConfigurationsAsync(baseSku);
 
