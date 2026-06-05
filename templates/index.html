@@ -229,7 +229,8 @@
                             <!-- Product image -->
                             <div class="w-full aspect-square bg-gray-100 overflow-hidden">
                                 <img
-                                    :src="config.image_url || getPlaceholderImage(config.name || '')"
+                                    :src="config.image_url || getPlaceholderImage(config.category, config.name)"
+                                    @error="$el.onerror=null; $el.src=getPlaceholderImage(config.category, config.name)"
                                     :alt="config.name || config.sku"
                                     class="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                                 >
@@ -267,7 +268,7 @@
             <div x-show="compatibleProducts.length > 0 && !errorMessage && !isLoading" x-cloak>
                 <!-- Sticky "viewing X" mini-bar -->
                 <div x-show="productDetails" x-cloak class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm -mx-4 px-4 py-2 mb-4 flex items-center gap-3">
-                    <img :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')" :alt="productDetails?.name || ''" class="w-10 h-10 rounded object-cover flex-shrink-0 bg-gray-100">
+                    <img :src="productDetails?.image_url || getPlaceholderImage(productDetails?.category, productDetails?.name)" @error="$el.onerror=null; $el.src=getPlaceholderImage(productDetails?.category, productDetails?.name)" :alt="productDetails?.name || ''" class="w-10 h-10 rounded object-cover flex-shrink-0 bg-gray-100">
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-semibold text-text-dark truncate" x-text="productDetails?.name || ''"></div>
                         <div class="text-xs text-text-light">
@@ -580,14 +581,16 @@
                                            rel="noopener noreferrer" 
                                            class="block w-full h-full group cursor-pointer">
                                             <img 
-                                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')"
+                                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.category, productDetails?.name)"
+                                                @error="$el.onerror=null; $el.src=getPlaceholderImage(productDetails?.category, productDetails?.name)"
                                                 :alt="productDetails?.name || 'Product Image'" 
                                                 class="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                                             >
                                         </a>
                                         <template x-if="!productDetails?.product_page_url">
                                             <img 
-                                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.name || '')"
+                                                :src="productDetails?.image_url || getPlaceholderImage(productDetails?.category, productDetails?.name)"
+                                                @error="$el.onerror=null; $el.src=getPlaceholderImage(productDetails?.category, productDetails?.name)"
                                                 :alt="productDetails?.name || 'Product Image'" 
                                                 class="w-full h-full object-cover object-center"
                                             >
@@ -698,14 +701,16 @@
                                                                rel="noopener noreferrer" 
                                                                class="block w-full h-full">
                                                                 <img 
-                                                                    :src="product.image_url || getPlaceholderImage(product.name)" 
+                                                                    :src="product.image_url || getPlaceholderImage(product.category, product.name)" 
+                                                                    @error="$el.onerror=null; $el.src=getPlaceholderImage(product.category, product.name)"
                                                                     :alt="product.name || 'Product Image'" 
                                                                     class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
                                                                 >
                                                             </a>
                                                             <template x-if="!product.product_page_url">
                                                                 <img 
-                                                                    :src="product.image_url || getPlaceholderImage(product.name)" 
+                                                                    :src="product.image_url || getPlaceholderImage(product.category, product.name)" 
+                                                                    @error="$el.onerror=null; $el.src=getPlaceholderImage(product.category, product.name)"
                                                                     :alt="product.name || 'Product Image'" 
                                                                     class="w-full h-full object-cover object-center"
                                                                 >
@@ -747,7 +752,8 @@
                                                                        rel="noopener noreferrer" 
                                                                        class="block w-full h-full">
                                                                         <img 
-                                                                            :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
+                                                                            :src="product.main_product.image_url || getPlaceholderImage(product.main_product.category, product.main_product.name)" 
+                                                                            @error="$el.onerror=null; $el.src=getPlaceholderImage(product.main_product.category, product.main_product.name)"
                                                                             :alt="product.main_product.name || 'Main Product Image'" 
                                                                             class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
                                                                         >
@@ -755,7 +761,8 @@
                                                                 </template>
                                                                 <template x-if="!product.main_product.product_page_url">
                                                                     <img 
-                                                                        :src="product.main_product.image_url || getPlaceholderImage(product.main_product.name)" 
+                                                                        :src="product.main_product.image_url || getPlaceholderImage(product.main_product.category, product.main_product.name)" 
+                                                                        @error="$el.onerror=null; $el.src=getPlaceholderImage(product.main_product.category, product.main_product.name)"
                                                                         :alt="product.main_product.name || 'Main Product Image'" 
                                                                         class="w-full h-full object-cover object-center"
                                                                     >
@@ -774,7 +781,8 @@
                                                                        rel="noopener noreferrer" 
                                                                        class="block w-full h-full">
                                                                         <img 
-                                                                            :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.name)" 
+                                                                            :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.category, product.secondary_product.name)" 
+                                                                            @error="$el.onerror=null; $el.src=getPlaceholderImage(product.secondary_product.category, product.secondary_product.name)"
                                                                             :alt="product.secondary_product.name || 'Secondary Product Image'" 
                                                                             class="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
                                                                         >
@@ -782,7 +790,8 @@
                                                                 </template>
                                                                 <template x-if="!product.secondary_product.product_page_url">
                                                                     <img 
-                                                                        :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.name)" 
+                                                                        :src="product.secondary_product.image_url || getPlaceholderImage(product.secondary_product.category, product.secondary_product.name)" 
+                                                                        @error="$el.onerror=null; $el.src=getPlaceholderImage(product.secondary_product.category, product.secondary_product.name)"
                                                                         :alt="product.secondary_product.name || 'Secondary Product Image'" 
                                                                         class="w-full h-full object-cover object-center"
                                                                     >

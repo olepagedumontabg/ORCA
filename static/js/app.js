@@ -995,49 +995,41 @@ function compatibilityApp() {
         },
         
         /**
-         * Get a placeholder image URL for products without images
-         * Uses a better product-specific placeholder based on the product name if available
-         * @param {string} productName - Optional product name to use in the placeholder
-         * @returns {string} The placeholder image URL
+         * Get a placeholder image URL for products without images.
+         * Matches by category first; falls back to product name keywords.
+         * @param {string} category - The product category (e.g. "Shower Bases")
+         * @param {string} [productName] - Optional product name for keyword fallback
+         * @returns {string} The placeholder SVG URL
          */
-        getPlaceholderImage(productName) {
-            // Check if we can determine a category-based image
+        getPlaceholderImage(category, productName) {
+            const cat = (category || '').toLowerCase().trim();
+            const categoryMap = {
+                'shower bases':   '/static/images/products/placeholder-shower-base.svg',
+                'bathtubs':       '/static/images/products/placeholder-bathtub.svg',
+                'showers':        '/static/images/products/placeholder-shower.svg',
+                'tub showers':    '/static/images/products/placeholder-shower.svg',
+                'enclosures':     '/static/images/products/placeholder-shower.svg',
+                'shower doors':   '/static/images/products/placeholder-shower-door.svg',
+                'shower screens': '/static/images/products/placeholder-shower-door.svg',
+                'tub doors':      '/static/images/products/placeholder-tub-door.svg',
+                'tub screens':    '/static/images/products/placeholder-tub-screen.svg',
+                'walls':          '/static/images/products/placeholder-wall.svg',
+                'return panels':  '/static/images/products/placeholder-wall.svg',
+            };
+            if (categoryMap[cat]) return categoryMap[cat];
+
             if (productName) {
-                // Look for key words in the product name to determine image type
-                productName = productName.toLowerCase();
-                
-                if (productName.includes('b3round') || (productName.includes('round') && productName.includes('base'))) {
-                    return '/static/images/products/b3round.jpg';
-                }
-                
-                if (productName.includes('b3square') || (productName.includes('square') && productName.includes('base'))) {
-                    return '/static/images/products/b3square.jpg';
-                }
-                
-                if (productName.includes('door')) {
-                    return '/static/images/products/shower_door.jpg';
-                }
-                
-                if (productName.includes('wall')) {
-                    return '/static/images/products/shower_wall.jpg';
-                }
-                
-                if (productName.includes('panel') || productName.includes('return')) {
-                    return '/static/images/products/return_panel.jpg';
-                }
-                
-                if (productName.includes('base') || productName.includes('shower base')) {
-                    return '/static/images/products/b3square.jpg';
-                }
-                
-                // If no matching category, create a generic placeholder with the product name
-                const cleanName = productName.replace(/[^a-zA-Z0-9 ]/g, '')
-                                           .replace(/\s+/g, '+')
-                                           .substring(0, 20);
-                return `https://via.placeholder.com/300x200?text=${cleanName}`;
+                const n = productName.toLowerCase();
+                if (n.includes('bathtub')) return '/static/images/products/placeholder-bathtub.svg';
+                if (n.includes('tub door')) return '/static/images/products/placeholder-tub-door.svg';
+                if (n.includes('tub screen')) return '/static/images/products/placeholder-tub-screen.svg';
+                if (n.includes('door')) return '/static/images/products/placeholder-shower-door.svg';
+                if (n.includes('screen')) return '/static/images/products/placeholder-shower-door.svg';
+                if (n.includes('wall')) return '/static/images/products/placeholder-wall.svg';
+                if (n.includes('base')) return '/static/images/products/placeholder-shower-base.svg';
             }
-            
-            return '/static/images/products/b3square.jpg'; // Default
+
+            return '/static/images/products/placeholder-shower-base.svg';
         },
         
         /**
